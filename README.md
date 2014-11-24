@@ -7,6 +7,6 @@ offsetDays
 ----
 paste this into the url of a bookmark
 ```
-javascript:var OFFSET=-3;(function(){var e=7+OFFSET>7?OFFSET:7+OFFSET;var h=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];var a=["<!--DAY0-->","<!--DAY1-->","<!--DAY2-->","<!--DAY3-->","<!--DAY4-->","<!--DAY5-->","<!--DAY6-->"];for(var d=0;d<h.length;d++){g(h[d],a[d])}for(var d=0;d<h.length;d++){var b=f(d);c(a[d],b)}function f(k){var j=h[(k+e)%7];return j[0].toUpperCase()+j.substring(1)}function g(i,j){var k=new RegExp(i,"gi");document.body.innerHTML=document.body.innerHTML.replace(k,j)}function c(j,i){var k=new RegExp(j,"g");document.body.innerHTML=document.body.innerHTML.replace(k,i)}})()
+javascript:var OFFSET=-3;(function(d){var h=7+d>7?d:7+d;var j=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];var c=["<!--DAY0-->","<!--DAY1-->","<!--DAY2-->","<!--DAY3-->","<!--DAY4-->","<!--DAY5-->","<!--DAY6-->"];for(var e=0;e<j.length;e++){g(j[e],c[e])}for(var e=0;e<j.length;e++){var b=a(e);f(c[e],b)}function a(l){var k=j[(l+h)%7];return k[0].toUpperCase()+k.substring(1)}function g(i,k){var l=new RegExp(i,"gi");document.body.innerHTML=document.body.innerHTML.replace(l,k)}function f(k,i){var l=new RegExp(k,"g");document.body.innerHTML=document.body.innerHTML.replace(l,i)}})(OFFSET)
 ```
 
