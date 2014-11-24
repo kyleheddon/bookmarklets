@@ -1,6 +1,6 @@
 var OFFSET = -3;
-(function(){
-  var positiveOffset = 7 + OFFSET > 7 ? OFFSET : 7 + OFFSET;
+(function(offset){
+  var positiveOffset = 7 + offset > 7 ? offset : 7 + offset;
   var days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   var dayTokens = ['<!--DAY0-->', '<!--DAY1-->', '<!--DAY2-->', '<!--DAY3-->', '<!--DAY4-->', '<!--DAY5-->', '<!--DAY6-->'];
   
@@ -28,4 +28,4 @@ var OFFSET = -3;
     document.body.innerHTML = document.body.innerHTML.replace(tokenRegEx, day);
   }
 
-})()
+})(OFFSET)
