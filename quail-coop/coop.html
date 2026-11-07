@@ -192,9 +192,6 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
   .app{display:block;height:auto}
   .stage{height:70svh;min-height:440px}
   .panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
-  .layers{flex-wrap:nowrap;overflow-x:auto;padding-bottom:4px;padding-right:28px;scrollbar-width:none;pointer-events:auto;touch-action:pan-x;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch;
-    -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 36px),transparent)}
-  .layers.end{-webkit-mask-image:none;mask-image:none}
   .layers::-webkit-scrollbar{display:none}
   .chip{flex:none}
   .hint{display:none}
@@ -207,7 +204,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
   <nav class="models" role="tablist" aria-label="Coop design" id="models"></nav>
   <section class="stage" id="stage" aria-label="3D model of the coop. Drag to rotate, scroll or pinch to zoom.">
     <div class="load" id="load">Loading model…</div>
-    <div class="layers" id="layers" role="group" aria-label="Show or hide layers"></div>
+    <div class="layers" id="layers"></div>
     <div class="hint">Drag to rotate · right-drag or two fingers to pan · scroll to zoom · tap a part to identify it</div>
     <div class="pick" id="pick" hidden><b id="pickName"></b><span id="pickInfo"></span><button type="button" id="pickClose" aria-label="Clear selection">×</button></div>
     <div class="viewbar">
@@ -960,7 +957,6 @@ function pick(m){ clearPick(); selected=m; m.userData.orig=m.material; const hm=
   $('#pickName').textContent=m.userData.name; $('#pickInfo').textContent=m.userData.info||''; $('#pick').hidden=false; dirty=true; }
 function clearPick(){ if(selected){ selected.material.dispose(); selected.material=selected.userData.orig; selected=null; dirty=true; } $('#pick').hidden=true; }
 $('#pickClose').addEventListener('click',clearPick);
-{ const ly=$('#layers'); const fade=()=>ly.classList.toggle('end', ly.scrollLeft+ly.clientWidth>=ly.scrollWidth-4); ly.addEventListener('scroll',fade,{passive:true}); new ResizeObserver(fade).observe(ly); }
 $('#kpiCost').addEventListener('click',()=>{ $('#tab-shop').click(); $('#tab-shop').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'}); });
 $('#kpiWeight').addEventListener('click',()=>{ $('#weightCard').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'}); });
 
@@ -977,14 +973,10 @@ function setModel(k, push){
 }
 function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare?m.compare.note:''; $('#cmpWrap').hidden=!m.compare; $('#optSection').hidden=!m.options.length; }
 function renderLayers(){
-  const el=$('#layers'), m=M(), ls=m.layerState; el.innerHTML='<span class="lbl">Layers</span>';
-  const all=m.layers.map(l=>l[0]);
-  const presets=[['Framing only',['framing']],['Show all',all]];
-  presets.forEach(([lbl,on])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip preset'; b.textContent=lbl;
-    b.addEventListener('click',()=>{ all.forEach(k=>ls[k]=on.includes(k)); renderLayers(); applyLayers(); }); el.appendChild(b); });
-  m.layers.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(ls[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
-    l.innerHTML=`<input type="checkbox" id="lay-${k}" ${ls[k]?'checked':''}><span class="sw"></span>${lbl}`;
-    l.querySelector('input').addEventListener('change',e=>{ ls[k]=e.target.checked; l.classList.toggle('off',!ls[k]); applyLayers(); }); el.appendChild(l); });
+  const el=$('#layers'), m=M(), ls=m.layerState, all=m.layers.map(l=>l[0]);
+  const on = all.every(k=>ls[k]===(k==='framing'));
+  el.innerHTML=`<label class="toggle"><input type="checkbox" id="framingOnly" ${on?'checked':''}><span class="track"></span>Framing only</label>`;
+  el.querySelector('input').addEventListener('change',e=>{ all.forEach(k=>ls[k]= e.target.checked ? k==='framing' : true); applyLayers(); });
 }
 function renderOptions(){
   const m=M();
