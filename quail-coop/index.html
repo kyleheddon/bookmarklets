@@ -343,7 +343,7 @@ MAT.doorPaint.map=lineTex(64,8,x=>{ x.fillStyle='#7a6f6c'; x.fillRect(0,0,4,8); 
 /* Give a geometry UVs in inches, projected along each face's normal, so tiled textures keep real scale. */
 function inchUV(geo){ const P=geo.attributes.position, N=geo.attributes.normal, uv=geo.attributes.uv; if(!N||!uv) return;
   for(let i=0;i<P.count;i++){ const nx=Math.abs(N.getX(i)), ny=Math.abs(N.getY(i));
-    if(ny>0.7) uv.setXY(i,0.4,1.8);   // tops and bottoms stay plain else if(nx>0.7) uv.setXY(i,P.getZ(i),P.getY(i)); else uv.setXY(i,P.getX(i),P.getY(i)); }
+    if(ny>0.7) uv.setXY(i,0.4,1.8); /* tops and bottoms stay plain */ else if(nx>0.7) uv.setXY(i,P.getZ(i),P.getY(i)); else uv.setXY(i,P.getX(i),P.getY(i)); }
   uv.needsUpdate=true; }
 const PAINT_EDGE = new THREE.LineBasicMaterial({color:0x3a4250, transparent:true, opacity:.28});
 const EDGE_MAT = new THREE.LineBasicMaterial({color:0x4a3016, transparent:true, opacity:.38});
