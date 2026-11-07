@@ -470,7 +470,7 @@ function ramp(ctx, o){
 function buildOutdoor(cfg, ctx){
   const F=cfg.lumber, T=1.5, D=LUM[F][1];
   const W=47, L=47, tw=+cfg.wallPly, tf=0.5, LEG=12, RUN=24;
-  const yLb=LEG, yLt=yLb+D, yLF=yLt /* run floor is inset flush with its frame */, yUb=yLF+RUN, yUt=yUb+D, yUF=yUt+tf;
+  const yLb=LEG, yLt=yLb+D, yLF=yLt+tf, yUb=yLF+RUN, yUt=yUb+D, yUF=yUt+tf;
   const s=4/12, cosA=1/Math.hypot(1,s), sinA=s*cosA, Dv=D/cosA, Tv=T/cosA;
   const OHF=6, OHB=6, zA=-OHF, zB=L+OHB, Lr=(zB-zA)/cosA;
   const stack=Dv+0.75/cosA+0.9, Hf=96-s*OHF-stack, plane=z=>Hf-s*z;
@@ -482,16 +482,11 @@ function buildOutdoor(cfg, ctx){
 
   ctx.mod='run';
   /* Run floor platform + legs */
-  const ptl=(len,size)=>Object.assign(lum(len,size),{pt:true});
+  const ptl=len=>Object.assign(lum(len),{pt:true});
   for(const zs of [[0,T],[L-T,L]]) B({...fr,name:'Run floor rim joist',x:[0,W],y:[yLb,yLt],z:zs,bom:ptl(W)});
-  // floor drops in inside the frame: ledgers, legs and the middle joist all stop one plywood thickness below the rim tops
-  const fb=yLt-tf, lg=1.5;
-  for(const xs of [[0,T],[W-T,W]]) B({...fr,name:'Run floor joist',x:xs,y:[yLb,yLt],z:[T,L-T],bom:ptl(L-2*T)});
-  B({...fr,name:'Run floor joist, middle (top ½″ below the rims)',x:[m0,m1],y:[yLb-tf,fb],z:[2*T,L-2*T],bom:ptl(L-4*T)});
-  for(const xs of [[T,T+D],[W-T-D,W-T]]) for(const zs of [[T,2*T],[L-2*T,L-T]]) B({...fr,name:'Leg',x:xs,y:[0,fb],z:zs,bom:ptl(fb)});
-  for(const zs of [[T,T+lg],[L-T-lg,L-T]]) B({...fr,name:'Run floor ledger (2×2)',x:[T+D,W-T-D],y:[fb-lg,fb],z:zs,bom:ptl(W-2*T-2*D,'2x2')});
-  for(const xs of [[T,T+lg],[W-T-lg,W-T]]) B({...fr,name:'Run floor ledger (2×2)',x:xs,y:[fb-lg,fb],z:[2*T,L-2*T],bom:ptl(L-4*T,'2x2')});
-  B({mat:'ply',layer:'floors',name:'Run floor (sits on ledgers inside the frame)',x:[T,W-T],y:[fb,yLF],z:[T,L-T],bom:{k:'ply',th:tf,w:W-2*T,h:L-2*T,pt:true}});
+  for(const xs of [[0,T],[m0,m1],[W-T,W]]) B({...fr,name:'Run floor joist',x:xs,y:[yLb,yLt],z:[T,L-T],bom:ptl(L-2*T)});
+  for(const xs of [[T,T+D],[W-T-D,W-T]]) for(const zs of [[T,2*T],[L-2*T,L-T]]) B({...fr,name:'Leg',x:xs,y:[0,yLt],z:zs,bom:ptl(yLt)});
+  B({mat:'ply',layer:'floors',name:'Run floor',x:[0,W],y:[yLt,yLF],z:[0,L],bom:{k:'ply',th:tf,w:W,h:L,pt:true}});
 
   /* Run walls (hardware cloth over framing) */
   const sb=yLF+T, st=yUb-T;
@@ -869,7 +864,7 @@ const MODELS = {
       ['Not shown','Fasteners you still need: roofing screws with neoprene washers (or roofing nails for shingles), ⅜″ carriage bolts for the legs, and ¼″ bolts for the carry handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
     lightest:{lumber:'2x3',wallPly:0.5,roof:'alum-ply'},
     steps:[
-      ['Build the run floor platform','Screw the two rim joists to the two outer joists and check the diagonals match. Bolt the four legs inside the corners with their tops ½″ below the rims. Screw 2×2 ledgers along the inside of the frame between the legs, at the same height, and hang the middle joist ½″ low. Drop in the 44″ × 44″ floor so it finishes flush with the frame, then glue and screw it down. No plywood edge shows outside.'],
+      ['Build the run floor platform','Screw the two rim joists to three joists on 24″ centers and check the diagonals match. Add the four legs inside the corners, then glue and screw down the plywood floor.'],
       ['Frame the run walls','Frame each wall flat on the floor. The back and sides get studs and two diagonal braces each; the front is just the plates and the two flat door posts. Stand the back up first, then the sides and the front, and screw the corners together.'],
       ['Wrap the run in hardware cloth','Cover the back and both sides from the bottom of the floor frame to the top plates. Do it now, while you can still reach inside.'],
       ['Build the coop floor','Build a second platform the same way, cut the 12″ × 10″ ramp hatch in its plywood, and set it on the run. Bolt it through the top plates if you want the coop to lift off as a separate piece.'],
@@ -1037,7 +1032,6 @@ const PRICE={
   'lum:2x3':[3.48,'https://www.lowes.com/pd/2-in-x-3-in-x-96-in-Euro-Spruce-Kiln-dried-Stud/5014776465','store',1,'Euro Spruce kiln-dried 96″ stud.'],
   'lum:2x4pt':[4.48,'https://www.lowes.com/pd/severe-weather-common-2-in-x-4-in-x-8-ft-actual-1-5-in-x-3-5-in-x-8-ft-2-treated-lumber/4564778','store',1,'Severe Weather #2 SYP, above-ground treatment: set the legs on pavers, not soil.'],
   'lum:2x3pt':[4.48,'https://www.lowes.com/pd/severe-weather-common-2-in-x-4-in-x-8-ft-actual-1-5-in-x-3-5-in-x-8-ft-2-treated-lumber/4564778','store',1,'Pressure-treated 2×3 is rarely stocked; buy this pressure-treated 2×4 and rip it to 2½″. Above-ground treatment: set the legs on pavers.'],
-  'lum:2x2pt':[3.68,LS('2 in x 2 in x 8 ft pressure treated'),'online',1,'Pressure-treated, for the run floor ledgers. Price from your earlier Lowe\'s list.'],
   'lum:2x2':[2.98,'https://www.lowes.com/pd/2-in-x-2-in-x-8-ft-Furring-Strip/1000483975','store',1,'Untreated furring strip.'],
   'lum:1x4':[3.48,'https://www.lowes.com/pd/1-in-x-4-in-x-8-ft-Furring-Strip/1000427895','store',1,'Spruce-pine-fir furring strip.'],
   'lum:1x2':[1.58,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Furring-Strip/1000427899','store',1,'Untreated furring strip.'],
@@ -1070,7 +1064,7 @@ const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
   for(const k of an.lumKeys){ const g=an.lum[k];
-    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?(g.size==='2x2'?'Run floor ledgers':'Legs and run floor joists'):(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
+    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?'Legs and run floor joists':(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
   for(const k of an.plyKeys){ const p=an.ply[k]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
     rows.push(['Plywood', fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
   rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
