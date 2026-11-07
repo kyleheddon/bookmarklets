@@ -414,7 +414,7 @@ const FAST={
   scr58:['#8 × ⅝″ Torx screw','#8 × ⅝″ Torx screws','#8 × ⅝″ Torx (star-drive) screw, for hardware on the ¾″ run-door frame'],
   scr1:['#8 × 1″ Torx screw','#8 × 1″ Torx screws','#8 × 1″ Torx (star-drive) screw, for hardware on the 1¼″ box door'],
   sup:['screw supplied with the hinge or latch','screws supplied with the hinges and latches','Supplied with the hinge or latch'],
-  roof:['2″ roofing screw','2″ roofing screws with neoprene washers','2″ roofing screw with neoprene washer, through a ridge'],
+  roof:['2″ roofing screw','2″ roofing screws with neoprene washers','2″ roofing screw with neoprene washer, in a valley of the wave'],
   staple:['fence staple','fence staples',''], brad:['brad','brads',''], glue:['wood glue','exterior wood glue','']};
 const FAST_DIRS={x:[1,0,0],'-x':[-1,0,0],y:[0,1,0],'-y':[0,-1,0],z:[0,0,1],'-z':[0,0,-1]};
 function fast(ctx,item,p,d,parent){
@@ -638,9 +638,10 @@ function buildCoop(cfg, ctx){
       const [cz,cy]=SP(Lr/2, td+amp); g.applyMatrix4(new THREE.Matrix4().makeBasis(e1,e2,e3).setPosition(W/2,cy,cz));
       addMesh(ctx,g,{mat:'alum',layer:'roofing',name:'Corrugated galvanized steel roofing',desc:n+' pieces, 26″ wide × '+fIn(Lp),noEdges:true}); }
     /* roofing screws through every other ridge over the front and back top rails, and one into each sloped rail mid-roof */
-    const crest=k=>-Wr/2+2.67*(k+0.25)+W/2;
-    for(const z of [0.75,L-0.75]) for(let k=0; crest(k)<W+tb; k+=2) if(crest(k)>-tb) sc('roof',onDeck(crest(k),z,td+2*amp),nrm);
-    for(const x of [0.75,cxm,W-0.75]) sc('roof',onDeck(x,L/2,td+2*amp),nrm);
+    /* roofing screws go in the low points (valleys) of the waves, where the washer seats flat on the solid deck */
+    const valley=k=>W/2-Wr/2+2.67*(k+0.75), nearV=x=>valley(Math.round((x-valley(0))/2.67));
+    for(const z of [0.75,L-0.75]) for(let k=0; valley(k)<W+tb; k+=2) if(valley(k)>-tb) sc('roof',onDeck(valley(k),z,td+0.02),nrm);
+    for(const x of [0.75,cxm,W-0.75]) sc('roof',onDeck(nearV(x),L/2,td+0.02),nrm);
     roofTop=SP(-1,td+2*amp)[1];
   }
 
@@ -800,7 +801,7 @@ const MODELS = {
       ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls, roof deck, door stops.','scr158'],
       ['Brad nailer and brads','With glue, for the run-door brace and the box door frame.','brad'],
       ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple'],
-      ['Roofing screws with neoprene washers, 2″','Through the steel ridges into the top rails. Make sure they are long enough to reach through the steel and the 7/16″ OSB into the rails.','roof']],
+      ['Roofing screws with neoprene washers, 2″','Through the valleys of the steel into the top rails. 1½″ or longer reaches through the steel and the 7/16″ OSB well into the rails.','roof']],
     uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Rails, lower back middle post, floor joist, braces','1x2':'Floor ledgers, divider cleats, door stops, door frames'},
     cfgLabel:s=>'steel roof over OSB',
     split:an=>'',
@@ -818,7 +819,7 @@ const MODELS = {
       ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, its top following the roof slope, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
       ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. Both are cut to the roof slope at the top, and the end sheet laps the back sheet\'s edge. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
       ['Screw down the roof deck','Screw the OSB roof deck down so it overhangs 3″ at the front and back, with 1⅝″ screws about every 6″ into the front and back top rails and the three sloped rails. Paint its top face and all its edges before the steel goes on.','roofdeck'],
-      ['Put on the steel','Cut one 8 ft steel panel into two pieces and lay them side by side, overlapping one corrugation. Drive 2″ roofing screws through the tops of the ridges, every other ridge over the front and back top rails, plus one into each sloped rail mid-roof. Snug the neoprene washers without crushing them.','roofing'],
+      ['Put on the steel','Cut one 8 ft steel panel into two pieces and lay them side by side, overlapping one corrugation. Drive the roofing screws through the low points (valleys) of the waves, where the steel sits flat on the deck: every other valley over the front and back top rails, plus one into each sloped rail mid-roof. Snug the neoprene washers until they just bulge, without crushing them.','roofing'],
       ['Staple on the hardware cloth','Cut hardware cloth for the run end, top edge cut to the roof slope, and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
       ['Fit the door stops','Screw 1×2 stops inside the door openings so the doors close flush: down the run side of the front 2×4 and under the top rail across the run opening, both set back ¾″, and down the box side of the 2×4, set back ½″, between the box door\'s top and bottom rails. 1⅝″ screws about every 8″.','stops'],
       ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 1×2 frame, predrilled and joined with one 2½″ screw through each stile into each rail end, plus glue; a 1×2 diagonal brace rising from the bottom hinge corner, glued and bradded; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 1×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), glued and bradded from the plywood side.','doors'],
