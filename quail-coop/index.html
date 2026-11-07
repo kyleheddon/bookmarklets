@@ -41,7 +41,16 @@ html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45}
 *{box-sizing:border-box}
 button{font:inherit;color:inherit}
-.app{display:grid;grid-template-columns:minmax(0,1fr) 400px;height:100%}
+.app{display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto minmax(0,1fr);height:100%}
+.models{grid-column:1 / -1;display:flex;gap:4px;align-items:stretch;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-left:max(12px, env(safe-area-inset-left,0px));padding-right:max(12px, env(safe-area-inset-right,0px));overflow-x:auto}
+.models button{border:0;background:transparent;cursor:pointer;padding:10px 14px 9px;border-bottom:3px solid transparent;margin-bottom:-1px;text-align:left;display:flex;flex-direction:column;gap:2px;flex:none}
+.models button b{font:700 18px/1 var(--font-display);text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.models button span{font:400 12px/1.2 var(--font-mono);color:var(--muted)}
+.models button[aria-selected="true"]{border-bottom-color:var(--accent)}
+.models button[aria-selected="true"] b{color:var(--fg)}
+.models button:hover b{color:var(--fg)}
+.models button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .stage{position:relative;min-width:0;min-height:0;background:var(--scene-bg);overflow:hidden;touch-action:none}
 .stage canvas{display:block;width:100%;height:100%;outline:none}
 .panel{min-width:0;overflow-y:auto;background:var(--panel);border-left:1px solid var(--line);
@@ -143,6 +152,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 
 @media (max-width: 880px){
   html,body{height:auto}
+  .models button{padding:9px 10px 8px}
   .app{display:block;height:auto}
   .stage{height:70svh;min-height:440px}
   .panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
@@ -156,6 +166,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 </style>
 
 <div class="app">
+  <nav class="models" role="tablist" aria-label="Coop design" id="models"></nav>
   <section class="stage" id="stage" aria-label="3D model of the coop. Drag to rotate, scroll or pinch to zoom.">
     <div class="load" id="load">Loading model…</div>
     <div class="layers" id="layers" role="group" aria-label="Show or hide layers"></div>
@@ -175,9 +186,9 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 
   <aside class="panel">
     <header>
-      <div class="eyebrow">Build plan · 4 quail</div>
-      <h1>Four-Quail Shed Coop</h1>
-      <p class="lede">Two-level coop on a 4′ × 4′ footprint. A plywood-walled roost box sits over a hardware-cloth run, joined by a removable cleated ramp. Every door and the vent window close with a gate latch that takes a locking carabiner.</p>
+      <div class="eyebrow" id="eyebrow"></div>
+      <h1 id="title"></h1>
+      <p class="lede" id="lede"></p>
     </header>
 
     <section>
@@ -187,22 +198,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 
     <section class="opt" aria-label="Build options">
       <h2>Options</h2>
-      <div class="row"><span>Framing lumber</span>
-        <div class="choices" data-opt="lumber">
-          <button type="button" data-val="2x4">2×4<small>As planned</small></button>
-          <button type="button" data-val="2x3">2×3<small>Lighter, same layout</small></button>
-        </div></div>
-      <div class="row"><span>Wall plywood</span>
-        <div class="choices" data-opt="wallPly">
-          <button type="button" data-val="0.5">½″<small>Stiffer</small></button>
-          <button type="button" data-val="0.375">⅜″<small>Lighter</small></button>
-        </div></div>
-      <div class="row"><span>Roof</span>
-        <div class="choices" data-opt="roof">
-          <button type="button" data-val="alum-ply">Aluminum<small>over ½″ plywood deck</small></button>
-          <button type="button" data-val="alum-purlin">Aluminum<small>on 1×4 purlins, no deck</small></button>
-          <button type="button" data-val="shingle">Asphalt shingles<small>over ½″ plywood deck</small></button>
-        </div></div>
+      <div id="opts" class="opt"></div>
     </section>
 
     <section class="weight" aria-label="Weight estimate">
@@ -214,8 +210,8 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <ul class="legend" id="wLegend"></ul>
       <p class="split" id="wSplit"></p>
       <div>
-        <table class="cmp" id="cmp" aria-label="Weight by lumber and roof choice (current wall plywood)"></table>
-        <p class="note" style="margin-top:6px">Tap a cell to switch the model to that combination. Figures assume kiln-dried SPF lumber; pressure-treated or wet lumber can run 30–50% heavier.</p>
+        <table class="cmp" id="cmp"></table>
+        <p class="note" style="margin-top:6px" id="cmpNote"></p>
       </div>
     </section>
 
@@ -245,19 +241,15 @@ if(!window.THREE || !THREE.OrbitControls){ $('#load').textContent = 'The 3D libr
 const LUM = {'2x4':[1.5,3.5],'2x3':[1.5,2.5],'2x2':[1.5,1.5],'1x4':[0.75,3.5],'1x2':[0.75,1.5]};
 const LUM_LABEL = {'2x4':'2×4','2x3':'2×3','2x2':'2×2','1x4':'1×4','1x2':'1×2'};
 const STOCK = 96, KERF = 0.125;
-const ROOFS = {'alum-ply':'Alum + deck','alum-purlin':'Alum + purlins','shingle':'Shingles'};
-const LAYERS = [['framing','Framing'],['floors','Floors'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors & window'],['ramp','Ramp'],['hardware','Latches & hinges']];
 const DENS_LUM = 34/1728, DENS_PLY = 32/1728; // lb per cubic inch
-const W_MESH = 0.18, W_ALUM = 0.40, W_SHINGLE = 2.4, W_UNDER = 0.04, W_DRIP = 0.08, W_FASTEN = 5;
-
-const state = {lumber:'2x4', wallPly:0.5, roof:'alum-ply', open:false};
-const layers = {}; LAYERS.forEach(([k])=>layers[k]=true);
+const W_MESH = 0.18, W_ALUM = 0.40, W_SHINGLE = 2.4, W_UNDER = 0.04, W_DRIP = 0.08;
 
 /* ---------- formatting ---------- */
 const FR = {1:'⅛',2:'¼',3:'⅜',4:'½',5:'⅝',6:'¾',7:'⅞'};
 function fIn(v){ const e = Math.round(v*8); const w = Math.floor(e/8), r = e%8; return (w ? String(w) : (r ? '' : '0')) + (r ? (w ? ' ' : '') + FR[r] : '') + '″'; }
-function fFt(v){ const e = Math.round(v*8)/8; const ft = Math.floor(e/12); const i = e - ft*12; return ft + '′-' + fIn(i); }
+function fFt(v){ const e = Math.round(v*8)/8; const ft = Math.floor(e/12); const i = e - ft*12; return ft + '′-' + (i>0 && i<1 ? '0 ' : '') + fIn(i); }
 const fLb = v => Math.round(v).toLocaleString();
+const rng = (a,b) => a<b ? [a,b] : [b,a];
 
 /* ---------- geometry helpers ---------- */
 function clipRect(poly, x0,x1,y0,y1){
@@ -312,8 +304,7 @@ function box(ctx,o){
 function prism(ctx,o){
   rec(ctx,o); if(ctx.dry) return;
   const conv = o.axis==='z' ? (p=>[p[0],p[1]]) : o.axis==='y' ? (p=>[p[0],-p[1]]) : (p=>[-p[0],p[1]]);
-  const mk = pts => { const q = pts.map(conv); const s = new THREE.Shape(); s.moveTo(q[0][0],q[0][1]); for(let i=1;i<q.length;i++) s.lineTo(q[i][0],q[i][1]); s.closePath(); return s; };
-  const shape = mk(o.poly);
+  const shape = new THREE.Shape(); { const q=o.poly.map(conv); shape.moveTo(q[0][0],q[0][1]); for(let i=1;i<q.length;i++) shape.lineTo(q[i][0],q[i][1]); shape.closePath(); }
   (o.holes||[]).forEach(h=>{ const hp = new THREE.Path(); const q=h.map(conv); hp.moveTo(q[0][0],q[0][1]); for(let i=1;i<q.length;i++) hp.lineTo(q[i][0],q[i][1]); hp.closePath(); shape.holes.push(hp); });
   const [r0,r1] = o.range;
   const g = new THREE.ExtrudeGeometry(shape,{depth:r1-r0, bevelEnabled:false});
@@ -326,11 +317,13 @@ function prism(ctx,o){
 }
 function meshPanel(ctx,o){
   const w=o.u[1]-o.u[0], h=o.v[1]-o.v[0];
-  rec(ctx, Object.assign({}, o, {bom:{k:'mesh', w, h}})); if(ctx.dry) return;
+  rec(ctx, Object.assign({}, o, {layer:'mesh', bom:{k:'mesh', w, h}})); if(ctx.dry) return;
   const g = new THREE.PlaneGeometry(w,h);
   const uv = g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*w, uv.getY(i)*h);
   const uc=(o.u[0]+o.u[1])/2, vc=(o.v[0]+o.v[1])/2;
-  if(o.axis==='x'){ g.rotateY(-Math.PI/2); g.translate(o.at, vc, uc); } else g.translate(uc, vc, o.at);
+  if(o.axis==='x'){ g.rotateY(-Math.PI/2); g.translate(o.at, vc, uc); }
+  else if(o.axis==='y'){ g.rotateX(-Math.PI/2); g.translate(uc, o.at, vc); }   // u = x, v = z
+  else g.translate(uc, vc, o.at);
   return addMesh(ctx,g,Object.assign({mat:'mesh', layer:'mesh', bom:{k:'mesh',w,h}}, o));
 }
 function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer){
@@ -341,8 +334,8 @@ function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer){
   const pr = poly.map(p=>p[0]*d[0]+p[1]*d[1]); const len = Math.max(...pr)-Math.min(...pr);
   prism(ctx,{axis, poly, range, mat:mat||'wood', layer:layer||'framing', name, parent, bom:{k:'lum', size, len}});
 }
-function hw(ctx, item, wt){ ctx.bom.push({k:'hw', item, wt, mod:ctx.mod}); }
-function hwBox(ctx, parent, x,y,z, mat, name){ box(ctx,{x,y,z,mat:mat||'steel',layer:'hardware',name:name||'Hardware',parent,desc:'Hardware',noEdges:true}); }
+function hw(ctx, item, wt, use){ ctx.bom.push({k:'hw', item, wt, use, mod:ctx.mod}); }
+function hwBox(ctx, parent, x,y,z, mat, name){ box(ctx,{x:rng(...x),y,z,mat:mat||'steel',layer:'hardware',name:name||'Hardware',parent,desc:'Hardware',noEdges:true}); }
 function torus(ctx, parent, pos, rotY){
   if(ctx.dry) return; const g=new THREE.TorusGeometry(0.85,0.13,8,24); g.scale(0.75,1.2,1); if(rotY) g.rotateY(rotY); g.translate(pos[0],pos[1],pos[2]);
   addMesh(ctx,g,{mat:'carabiner',layer:'hardware',name:'Locking carabiner',desc:'Clips through the latch so it cannot be lifted',parent});
@@ -351,27 +344,61 @@ function cyl(ctx, parent, pos, len, axis){
   if(ctx.dry) return; const g=new THREE.CylinderGeometry(0.26,0.26,len,10); if(axis==='z') g.rotateX(Math.PI/2); g.translate(pos[0],pos[1],pos[2]);
   addMesh(ctx,g,{mat:'steel',layer:'hardware',name:'Hinge knuckle',desc:'Hardware',parent});
 }
-function rig(ctx, pos){
-  if(ctx.dry) return {pivot:null, fixed:null};
-  const pivot=new THREE.Group(), fixed=new THREE.Group(); pivot.position.set(...pos); fixed.position.set(...pos); ctx.root.add(pivot); ctx.root.add(fixed); return {pivot, fixed};
+/* A door rig: a pivot group that swings plus a fixed group in the same coordinates. */
+function rig(ctx, pos, use, axis, open){
+  if(ctx.dry) return {pivot:null, fixed:null, use};
+  const pivot=new THREE.Group(), fixed=new THREE.Group(); pivot.position.set(...pos); fixed.position.set(...pos); ctx.root.add(pivot); ctx.root.add(fixed);
+  ctx.pivots.push({p:pivot, axis, open}); return {pivot, fixed, use};
 }
-/* Front-facing door hardware, in rig coords: door spans x [0,dw], outer face z=0, door thickness th (frame face at z=th). */
+/* Overlay door (outdoor coop): door spans x [0,dw], outer face z=0, frame face sits th behind it. */
 function frontHinge(ctx, R, h, th){
   hwBox(ctx,R.pivot,[0.3,7],[h-0.45,h+0.45],[-0.12,0],'steel','T-hinge strap');
   hwBox(ctx,R.fixed,[-2.1,-0.3],[h-1.6,h+1.6],[th-0.12,th],'steel','T-hinge leaf');
   cyl(ctx,R.fixed,[-0.15,h,-0.15],3.2,'y');
-  hw(ctx,'T-hinge, 4″ heavy duty',0.45);
+  hw(ctx,'T-hinge, 4″ heavy duty',0.45,R.use);
 }
 function frontLatch(ctx, R, dw, hm, th){
   hwBox(ctx,R.pivot,[dw-4.5,dw+1.2],[hm-0.3,hm+0.3],[-0.5,-0.15],'steel','Gate latch bar');
   hwBox(ctx,R.pivot,[dw-4.6,dw-3.4],[hm-0.9,hm+0.9],[-0.15,0],'steel','Gate latch bar bracket');
   hwBox(ctx,R.fixed,[dw+0.4,dw+2.2],[hm-1.3,hm+0.9],[-0.65,th],'steel','Gate latch keeper');
   torus(ctx,R.fixed,[dw+1.3,hm-2.0,-0.8],0);
-  hw(ctx,'Gate latch, self-locking with padlock hole',0.6); hw(ctx,'Locking carabiner',0.1);
+  hw(ctx,'Gate latch, self-locking with padlock hole',0.6,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
+}
+/* Inset door (garage coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
+function insetHinge(ctx, R, h, s){
+  hwBox(ctx,R.pivot,[s*0.3,s*5.5],[h-0.4,h+0.4],[-0.1,0],'steel','Strap hinge');
+  hwBox(ctx,R.fixed,[-s*0.15,-s*1.35],[h-1.3,h+1.3],[-0.1,0],'steel','Strap hinge leaf');
+  cyl(ctx,R.fixed,[0,h,-0.2],2.6,'y');
+  hw(ctx,'Strap hinge, 3″ light duty',0.2,R.use);
+}
+function insetLatch(ctx, R, dw, hm, s){
+  hwBox(ctx,R.pivot,[s*(dw-4),s*(dw+1.05)],[hm-0.28,hm+0.28],[-0.45,-0.12],'steel','Gate latch bar');
+  hwBox(ctx,R.pivot,[s*(dw-4.1),s*(dw-3)],[hm-0.8,hm+0.8],[-0.12,0],'steel','Gate latch bar bracket');
+  hwBox(ctx,R.fixed,[s*(dw+0.25),s*(dw+1.4)],[hm-1.2,hm+0.8],[-0.6,0],'steel','Gate latch keeper');
+  torus(ctx,R.fixed,[s*(dw+0.8),hm-1.9,-0.7],0);
+  hw(ctx,'Gate latch, small, with padlock hole',0.35,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
+}
+function handle(ctx, face, dir, yc, zc, use){
+  const bx = dir<0?[face-1.4,face-0.9]:[face+0.9,face+1.4], px=dir<0?[face-1.4,face]:[face,face+1.4];
+  hwBox(ctx,null,bx,[yc-0.28,yc+0.28],[zc-3,zc+3],'steel','Carry handle');
+  hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc-3,zc-2.3],'steel','Carry handle');
+  hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc+2.3,zc+3],'steel','Carry handle');
+  hw(ctx,'Steel pull handle, 6″ (carry handle)',0.35,use);
+}
+/* Removable cleated ramp that hangs from the edge of a floor hatch and descends toward +x. */
+function ramp(ctx, o){
+  const {x0, yTop, yBot, xEnd, z0, w, t} = o; const rise=yTop-yBot, run=xEnd-x0;
+  let lo=0.2, hi=1.4, a=0.6, len=0;
+  for(let i=0;i<50;i++){ a=(lo+hi)/2; len=(rise-t*Math.cos(a))/Math.sin(a); const f=len*Math.cos(a)+t*Math.sin(a)-run; if(f>0) lo=a; else hi=a; }
+  let G=null; if(!ctx.dry){ G=new THREE.Group(); G.position.set(x0,yTop,z0); G.rotation.z=-a; ctx.root.add(G); }
+  box(ctx,{mat:'ply',layer:'ramp',name:'Ramp board',x:[0,len],y:[-t,0],z:[0,w],parent:G,bom:{k:'ply',th:t,w,h:len}});
+  let nc=0; for(let u=3; u<=len-2; u+=3){ box(ctx,{mat:'wood',layer:'ramp',name:'Ramp cleat (1×2 flat)',x:[u-0.75,u+0.75],y:[0,0.75],z:[0.5,w-0.5],parent:G,bom:{k:'lum',size:'1x2',len:w-1}}); nc++; }
+  box(ctx,{mat:'wood',layer:'ramp',name:'Ramp hanger cleat (rests on upper floor)',x:[x0-1.5,x0],y:[yTop,yTop+0.75],z:[z0,z0+w],bom:{k:'lum',size:'1x2',len:w}});
+  return {deg:a*180/Math.PI, len, cleats:nc, rise};
 }
 
-/* ---------- the coop ---------- */
-function build(cfg, ctx){
+/* ---------- outdoor coop: 4' x 4' x 8' shed roof ---------- */
+function buildOutdoor(cfg, ctx){
   const F=cfg.lumber, T=1.5, D=LUM[F][1];
   const W=47, L=47, tw=+cfg.wallPly, tf=0.5, LEG=12, RUN=24;
   const yLb=LEG, yLt=yLb+D, yLF=yLt+tf, yUb=yLF+RUN, yUt=yUb+D, yUF=yUt+tf;
@@ -438,7 +465,7 @@ function build(cfg, ctx){
     }
   }
 
-  /* Rafters, 24″ on center */
+  /* Rafters, 24" on center */
   for(const xs of [[0,T],[m0,m1],[W-T,W]]) P({...fr,name:'Rafter (plumb-cut ends, seat cut at plates)',axis:'x',poly:[[zA,plane(zA)],[zB,plane(zB)],[zB,plane(zB)+Dv],[zA,plane(zA)+Dv]],range:xs,bom:lum(Lr)});
 
   /* Roof deck or purlins */
@@ -500,7 +527,7 @@ function build(cfg, ctx){
   ctx.mod='run';
   /* Run door: 2x2 frame with hardware cloth, overlays the flat door posts */
   const ldw=W-5, yd0=sb-0.75, yd1=st+0.75, ldx=2.5;
-  const LR=rig(ctx,[ldx,0,-T]); ctx.pivots.lower=LR.pivot;
+  const LR=rig(ctx,[ldx,0,-T],'Run door','y',1.75);
   const dm={mat:'door',layer:'doors',parent:LR.pivot};
   for(const xs of [[0,T],[ldw-T,ldw]]) box(ctx,{...dm,name:'Run door stile',x:xs,y:[yd0,yd1],z:[0,T],bom:lum(yd1-yd0,'2x2')});
   for(const ys of [[yd0,yd0+T],[yd1-T,yd1]]) box(ctx,{...dm,name:'Run door rail',x:[T,ldw-T],y:ys,z:[0,T],bom:lum(ldw-2*T,'2x2')});
@@ -511,48 +538,129 @@ function build(cfg, ctx){
 
   ctx.mod='coop';
   /* Coop door: plywood overlay on the front sheathing */
-  const UR=rig(ctx,[dx0-1,0,-2*tw]); ctx.pivots.upper=UR.pivot;
+  const UR=rig(ctx,[dx0-1,0,-2*tw],'Coop door','y',1.85);
   box(ctx,{mat:'door',layer:'doors',name:'Coop door (plywood, overlaps opening 1″)',x:[0,dw+2],y:[dB-1,dT+1],z:[0,tw],parent:UR.pivot,bom:{k:'ply',th:tw,w:dw+2,h:26}});
   for(const h of [dB+3,dT-3]) frontHinge(ctx,UR,h,tw);
   frontLatch(ctx,UR,dw+2,(dB+dT)/2,tw);
 
   /* Vent window: plywood flap hinged at the top, over hardware cloth */
   const fz0=D+T-1, fz1=n0+1, fzc=(fz0+fz1)/2, fh=winT-winB+2;
-  const WR=rig(ctx,[W+2*tw,winT+1,0]); ctx.pivots.window=WR.pivot;
+  const WR=rig(ctx,[W+2*tw,winT+1,0],'Vent window','z',1.15);
   box(ctx,{mat:'door',layer:'doors',name:'Vent window flap (hinged at top)',x:[-tw,0],y:[-fh,0],z:[fz0,fz1],parent:WR.pivot,bom:{k:'ply',th:tw,w:fz1-fz0,h:fh}});
   for(const zc of [fz0+3.5,fz1-3.5]){
     hwBox(ctx,WR.pivot,[0,0.12],[-6,-0.3],[zc-0.45,zc+0.45],'steel','T-hinge strap');
     hwBox(ctx,WR.fixed,[-tw,-tw+0.12],[0.3,2.1],[zc-1.6,zc+1.6],'steel','T-hinge leaf');
-    cyl(ctx,WR.fixed,[0.15,0,zc],3.2,'z'); hw(ctx,'T-hinge, 4″ heavy duty',0.45);
+    cyl(ctx,WR.fixed,[0.15,0,zc],3.2,'z'); hw(ctx,'T-hinge, 4″ heavy duty',0.45,'Vent window');
   }
   hwBox(ctx,WR.pivot,[0.15,0.5],[-fh-1.2,-fh+4.5],[fzc-0.3,fzc+0.3],'steel','Gate latch bar');
   hwBox(ctx,WR.pivot,[0,0.15],[-fh+3.3,-fh+4.6],[fzc-0.9,fzc+0.9],'steel','Gate latch bar bracket');
   hwBox(ctx,WR.fixed,[-tw,0.65],[-fh-2.2,-fh-0.4],[fzc-1.3,fzc+0.9],'steel','Gate latch keeper');
   torus(ctx,WR.fixed,[0.8,-fh-1.3,fzc+2.0],Math.PI/2);
-  hw(ctx,'Gate latch, self-locking with padlock hole',0.6); hw(ctx,'Locking carabiner',0.1);
+  hw(ctx,'Gate latch, self-locking with padlock hole',0.6,'Vent window'); hw(ctx,'Locking carabiner',0.1,'Vent window');
 
   /* Carry handles on the coop floor joists */
-  const yc=yUb+D/2;
-  for(const zc of [10,L-10]) for(const [face,dir] of [[-tw,-1],[W+tw,1]]){
-    const bx = dir<0?[face-1.4,face-0.9]:[face+0.9,face+1.4], px=dir<0?[face-1.4,face]:[face,face+1.4];
-    hwBox(ctx,null,bx,[yc-0.28,yc+0.28],[zc-3,zc+3],'steel','Carry handle');
-    hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc-3,zc-2.3],'steel','Carry handle');
-    hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc+2.3,zc+3],'steel','Carry handle');
-    hw(ctx,'Steel pull handle, 6″ (carry handle)',0.35);
-  }
+  for(const zc of [10,L-10]) for(const [face,dir] of [[-tw,-1],[W+tw,1]]) handle(ctx,face,dir,yUb+D/2,zc,'Bolted to the coop floor joists');
 
   ctx.mod='run';
-  /* Ramp: removable cleated board hung from the hatch edge */
-  const rise=yUF-yLF, rx0=hatch[0], run=W-D-2-rx0, rz0=hatch[2]+0.5, rw=9;
-  let lo=0.2, hi=1.4, a=0.6, rlen=0;
-  for(let i=0;i<50;i++){ a=(lo+hi)/2; rlen=(rise-tf*Math.cos(a))/Math.sin(a); const f=rlen*Math.cos(a)+tf*Math.sin(a)-run; if(f>0) lo=a; else hi=a; }
-  let RG=null; if(!ctx.dry){ RG=new THREE.Group(); RG.position.set(rx0,yUF,rz0); RG.rotation.z=-a; ctx.root.add(RG); }
-  box(ctx,{mat:'ply',layer:'ramp',name:'Ramp board',x:[0,rlen],y:[-tf,0],z:[0,rw],parent:RG,bom:{k:'ply',th:tf,w:rw,h:rlen}});
-  let nc=0; for(let u=3; u<=rlen-2; u+=3){ box(ctx,{mat:'wood',layer:'ramp',name:'Ramp cleat (1×2 flat)',x:[u-0.75,u+0.75],y:[0,0.75],z:[0.5,rw-0.5],parent:RG,bom:lum(rw-1,'1x2')}); nc++; }
-  box(ctx,{mat:'wood',layer:'ramp',name:'Ramp hanger cleat (rests on coop floor)',x:[rx0-1.5,rx0],y:[yUF,yUF+0.75],z:[rz0,rz0+rw],bom:lum(rw,'1x2')});
+  const rp=ramp(ctx,{x0:hatch[0], yTop:yUF, yBot:yLF, xEnd:W-D-2, z0:hatch[2]+0.5, w:9, t:tf});
 
-  ctx.g = {W,L,tw,D,T,yLF,yUF,yUb,yFP,yBP,Hf,dw,winB,winT,rise,rampDeg:a*180/Math.PI,rampLen:rlen,cleats:nc,
-    runClear:yUb-yLF, coopFront:yFP-T-yUF, coopBack:yBP-T-yUF, Lr, overall:[W+2*tw, L+2*tw], roofW:W+2*tw, lowerDoor:[ldw, yd1-yd0], lowerOpen:[W-2*D, st-sb], upperOpen:[dw,24], winOpen:[n0-D-T, winT-winB]};
+  ctx.g = {W,L,tw,D,T,yLF,yUF,yUb,yFP,yBP,Hf,dw,winB,winT,rise:rp.rise,rampDeg:rp.deg,rampLen:rp.len,cleats:rp.cleats,
+    runClear:yUb-yLF, coopFront:yFP-T-yUF, coopBack:yBP-T-yUF, Lr, overall:[W+2*tw, L+2*tw], lowerOpen:[W-2*D, st-sb], upperOpen:[dw,24], winOpen:[n0-D-T, winT-winB]};
+  return ctx.g;
+}
+
+/* ---------- garage coop: 4' wide x 2' deep x 6' tall, light 2x2 frame ---------- */
+function buildGarage(cfg, ctx){
+  const T=1.5, W=48, L=24, H=72, tf=+cfg.floorPly, tb=+cfg.boxPly, F='2x2';
+  const m0=(W-T)/2, m1=(W+T)/2, mx=W/2;
+  const yS=3, f1=18, f2=44, yTop=H-T;
+  const yLF=f1+T+tf, yUF=f2+T+tf;
+  const lum=(len,size)=>({k:'lum',size:size||F,len});
+  const fr={mat:'wood',layer:'framing'};
+  const B=o=>box(ctx,o), P=o=>prism(ctx,o);
+  ctx.mod='coop';
+
+  /* Posts run full height and double as legs */
+  for(const xs of [[0,T],[W-T,W]]) for(const zs of [[0,T],[L-T,L]]) B({...fr,name:'Corner post (full height, doubles as leg)',x:xs,y:[0,H],z:zs,bom:lum(H)});
+  for(const [a,b] of [[yS+T,f1],[f1+T,f2],[f2+T,yTop]]) B({...fr,name:'Back middle post',x:[m0,m1],y:[a,b],z:[L-T,L],bom:lum(b-a)});
+  B({...fr,name:'Front middle post (between upper doors)',x:[m0,m1],y:[f2+T,yTop],z:[0,T],bom:lum(yTop-f2-T)});
+
+  /* Rails: a bottom stretcher, two floor frames and a top frame */
+  for(const [y0,nm,mid] of [[yS,'Bottom stretcher',null],[f1,'Lower floor rail','Lower floor joist'],[f2,'Upper floor rail','Upper floor joist'],[yTop,'Top rail','Top cross rail']]){
+    for(const zs of [[0,T],[L-T,L]]) B({...fr,name:nm+' (front and back)',x:[T,W-T],y:[y0,y0+T],z:zs,bom:lum(W-2*T)});
+    for(const xs of [[0,T],[W-T,W]]) B({...fr,name:nm+' (sides)',x:xs,y:[y0,y0+T],z:[T,L-T],bom:lum(L-2*T)});
+    if(mid) B({...fr,name:mid,x:[m0,m1],y:[y0,y0+T],z:[T,L-T],bom:lum(L-2*T)});
+  }
+
+  /* Diagonal braces: hardware cloth does not stop racking */
+  for(const [a,b] of [[yS+T,f1],[f1+T,f2]]){
+    brace(ctx,'z',[T,m0,a,b],true,[L-T,L],'Back diagonal brace',T,F);
+    brace(ctx,'z',[m1,W-T,a,b],false,[L-T,L],'Back diagonal brace',T,F);
+    brace(ctx,'x',[T,L-T,a,b],true,[0,T],'Side diagonal brace',T,F);
+    brace(ctx,'x',[T,L-T,a,b],false,[W-T,W],'Side diagonal brace',T,F);
+  }
+  brace(ctx,'x',[T,L-T,f2+T,yTop],true,[0,T],'Side diagonal brace',T,F);
+
+  /* Floors, notched around the posts */
+  const floorPoly=(frontMid)=>{
+    const p=[[T,0]]; if(frontMid) p.push([m0,0],[m0,T],[m1,T],[m1,0]); p.push([W-T,0],[W-T,T],[W,T],[W,L-T],[W-T,L-T],[W-T,L],[m1,L],[m1,L-T],[m0,L-T],[m0,L],[T,L],[T,L-T],[0,L-T],[0,T],[T,T]); return p; };
+  P({mat:'ply',layer:'floors',name:'Lower floor (notched at posts)',axis:'y',poly:floorPoly(false),range:[f1+T,yLF],bom:{k:'ply',th:tf,w:W,h:L}});
+  const hatch=[3.5,12.5,12,20];
+  P({mat:'ply',layer:'floors',name:'Upper floor (ramp hatch cut out)',axis:'y',poly:floorPoly(true),holes:[[[hatch[0],hatch[2]],[hatch[1],hatch[2]],[hatch[1],hatch[3]],[hatch[0],hatch[3]]]],range:[f2+T,yUF],bom:{k:'ply',th:tf,w:W,h:L}});
+
+  /* Sleeping box: thin plywood on the right half of the upper level */
+  const sb={mat:'ply',layer:'sheathing'};
+  B({...sb,name:'Sleeping box back',x:[mx,W],y:[f2,H],z:[L,L+tb],bom:{k:'ply',th:tb,w:W-mx,h:H-f2}});
+  B({...sb,name:'Sleeping box side',x:[W,W+tb],y:[f2,H],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:H-f2}});
+  B({...sb,name:'Sleeping box lid',x:[mx,W+tb],y:[H,H+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W-mx+tb,h:L+tb}});
+  const pop=[L-T-8.5,L-T-1.5], dvTop=yTop-2;
+  P({...sb,name:'Sleeping box divider (pop hole, 2″ air gap at top)',axis:'x',poly:[[T,yUF],[L-T,yUF],[L-T,dvTop],[T,dvTop]],holes:[[[pop[0],yUF],[pop[1],yUF],[pop[1],yUF+8],[pop[0],yUF+8]]],range:[m1,m1+tb],bom:{k:'ply',th:tb,w:L-2*T,h:dvTop-yUF}});
+
+  /* Hardware cloth on every open face, including the top */
+  meshPanel(ctx,{name:'Back hardware cloth, lower level',axis:'z',at:L+0.05,u:[0,W],v:[f1,f2]});
+  meshPanel(ctx,{name:'Back hardware cloth, upper run',axis:'z',at:L+0.05,u:[0,mx],v:[f2,H]});
+  meshPanel(ctx,{name:'Side hardware cloth, lower level',axis:'x',at:-0.05,u:[0,L],v:[f1,f2]});
+  meshPanel(ctx,{name:'Side hardware cloth, upper run',axis:'x',at:-0.05,u:[0,L],v:[f2,H]});
+  meshPanel(ctx,{name:'Side hardware cloth, lower level',axis:'x',at:W+0.05,u:[0,L],v:[f1,f2]});
+  meshPanel(ctx,{name:'Top hardware cloth, upper run',axis:'y',at:H+0.05,u:[0,mx],v:[0,L]});
+
+  /* Doors: set flush in their openings, 1/8" gap all round */
+  const g8=0.125, ft=0.75;
+  const doorFrame=(R,dw,dh,name,mids)=>{
+    const dm={mat:'door',layer:'doors',parent:R.pivot};
+    for(const xs of [[0,1.5],[dw-1.5,dw]]) box(ctx,{...dm,name:name+' stile (1×2)',x:xs,y:[0,dh],z:[0,ft],bom:lum(dh,'1x2')});
+    for(const ys of [[0,1.5],[dh-1.5,dh]]) box(ctx,{...dm,name:name+' rail (1×2)',x:[1.5,dw-1.5],y:ys,z:[0,ft],bom:lum(dw-3,'1x2')});
+    const bays = mids ? [[1.5,dw/2-0.75],[dw/2+0.75,dw-1.5]] : [[1.5,dw-1.5]];
+    if(mids) box(ctx,{...dm,name:name+' middle stile (1×2)',x:[dw/2-0.75,dw/2+0.75],y:[1.5,dh-1.5],z:[0,ft],bom:lum(dh-3,'1x2')});
+    bays.forEach(([a,b],i)=>brace(ctx,'z',[a,b,1.5,dh-1.5],i===0,[0,ft],name+' diagonal brace (1×2)',1.5,'1x2',R.pivot,'door','doors'));
+    meshPanel(ctx,{name:name+' hardware cloth',axis:'z',at:ft+0.03,u:[0.1,dw-0.1],v:[0.1,dh-0.1],parent:R.pivot});
+  };
+  // lower level: one wide door, hinged on the left corner post
+  const ldw=W-2*T-2*g8, ldh=f2-g8-(yLF+g8);
+  const LR=rig(ctx,[T+g8,yLF+g8,0],'Lower door','y',1.75);
+  doorFrame(LR,ldw,ldh,'Lower door',true);
+  for(const h of [3,ldh-3]) insetHinge(ctx,LR,h,1); insetLatch(ctx,LR,ldw,ldh/2,1);
+  // upper run door, hinged on the left corner post, latches to the middle post
+  const udw=m0-g8-(T+g8), udh=yTop-g8-(yUF+g8);
+  const UR=rig(ctx,[T+g8,yUF+g8,0],'Upper run door','y',1.8);
+  doorFrame(UR,udw,udh,'Upper run door',false);
+  for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1); insetLatch(ctx,UR,udw,udh*0.72,1);
+  // sleeping box door: thin plywood with 1x2 stiffeners, hinged on the right corner post
+  const bdw=(W-T-g8)-(m1+g8);
+  const BR=rig(ctx,[W-T-g8,yUF+g8,0],'Sleeping box door','y',-1.8);
+  box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
+  for(const ys of [[1,2.5],[udh-2.5,udh-1]]) box(ctx,{mat:'wood',layer:'doors',name:'Box door stiffener (1×2, inside face)',x:[-bdw+0.75,-0.75],y:ys,z:[tb,tb+0.75],parent:BR.pivot,bom:lum(bdw-1.5,'1x2')});
+  for(const h of [3,udh-3]) insetHinge(ctx,BR,h,-1); insetLatch(ctx,BR,bdw,udh*0.35,-1);
+
+  /* Carry handles on the upper floor side rails */
+  handle(ctx,-0.05,-1,f2+0.75,L/2,'Bolted to the upper floor side rails');
+  handle(ctx,W+tb,1,f2+0.75,L/2,'Bolted to the upper floor side rails');
+
+  const rp=ramp(ctx,{x0:hatch[0], yTop:yUF, yBot:yLF, xEnd:37, z0:hatch[2]+0.5, w:7, t:tf});
+
+  ctx.g={W,L,H,tb,tf,yLF,yUF,f2,yTop,lowerClear:f2-yLF,upperClear:yTop-yUF,ldw,ldh,udw,udh,bdw,
+    box:[W-T-m1-tb, L-2*T, yTop-yUF], rise:rp.rise, rampDeg:rp.deg, rampLen:rp.len, cleats:rp.cleats,
+    lowerArea:(W-2*T)*(L-2*T)/144, runArea:(m0-T)*(L-2*T)/144, boxArea:(W-T-m1-tb)*(L-2*T)/144};
   return ctx.g;
 }
 
@@ -570,10 +678,10 @@ function packSheets(pieces){
   pieces.slice().sort((a,b)=>b.w*b.h-a.w*a.h).forEach(p=>{ if(!sheets.some(s=>place(s,p))){ const s={free:[{w:48,h:96}],names:[]}; sheets.push(s); if(!place(s,p)) s.names.push(p.name+' (oversize)'); } });
   return sheets;
 }
-function analyze(bom){
-  const out={lum:{}, ply:{}, mesh:[], hw:{}, roof:{}, w:{Lumber:0,Plywood:0,'Hardware cloth':0,Roofing:0,'Hardware & fasteners':W_FASTEN}};
-  const nests={};
+function analyze(bom, fasten){
+  const out={lum:{}, ply:{}, mesh:[], hw:{}, roof:{}, w:{Lumber:0,Plywood:0,'Hardware cloth':0,Roofing:0,'Hardware & fasteners':fasten}};
   out.mod={run:0,coop:0}; const add=(cat,b,v)=>{ out.w[cat]+=v; out.mod[b.mod||'coop']+=v; };
+  const nests={};
   for(const b of bom){
     if(b.k==='lum'){ (out.lum[b.size]=out.lum[b.size]||[]).push(b); const [t,d]=LUM[b.size]; add('Lumber',b,t*d*b.len*DENS_LUM); }
     else if(b.k==='ply'){ const key=b.th; (out.ply[key]=out.ply[key]||{pieces:[],list:[]}); out.ply[key].list.push(b);
@@ -581,7 +689,7 @@ function analyze(bom){
       if(b.nest){ const nk=b.nest+key; if(nests[nk]){ out.ply[key].pieces.push({w:b.w,h:b.h+nests[nk].h2+0.25,name:'2 × '+b.name.replace(/ \(.*\)/,'')+' (nested)'}); delete nests[nk]; } else nests[nk]=b; }
       else out.ply[key].pieces.push({w:b.w,h:b.h,name:b.name}); }
     else if(b.k==='mesh'){ out.mesh.push(b); add('Hardware cloth',b,b.w*b.h/144*W_MESH); }
-    else if(b.k==='hw'){ (out.hw[b.item]=out.hw[b.item]||{qty:0}); out.hw[b.item].qty++; add('Hardware & fasteners',b,b.wt); }
+    else if(b.k==='hw'){ const e=(out.hw[b.item]=out.hw[b.item]||{qty:0,uses:{}}); e.qty++; if(b.use) e.uses[b.use]=(e.uses[b.use]||0)+1; add('Hardware & fasteners',b,b.wt); }
     else { out.roof[b.k]=b;
       if(b.k==='alum') add('Roofing',b,b.area*W_ALUM); if(b.k==='shingle') add('Roofing',b,b.area*W_SHINGLE*1.15); if(b.k==='underlay') add('Roofing',b,b.area*W_UNDER); if(b.k==='drip') add('Roofing',b,b.len/12*W_DRIP); }
   }
@@ -591,12 +699,92 @@ function analyze(bom){
   let ml=0; for(const m of out.mesh){ const lo=Math.min(m.w,m.h), hi=Math.max(m.w,m.h); ml += hi<=36 ? lo : hi; }
   out.meshLen=ml; out.meshRoll = ml<=120?10:ml<=300?25:50;
   out.total=Object.values(out.w).reduce((a,b)=>a+b,0);
-  const ms=out.mod.run+out.mod.coop; out.mod.run+=W_FASTEN*out.mod.run/ms; out.mod.coop+=W_FASTEN*out.mod.coop/ms;
+  const ms=out.mod.run+out.mod.coop; out.mod.run+=fasten*out.mod.run/ms; out.mod.coop+=fasten*out.mod.coop/ms;
   return out;
 }
-function dryWeight(cfg){ const ctx={dry:true,parts:[],bom:[],pivots:{}}; build(cfg,ctx); return analyze(ctx.bom).total; }
+
+/* ---------- the two designs ---------- */
+const MODELS = {
+  outdoor:{
+    tab:'Outdoor coop', dims:'4′ × 4′ × 8′ · shed roof',
+    eyebrow:'Build plan · 4 quail · outdoors', title:'Four-Quail Shed Coop',
+    lede:'Two-level coop on a 4′ × 4′ footprint. A plywood-walled roost box sits over a hardware-cloth run, joined by a removable cleated ramp. Every door and the vent window close with a gate latch that takes a locking carabiner.',
+    build:buildOutdoor, center:46, radius:66, fasten:5,
+    state:{lumber:'2x4', wallPly:0.5, roof:'alum-ply'},
+    layers:[['framing','Framing'],['floors','Floors'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors & window'],['ramp','Ramp'],['hardware','Latches & hinges']],
+    options:[
+      {key:'lumber',label:'Framing lumber',choices:[['2x4','2×4','As planned'],['2x3','2×3','Lighter, same layout']]},
+      {key:'wallPly',label:'Wall plywood',num:true,choices:[[0.5,'½″','Stiffer'],[0.375,'⅜″','Lighter']]},
+      {key:'roof',label:'Roof',choices:[['alum-ply','Aluminum','over ½″ plywood deck'],['alum-purlin','Aluminum','on 1×4 purlins, no deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
+    compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Alum + deck'],['alum-purlin','Alum + purlins'],['shingle','Shingles']],
+      note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried SPF lumber; pressure-treated or wet lumber can run 30–50% heavier.'},
+    uses:{'2x4':'Framing, legs, rafters','2x3':'Framing, legs, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'},
+    cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'aluminum over deck','alum-purlin':'aluminum on purlins','shingle':'shingles'})[s.roof],
+    split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
+    specs:g=>[['Overall footprint',fIn(g.overall[0])+' × '+fIn(g.overall[1])],['Highest point',"8′-0″ (front eave)"],
+      ['Roof pitch','4 in 12, sheds to back'],['Back wall height',fFt(g.yBP)+' at top plate'],
+      ['Run floor height',fIn(g.yLF)+' off ground'],['Run clear height',fIn(g.runClear)],
+      ['Coop floor height',fFt(g.yUF)],['Coop wall height',fIn(g.coopFront)+' front, '+fIn(g.coopBack)+' back'],
+      ['Run door opening',fIn(g.lowerOpen[0])+' × '+fIn(g.lowerOpen[1])],['Coop door opening',fIn(g.upperOpen[0])+' × '+fIn(g.upperOpen[1])],
+      ['Vent window',fIn(g.winOpen[0])+' × '+fIn(g.winOpen[1])],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
+      ['Floor space per level',((g.W-2*g.D)*(g.L-2*g.D)/144).toFixed(1)+' sq ft inside ('+((g.W-2*g.D)*(g.L-2*g.D)/144/4).toFixed(1)+' per bird)'],['Framing spacing','24″ on center']],
+    notes:(g,an,lightest)=>[
+      ['How it goes together','Build it as stacked boxes: the run floor platform on four legs, the run walls, the coop floor platform, the coop walls, then rafters and roof. Stud walls sit on the plywood floor of the level below them. Corner and door studs, plates and joists are on a 24″ grid as you asked; every board fits in an 8 ft length.'],
+      ['Footprint','The frame is 47″ × 47″ so that ½″ wall plywood brings the outside to exactly 48″. Front and back plywood run the full 48″ and lap the side sheets. Both side sheets nest head-to-tail on one 4 × 8.'],
+      ['Racking','Hardware cloth adds no stiffness, so the run walls carry let-in diagonal braces on the back and both sides. Keep them; they stop the heavy coop box from leaning the run out of square, especially when it is carried.'],
+      ['Rafters','The rafters run front to back at a 4 in 12 pitch and overhang 6″ at both eaves. Cut a shallow seat (birdsmouth, under ⅓ of the rafter depth) where each rafter crosses the front and back top plates. The side-wall top plates are cut to the same slope, and the side-wall stud tops are cut to match.'],
+      ['Ramp','The rise is '+fIn(g.rise)+', so the ramp ends up about '+Math.round(g.rampDeg)+'°, which is steep for quail. '+g.cleats+' cleats at 3″ spacing give them footing. The ramp hangs from a cleat at the edge of the 12″ × 10″ floor hatch, so it lifts out for cleaning. Quail are reluctant climbers: plan to lift them up the first few nights, or add a midway landing.'],
+      ['Cleaning','The run door is nearly the full front ('+fIn(g.lowerOpen[0])+' wide) and the coop door is '+fIn(g.upperOpen[0])+' × '+fIn(g.upperOpen[1])+'. Both keep a 1½″ sill (the bottom plate), which holds bedding in. Pull bedding over it with a scraper.'],
+      ['Wind and air','The coop walls are solid plywood. Air comes in through hardware-cloth eave vents between the rafters at the front and back. The side vent window has a hinged plywood flap that latches shut in winter and props open in summer.'],
+      ['Predators','Use ½″ galvanized hardware cloth, not chicken wire. The cloth wraps down over the run floor framing so there is no gap at the floor. Raccoons can open plain latches, so every latch takes a locking carabiner through its padlock hole.'],
+      ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Aluminum is about 0.4 lb/sq ft against about 2.4 for 3-tab shingles. Putting aluminum on 1×4 purlins also drops the plywood deck. The trade-off is that a bare metal roof is louder in rain and can drip condensation in a cold coop. The deck prevents that.'],
+      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and aluminum on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. Use pressure-treated lumber only for the legs and run floor frame; it is much heavier when new.'],
+      ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
+      ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
+    lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'}
+  },
+  garage:{
+    tab:'Garage coop', dims:'4′ × 2′ × 6′ · no roof',
+    eyebrow:'Build plan · 4 quail · indoors', title:'Four-Quail Garage Coop',
+    lede:'A lightweight two-level cage for a garage. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out rats, cats and raccoons. A thin-plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
+    build:buildGarage, center:37, radius:46, fasten:2,
+    state:{floorPly:0.375, boxPly:0.25},
+    layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
+    options:[
+      {key:'floorPly',label:'Floor plywood',num:true,choices:[[0.375,'⅜″','Lighter'],[0.5,'½″','Stiffer underfoot']]},
+      {key:'boxPly',label:'Sleeping box plywood',num:true,choices:[[0.25,'¼″','Lightest'],[0.375,'⅜″','Sturdier']]}],
+    compare:{row:'floorPly',col:'boxPly',rows:[[0.375,'⅜″ floors'],[0.5,'½″ floors']],cols:[[0.25,'¼″ box'],[0.375,'⅜″ box']],
+      note:'Weight by floor and sleeping-box plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried lumber.'},
+    uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
+    cfgLabel:s=>fIn(s.floorPly)+' floors, '+fIn(s.boxPly)+' sleeping box',
+    split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
+    specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
+      ['Lower floor height',fIn(g.yLF)+' off ground'],['Lower clear height',fIn(g.lowerClear)],
+      ['Upper floor height',fFt(g.yUF)],['Upper clear height',fIn(g.upperClear)],
+      ['Lower door',fIn(g.ldw)+' × '+fIn(g.ldh)],['Upper doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
+      ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
+      ['Floor space',(g.lowerArea+g.runArea+g.boxArea).toFixed(1)+' sq ft over two levels'],['Per bird',((g.lowerArea+g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
+    notes:(g,an)=>[
+      ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
+      ['Why it is light','There is no roof and no wall sheathing except the sleeping box, so the 2×2 frame only carries hardware cloth, two floors and a small plywood box. All the plywood comes from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets. The whole cage is about '+fLb(an.total)+' lb, roughly a quarter of the outdoor coop.'],
+      ['Racking','A tall, narrow cage on 2×2s will rack unless it is braced. Diagonal braces run on the back and both sides of the leg zone and the lower level, and on the left side of the upper run. The sleeping-box plywood stiffens the upper right. Fasten the hardware cloth tight with washer-head screws every 4″ and it helps too.'],
+      ['Tipping','At 6′ tall and 2′ deep it can tip if a dog jumps on it or a door is leaned on. Strap the back top rail to a wall stud with a short furniture anti-tip strap.'],
+      ['Sleeping box','It fills the right half of the upper level. The divider has a 7″ × 8″ pop hole at the back and stops 2″ below the top rail, so stale air can leave through the run side. In a cold garage, a sheet of cardboard over the top mesh of the run in winter cuts drafts.'],
+      ['Predators','In a garage the threats are rats, mice, weasels, cats and the occasional raccoon. ½″ hardware cloth covers every open face including the top. ¼″ cloth also stops mice and is about the same weight, if you prefer it. The three doors sit flush in their openings with ⅛″ gaps. Each closes with a gate latch and a locking carabiner, because raccoons can work plain latches.'],
+      ['Flighty birds','Quail flush straight up when startled. Each level has about '+fIn(Math.min(g.lowerClear,g.upperClear))+' of headroom, which is high enough for them to hit the top hard. Staple soft bird netting or shade cloth a few inches under the top mesh of the upper run to cushion them.'],
+      ['Ramp','The rise is '+fIn(g.rise)+', so the 7″-wide ramp runs at about '+Math.round(g.rampDeg)+'° with '+g.cleats+' cleats. It hangs from a cleat at the 9″ × 8″ hatch and lifts out for cleaning. Teach the birds the route by placing them in the sleeping box at dusk for the first few nights.'],
+      ['Cleaning','The lower door spans almost the whole front. The two upper doors open the run half and the sleeping box separately. To keep shavings off the garage floor, slide a cut-down boot tray or a scrap of vinyl flooring onto each floor as a removable liner.'],
+      ['Not shown','Fasteners: screws, washer-head screws or staples for the hardware cloth, and glue. Also not shown: the anti-tip wall strap, bird netting, feeders, waterers, a heat lamp (if you add one, guard it and keep it clear of the plywood), and bedding.']]
+  }
+};
 
 /* ---------- three.js scene ---------- */
+let MK = 'outdoor';
+const M = () => MODELS[MK];
+const runtime = {open:false};
+for(const k in MODELS){ MODELS[k].layerState={}; MODELS[k].layers.forEach(([l])=>MODELS[k].layerState[l]=true); }
+function dryWeight(model, cfg){ const ctx={dry:true,parts:[],bom:[],pivots:[]}; model.build(cfg,ctx); return analyze(ctx.bom, model.fasten).total; }
+
 const stage=$('#stage');
 const renderer=new THREE.WebGLRenderer({antialias:true});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
@@ -605,7 +793,7 @@ stage.prepend(renderer.domElement); renderer.domElement.tabIndex=0;
 const scene=new THREE.Scene(); scene.background=new THREE.Color();
 const camera=new THREE.PerspectiveCamera(32,1,1,3000);
 const controls=new THREE.OrbitControls(camera,renderer.domElement);
-controls.enableDamping=true; controls.dampingFactor=0.09; controls.target.set(0,46,0); controls.minDistance=50; controls.maxDistance=650; controls.maxPolarAngle=Math.PI*0.58;
+controls.enableDamping=true; controls.dampingFactor=0.09; controls.minDistance=40; controls.maxDistance=650; controls.maxPolarAngle=Math.PI*0.58;
 scene.add(new THREE.HemisphereLight(0xffffff,0x8a8070,0.62));
 const sun=new THREE.DirectionalLight(0xfff4e2,0.95); sun.position.set(80,160,120); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048);
 Object.assign(sun.shadow.camera,{left:-110,right:110,top:110,bottom:-110,near:20,far:500}); sun.shadow.bias=-0.0004; sun.shadow.normalBias=0.4; scene.add(sun);
@@ -621,30 +809,30 @@ function applyTheme(){
   grid=new THREE.GridHelper(240,20,lin(v('--grid')),lin(v('--grid'))); grid.position.y=0.05; grid.material.transparent=true; grid.material.opacity=.55; scene.add(grid);
   dirty=true;
 }
-let dirty=true, current=null, selected=null;
-const doorAng={upper:0,lower:0,window:0}, DOOR_OPEN={upper:1.85,lower:1.75,window:1.15};
+let dirty=true, current=null, selected=null, doorT=0;
 const reduceMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TGT=()=>new THREE.Vector3(0,M().center,0);
 
 function rebuild(){
   clearPick();
   holder.children.slice().forEach(c=>{ c.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); holder.remove(c); });
-  const root=new THREE.Group(); root.rotation.y=Math.PI; root.position.set(23.5,0,23.5);
-  const ctx={dry:false,root,parts:[],bom:[],pivots:{}}; build(state,ctx); holder.add(root);
-  current=ctx; current.an=analyze(ctx.bom);
-  applyLayers(); setDoorAngles(true); renderPanel(); dirty=true;
+  const root=new THREE.Group(); root.rotation.y=Math.PI;
+  const ctx={dry:false,root,parts:[],bom:[],pivots:[]}; M().build(M().state,ctx);
+  root.position.set(ctx.g.W/2,0,ctx.g.L/2); holder.add(root);
+  current=ctx; current.an=analyze(ctx.bom, M().fasten);
+  applyLayers(); setDoors(); renderPanel(); dirty=true;
 }
-function applyLayers(){ if(!current) return; current.parts.forEach(m=>{ m.visible=!!layers[m.userData.layer]; }); if(selected && !selected.visible) clearPick(); dirty=true; }
-function setDoorAngles(instant){ if(!current) return; for(const k in doorAng){ if(instant) doorAng[k]=state.open?DOOR_OPEN[k]:0; const p=current.pivots[k]; if(!p) continue; if(k==='window') p.rotation.z=doorAng[k]; else p.rotation.y=doorAng[k]; } dirty=true; }
+function applyLayers(){ if(!current) return; const ls=M().layerState; current.parts.forEach(m=>{ m.visible=!!ls[m.userData.layer]; }); if(selected && !selected.visible) clearPick(); dirty=true; }
+function setDoors(){ if(!current) return; current.pivots.forEach(d=>{ d.p.rotation[d.axis]=d.open*doorT; }); dirty=true; }
 
 /* camera views */
 const VIEWS={iso:[0.62,0.40,0.68],front:[0,0.10,1],side:[-1,0.10,0.001],back:[0,0.10,-1],top:[0.001,1,0.002]};
 let tween=null;
-function fitDist(){ const asp=camera.aspect, vf=camera.fov*Math.PI/180, hf=2*Math.atan(Math.tan(vf/2)*asp); return 66/Math.sin(Math.min(vf,hf)/2)*1.02; }
+function fitDist(){ const asp=camera.aspect, vf=camera.fov*Math.PI/180, hf=2*Math.atan(Math.tan(vf/2)*asp); return M().radius/Math.sin(Math.min(vf,hf)/2)*1.02; }
 function goView(name, instant){
-  const d=new THREE.Vector3(...VIEWS[name]).normalize(); const dist=fitDist();
-  const to=d.multiplyScalar(dist).add(new THREE.Vector3(0,46,0));
+  const d=new THREE.Vector3(...VIEWS[name]).normalize(); const to=d.multiplyScalar(fitDist()).add(TGT());
   document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===name));
-  if(instant||reduceMotion){ camera.position.copy(to); controls.target.set(0,46,0); tween=null; dirty=true; return; }
+  if(instant||reduceMotion){ camera.position.copy(to); controls.target.copy(TGT()); tween=null; dirty=true; return; }
   tween={from:camera.position.clone(), to, tf:controls.target.clone(), t0:performance.now()};
 }
 function resize(){ const r=stage.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); camera.aspect=r.width/Math.max(r.height,1); camera.updateProjectionMatrix(); dirty=true; }
@@ -652,11 +840,11 @@ new ResizeObserver(resize).observe(stage);
 
 function loop(now){
   requestAnimationFrame(loop);
-  if(tween){ let t=Math.min(1,(now-tween.t0)/650); const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
-    const a=tween.from.clone().sub(controls.target), b=tween.to.clone().sub(new THREE.Vector3(0,46,0));
+  if(tween){ const t=Math.min(1,(now-tween.t0)/650); const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; const tg=TGT();
+    const a=tween.from.clone().sub(tween.tf), b=tween.to.clone().sub(tg);
     const len=a.length()+(b.length()-a.length())*e; const dir=a.normalize().lerp(b.normalize(),e).normalize();
-    controls.target.lerpVectors(tween.tf,new THREE.Vector3(0,46,0),e); camera.position.copy(controls.target).add(dir.multiplyScalar(len)); if(t>=1) tween=null; dirty=true; }
-  if(current){ for(const k in doorAng){ const tgt=state.open?DOOR_OPEN[k]:0; if(Math.abs(doorAng[k]-tgt)>0.001){ doorAng[k]+= reduceMotion ? (tgt-doorAng[k]) : (tgt-doorAng[k])*0.14; setDoorAngles(false);} } }
+    controls.target.lerpVectors(tween.tf,tg,e); camera.position.copy(controls.target).add(dir.multiplyScalar(len)); if(t>=1) tween=null; dirty=true; }
+  const tgt=runtime.open?1:0; if(Math.abs(doorT-tgt)>0.001){ doorT = reduceMotion ? tgt : doorT+(tgt-doorT)*0.14; setDoors(); }
   if(controls.update()) dirty=true;
   if(dirty){ renderer.render(scene,camera); dirty=false; }
 }
@@ -667,7 +855,8 @@ renderer.domElement.addEventListener('pointerdown',e=>{ downAt=[e.clientX,e.clie
 renderer.domElement.addEventListener('pointerup',e=>{
   if(!downAt || Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1])>5) return; downAt=null;
   const r=renderer.domElement.getBoundingClientRect(); ray.setFromCamera({x:(e.clientX-r.left)/r.width*2-1, y:-(e.clientY-r.top)/r.height*2+1},camera);
-  const hit=ray.intersectObjects(current.parts.filter(p=>p.visible&&p.userData.layer!=='mesh').concat(current.parts.filter(p=>p.visible&&p.userData.layer==='mesh')),false)[0];
+  const vis=current.parts.filter(p=>p.visible);
+  const hit=ray.intersectObjects(vis.filter(p=>p.userData.layer!=='mesh'),false)[0] || ray.intersectObjects(vis.filter(p=>p.userData.layer==='mesh'),false)[0];
   hit ? pick(hit.object) : clearPick();
 });
 function pick(m){ clearPick(); selected=m; m.userData.orig=m.material; const hm=m.material.clone(); hm.emissive=new THREE.Color(0xffb020); hm.emissiveIntensity=.45; m.material=hm;
@@ -676,59 +865,68 @@ function clearPick(){ if(selected){ selected.material.dispose(); selected.materi
 $('#pickClose').addEventListener('click',clearPick);
 
 /* ---------- UI ---------- */
+function renderModelTabs(){
+  $('#models').innerHTML=Object.entries(MODELS).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b><span>${m.dims}</span></button>`).join('');
+}
+$('#models').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setModel(b.dataset.m, true); });
+function setModel(k, push){
+  if(!MODELS[k]) k='outdoor'; const changed = k!==MK || !current; MK=k;
+  if(push){ try{ history.replaceState(null,'','#'+k); }catch(_){ location.hash=k; } }
+  renderModelTabs(); renderHeader(); renderLayers(); renderOptions();
+  if(changed){ rebuild(); goView('iso', !push); }
+}
+function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare.note; }
 function renderLayers(){
-  const el=$('#layers'); el.innerHTML='<span class="lbl">Layers</span>';
-  LAYERS.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(layers[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
-    l.innerHTML=`<input type="checkbox" id="lay-${k}" ${layers[k]?'checked':''}><span class="sw"></span>${lbl}`;
-    l.querySelector('input').addEventListener('change',e=>{ layers[k]=e.target.checked; l.classList.toggle('off',!layers[k]); applyLayers(); }); el.appendChild(l); });
-  const presets=[['Framing only',['framing']],['No sheathing',LAYERS.map(l=>l[0]).filter(k=>!['sheathing','roofdeck','roofing'].includes(k))],['Show all',LAYERS.map(l=>l[0])]];
+  const el=$('#layers'), m=M(), ls=m.layerState; el.innerHTML='<span class="lbl">Layers</span>';
+  m.layers.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(ls[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
+    l.innerHTML=`<input type="checkbox" id="lay-${k}" ${ls[k]?'checked':''}><span class="sw"></span>${lbl}`;
+    l.querySelector('input').addEventListener('change',e=>{ ls[k]=e.target.checked; l.classList.toggle('off',!ls[k]); applyLayers(); }); el.appendChild(l); });
+  const all=m.layers.map(l=>l[0]);
+  const presets=[['Framing only',['framing']],['No plywood',all.filter(k=>!['sheathing','roofdeck','roofing'].includes(k))],['Show all',all]];
   presets.forEach(([lbl,on])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip preset'; b.textContent=lbl;
-    b.addEventListener('click',()=>{ LAYERS.forEach(([k])=>layers[k]=on.includes(k)); renderLayers(); applyLayers(); }); el.appendChild(b); });
+    b.addEventListener('click',()=>{ all.forEach(k=>ls[k]=on.includes(k)); renderLayers(); applyLayers(); }); el.appendChild(b); });
 }
 function renderOptions(){
-  document.querySelectorAll('.opt .choices').forEach(c=>{ const k=c.dataset.opt; c.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.val)===String(state[k]))); });
+  const m=M();
+  $('#opts').innerHTML=m.options.map(o=>`<div class="row"><span>${o.label}</span><div class="choices" data-opt="${o.key}">`+
+    o.choices.map(([v,l,s])=>`<button type="button" data-val="${v}" aria-pressed="${String(v)===String(m.state[o.key])}">${l}<small>${s}</small></button>`).join('')+'</div></div>').join('');
 }
-document.querySelectorAll('.opt .choices').forEach(c=>c.addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const k=c.dataset.opt; state[k]= k==='wallPly'? +b.dataset.val : b.dataset.val; renderOptions(); rebuild(); }));
+$('#opts').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const k=b.closest('.choices').dataset.opt; const o=M().options.find(x=>x.key===k);
+  M().state[k]= o.num ? +b.dataset.val : b.dataset.val; renderOptions(); rebuild(); });
 
 function renderPanel(){
-  const g=current.g, an=current.an;
-  const specs=[['Overall footprint',fIn(g.overall[0])+' × '+fIn(g.overall[1])],['Highest point',"8′-0″ (front eave)"],
-    ['Roof pitch','4 in 12, sheds to back'],['Back wall height',fFt(g.yBP)+' at top plate'],
-    ['Run floor height',fIn(g.yLF)+' off ground'],['Run clear height',fIn(g.runClear)],
-    ['Coop floor height',fFt(g.yUF)],['Coop wall height',fIn(g.coopFront)+' front, '+fIn(g.coopBack)+' back'],
-    ['Run door opening',fIn(g.lowerOpen[0])+' × '+fIn(g.lowerOpen[1])],['Coop door opening',fIn(g.upperOpen[0])+' × '+fIn(g.upperOpen[1])],
-    ['Vent window',fIn(g.winOpen[0])+' × '+fIn(g.winOpen[1])],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
-    ['Floor space per level',((g.W-2*g.D)*(g.L-2*g.D)/144).toFixed(1)+' sq ft inside ('+((g.W-2*g.D)*(g.L-2*g.D)/144/4).toFixed(1)+' per bird)'],['Framing spacing','24″ on center']];
-  $('#specs').innerHTML=specs.map(([a,b])=>`<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
-
-  // weight
+  const m=M(), g=current.g, an=current.an;
+  $('#specs').innerHTML=m.specs(g).map(([a,b])=>`<div><dt>${a}</dt><dd>${b}</dd></div>`).join('');
   const cols={Lumber:'--bar-1',Plywood:'--bar-2','Hardware cloth':'--bar-3',Roofing:'--bar-4','Hardware & fasteners':'--bar-5'};
+  const ws=Object.entries(an.w).filter(([,v])=>v>0.05);
   $('#wTotal').innerHTML=fLb(an.total)+'<small>lb</small>'; $('#wPer').textContent=fLb(an.total/2)+' lb';
-  $('#wStack').innerHTML=Object.entries(an.w).map(([k,v])=>`<i style="flex:${v};background:var(${cols[k]})" title="${k}"></i>`).join('');
-  $('#wLegend').innerHTML=Object.entries(an.w).map(([k,v])=>`<li><i style="background:var(${cols[k]})"></i>${k}<span>${fLb(v)} lb</span></li>`).join('');
-  $('#wSplit').innerHTML='Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.';
-  const grid={}; let min=Infinity;
-  for(const lm of ['2x4','2x3']) for(const rf in ROOFS){ const w=dryWeight({lumber:lm,wallPly:state.wallPly,roof:rf}); grid[lm+rf]=w; min=Math.min(min,w); }
-  let h='<thead><tr><th></th>'+Object.values(ROOFS).map(r=>`<th>${r}</th>`).join('')+'</tr></thead><tbody>';
-  for(const lm of ['2x4','2x3']){ h+=`<tr><th>${LUM_LABEL[lm]}</th>`; for(const rf in ROOFS){ const on=lm===state.lumber&&rf===state.roof; const w=grid[lm+rf];
-    h+=`<td><button type="button" data-l="${lm}" data-r="${rf}" aria-pressed="${on}" class="${w===min?'best':''}" aria-label="${LUM_LABEL[lm]} with ${ROOFS[rf]}: ${fLb(w)} pounds">${fLb(w)}</button></td>`; } h+='</tr>'; }
+  $('#wStack').innerHTML=ws.map(([k,v])=>`<i style="flex:${v};background:var(${cols[k]})" title="${k}"></i>`).join('');
+  $('#wLegend').innerHTML=ws.map(([k,v])=>`<li><i style="background:var(${cols[k]})"></i>${k}<span>${fLb(v)} lb</span></li>`).join('');
+  $('#wSplit').innerHTML=m.split(an);
+  const c=m.compare, grid={}; let min=Infinity;
+  for(const [rv] of c.rows) for(const [cv] of c.cols){ const w=dryWeight(m, Object.assign({}, m.state, {[c.row]:rv, [c.col]:cv})); grid[rv+'|'+cv]=w; min=Math.min(min,w); }
+  let h='<thead><tr><th></th>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'</tr></thead><tbody>';
+  for(const [rv,rl] of c.rows){ h+=`<tr><th>${rl}</th>`; for(const [cv,cl] of c.cols){ const on=String(rv)===String(m.state[c.row])&&String(cv)===String(m.state[c.col]); const w=grid[rv+'|'+cv];
+    h+=`<td><button type="button" data-r="${rv}" data-c="${cv}" aria-pressed="${on}" class="${w===min?'best':''}" aria-label="${rl}, ${cl}: ${fLb(w)} pounds">${fLb(w)}</button></td>`; } h+='</tr>'; }
   $('#cmp').innerHTML=h+'</tbody>';
-
-  renderShop(an); renderCut(an); renderNotes(g,an);
+  renderShop(an); renderCut(an);
+  const lightest = m.lightest ? dryWeight(m, m.lightest) : 0;
+  $('#notes').innerHTML=m.notes(g,an,lightest).map(([a,b])=>`<p><b>${a}.</b> ${b}</p>`).join('');
 }
-$('#cmp').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; state.lumber=b.dataset.l; state.roof=b.dataset.r; renderOptions(); rebuild(); });
+$('#cmp').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const m=M(), c=m.compare;
+  const num=k=>(m.options.find(o=>o.key===k)||{}).num; m.state[c.row]=num(c.row)?+b.dataset.r:b.dataset.r; m.state[c.col]=num(c.col)?+b.dataset.c:b.dataset.c; renderOptions(); rebuild(); });
 
 function shopRows(an){
-  const rows=[]; const use={'2x4':'Framing, legs, rafters','2x3':'Framing, legs, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'};
-  for(const sz of ['2x4','2x3','2x2','1x4','1x2']) if(an.lum[sz]) rows.push(['Lumber', LUM_LABEL[sz]+' × 8 ft', an.lum[sz].boards.length, use[sz]+' · '+an.lum[sz].length+' pieces']);
+  const rows=[], m=M();
+  for(const sz of ['2x4','2x3','2x2','1x4','1x2']) if(an.lum[sz]) rows.push(['Lumber', LUM_LABEL[sz]+' × 8 ft', an.lum[sz].boards.length, (m.uses[sz]||'')+' · '+an.lum[sz].length+' pieces']);
   for(const th of Object.keys(an.ply).sort((a,b)=>b-a)){ const p=an.ply[th]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
-    rows.push(['Plywood', fIn(+th)+' exterior plywood, 4 × 8 ft', p.sheets.length, uses.join(', ')]); }
-  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used for run walls, run door, window and eave vents']);
+    rows.push(['Plywood', fIn(+th)+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', ')]); }
+  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used']);
   const r=an.roof;
   if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves']); }
   if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges']); }
   if(r.underlay) rows.push(['Roofing','Synthetic roof underlayment',1,'Smallest roll; about '+Math.ceil(r.underlay.area)+' sq ft needed']);
-  for(const [k,v] of Object.entries(an.hw)) rows.push(['Hardware',k,v.qty, k.startsWith('Gate')?'Run door, coop door, vent window':k.startsWith('Locking')?'One per latch':k.startsWith('T-hinge')?'Two per door and two on the window':'Bolt through sheathing into the coop floor joists']);
+  for(const [k,v] of Object.entries(an.hw)) rows.push(['Hardware',k,v.qty,Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ')]);
   return rows;
 }
 function renderShop(an){
@@ -737,7 +935,7 @@ function renderShop(an){
   $('#shop').innerHTML=h;
 }
 $('#copyShop').addEventListener('click',async e=>{
-  const rows=shopRows(current.an); let last=''; const lines=['Four-Quail Shed Coop: shopping list ('+LUM_LABEL[state.lumber]+' framing, '+fIn(state.wallPly)+' walls, '+ROOFS[state.roof]+')'];
+  const rows=shopRows(current.an); let last=''; const lines=[M().title+': shopping list ('+M().cfgLabel(M().state)+')'];
   rows.forEach(([g,i,q])=>{ if(g!==last){ lines.push('', g.toUpperCase()); last=g; } lines.push(`${q} × ${i}`); });
   const txt=lines.join('\n'), b=e.currentTarget;
   try{ await navigator.clipboard.writeText(txt); b.textContent='Copied'; }catch(_){ const ta=document.createElement('textarea'); ta.value=txt; b.after(ta); ta.select(); b.textContent='Select and copy the text below'; }
@@ -748,41 +946,25 @@ function renderCut(an){
   for(const sz of ['2x4','2x3','2x2','1x4','1x2']){ if(!an.lum[sz]) continue; h+=`<tr class="sec"><td colspan="3">${LUM_LABEL[sz]} lumber</td></tr>`;
     const grp={}; an.lum[sz].forEach(b=>{ const k=b.name+'|'+Math.round(b.len*8); (grp[k]=grp[k]||{n:b.name,len:b.len,q:0}).q++; });
     Object.values(grp).sort((a,b)=>b.len-a.len).forEach(r=>{ h+=`<tr><td>${r.n}</td><td class="m">${r.q}</td><td class="m">${fIn(r.len)}</td></tr>`; }); }
-  for(const th of Object.keys(an.ply).sort((a,b)=>b-a)){ h+=`<tr class="sec"><td colspan="3">${fIn(+th)} plywood · ${an.ply[th].sheets.length} sheets</td></tr>`;
+  for(const th of Object.keys(an.ply).sort((a,b)=>b-a)){ h+=`<tr class="sec"><td colspan="3">${fIn(+th)} plywood · ${an.ply[th].sheets.length} sheet${an.ply[th].sheets.length>1?'s':''}</td></tr>`;
     an.ply[th].list.forEach(b=>{ const sz= b.h2 ? fIn(b.w)+' × '+fIn(b.h)+' tapering to '+fIn(b.h2) : fIn(b.w)+' × '+fIn(b.h); h+=`<tr><td>${b.name}</td><td class="m">1</td><td class="m">${sz}</td></tr>`; }); }
   h+=`<tr class="sec"><td colspan="3">Hardware cloth</td></tr>`;
-  const mg={}; an.mesh.forEach(b=>{ const k=b.name.replace(/ \(.*\)/,'')+'|'+Math.round(b.w*8)+'|'+Math.round(b.h*8); (mg[k]=mg[k]||{n:b.name,w:b.w,h:b.h,q:0}).q++; });
+  const mg={}; an.mesh.forEach(b=>{ const k=b.name+'|'+Math.round(b.w*8)+'|'+Math.round(b.h*8); (mg[k]=mg[k]||{n:b.name,w:b.w,h:b.h,q:0}).q++; });
   Object.values(mg).forEach(r=>{ h+=`<tr><td>${r.n}</td><td class="m">${r.q}</td><td class="m">${fIn(r.w)} × ${fIn(r.h)}</td></tr>`; });
   $('#cut').innerHTML=h+'</tbody>';
-}
-function renderNotes(g,an){
-  const alt=dryWeight({lumber:'2x3',wallPly:0.375,roof:'alum-purlin'});
-  const N=[
-    ['How it goes together','Build it as stacked boxes: the run floor platform on four legs, the run walls, the coop floor platform, the coop walls, then rafters and roof. Stud walls sit on the plywood floor of the level below them. Corner and door studs, plates and joists are on a 24″ grid as you asked; every board fits in an 8 ft length.'],
-    ['Footprint','The frame is 47″ × 47″ so that ½″ wall plywood brings the outside to exactly 48″. Front and back plywood run the full 48″ and lap the side sheets. Both side sheets nest head-to-tail on one 4 × 8.'],
-    ['Racking','Hardware cloth adds no stiffness, so the run walls carry let-in diagonal braces on the back and both sides. Keep them; they stop the heavy coop box from leaning the run out of square, especially when it is carried.'],
-    ['Rafters','The rafters run front to back at a 4 in 12 pitch and overhang 6″ at both eaves. Cut a shallow seat (birdsmouth, under ⅓ of the rafter depth) where each rafter crosses the front and back top plates. The side-wall top plates are cut to the same slope, and the side-wall stud tops are cut to match.'],
-    ['Ramp','The rise is '+fIn(g.rise)+', so the ramp ends up about '+Math.round(g.rampDeg)+'°, which is steep for quail. '+g.cleats+' cleats at 3″ spacing give them footing. The ramp hangs from a cleat at the edge of the 12″ × 10″ floor hatch, so it lifts out for cleaning. Quail are reluctant climbers: plan to lift them up the first few nights, or add a midway landing.'],
-    ['Cleaning','The run door is nearly the full front ('+fIn(g.lowerOpen[0])+' wide) and the coop door is '+fIn(g.upperOpen[0])+' × '+fIn(g.upperOpen[1])+'. Both keep a 1½″ sill (the bottom plate), which holds bedding in. Pull bedding over it with a scraper.'],
-    ['Wind and air','The coop walls are solid plywood. Air comes in through hardware-cloth eave vents between the rafters at the front and back. The side vent window has a hinged plywood flap that latches shut in winter and props open in summer.'],
-    ['Predators','Use ½″ galvanized hardware cloth, not chicken wire. The cloth wraps down over the run floor framing so there is no gap at the floor. Raccoons can open plain latches, so every latch takes a locking carabiner through its padlock hole.'],
-    ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Aluminum is about 0.4 lb/sq ft against about 2.4 for 3-tab shingles. Putting aluminum on 1×4 purlins also drops the plywood deck. The trade-off is that a bare metal roof is louder in rain and can drip condensation in a cold coop. The deck prevents that.'],
-    ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and aluminum on purlins brings it to about '+fLb(alt)+' lb, the lightest option shown. Use pressure-treated lumber only for the legs and run floor frame; it is much heavier when new.'],
-    ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
-    ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']
-  ];
-  $('#notes').innerHTML=N.map(([a,b])=>`<p><b>${a}.</b> ${b}</p>`).join('');
 }
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
 $('#views').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) goView(b.dataset.v); });
-$('#openDoors').addEventListener('change',e=>{ state.open=e.target.checked; dirty=true; });
+$('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed','false')); });
+window.addEventListener('hashchange',()=>setModel(location.hash.slice(1), false));
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
 new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
-renderLayers(); renderOptions(); applyTheme(); resize(); rebuild(); goView('iso',true);
+applyTheme(); resize();
+setModel(MODELS[location.hash.slice(1)] ? location.hash.slice(1) : 'outdoor', false);
 $('#load').remove();
 requestAnimationFrame(loop);
 })();
