@@ -265,7 +265,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <div role="tabpanel" id="pane-cut" aria-labelledby="tab-cut" hidden><div class="tablewrap"><table class="cut" id="cut"></table></div></div>
       <div role="tabpanel" id="pane-notes" aria-labelledby="tab-notes" hidden><div class="notes" id="notes"></div></div>
     </section>
-    <p class="foot">Fasteners are left out of the 3D model. The lists include the fence staples and the screws and nailer you already have; roofing screws and bolts are not priced yet. Lumber counts are 8 ft boards packed with a ⅛″ saw kerf; plywood counts are 4 × 8 sheets.</p>
+    <p class="foot">Fasteners are left out of the 3D model. The lists include the screws, fence staples and nailer you already have; roofing screws and bolts are not priced yet. Lumber counts are 8 ft boards packed with a ⅛″ saw kerf; plywood counts are 4 × 8 sheets.</p>
   </aside>
 </div>
 
@@ -759,7 +759,7 @@ const MODELS = {
       ['#8 deck screws, 3″','Rails and joists into the posts: drive through the post into the rail end, two per joint. Predrill so the 2×2 does not split.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Floors and sleeping-box plywood to the frame, 1×2 door-frame corners (predrill), and the ramp hanger cleat.'],
       ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.'],
-      ['Poultry nails','Extra hold for the hardware cloth alongside the fence staples, especially where it wraps the top and the corners.']],
+      ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every rail it crosses, closer where it wraps the top and the corners.']],
     uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
     cfgLabel:s=>'½″ plywood throughout',
     split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
@@ -807,7 +807,7 @@ const MODELS = {
       ['#8 deck screws, 3″','All 2×4 framing: studs to plates, joists, rafters and braces. Coated deck screws are fine in the pressure-treated base.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Plywood floors, wall sheathing and roof deck, every 6″ on edges and 12″ in the field.'],
       ['Brad nailer and brads','With glue, for the ramp cleats and holding plywood in place while you screw it. Not for framing.'],
-      ['Poultry nails','Extra hold for the hardware cloth alongside the fence staples, especially along the floor frame and the eave vents.']],
+      ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every stud and plate it crosses, closer along the floor frame and the eave vents.']],
     uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger'},
     cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'steel roof','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
@@ -1039,7 +1039,6 @@ function shopRows(an){
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
     rows.push(['Hardware', pk>1 ? k+', '+pk+'-pack' : k, Math.ceil(v.qty/pk), pk>1 ? v.qty+' needed: '+uses : uses, 'hw:'+k]); }
-  rows.push(['Fasteners','Fence staples, ¾″ leg, 14 ga, box of 475',1,'For the hardware cloth: one every 2–3″ along each edge and into every rail and stud it crosses','x:staples']);
   (m.have||[]).forEach(([item,d],i)=>rows.push(['Already have',item,0,d,'have:'+i]));
   return rows;
 }
