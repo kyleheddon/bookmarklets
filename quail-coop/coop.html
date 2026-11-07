@@ -347,7 +347,7 @@ function addMesh(ctx, geo, o){
   if(pk && ctx.paintAll) pk=ctx.paintAll;
   const m = new THREE.Mesh(geo, MAT[o.mat]);
   m.castShadow = o.mat!=='mesh'; m.receiveShadow = true;
-  m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom), rawMat:MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};
+  m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom), rawMat: o.mat==='door' ? ((o.bom&&o.bom.k==='ply') ? MAT.ply : MAT.wood) : MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};   /* unpainted doors show as bare wood */
   if(paintOn) m.material=m.userData.paintMat;
   if(EDGED[o.mat] && !o.noEdges){ const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), (paintOn&&pk)?PAINT_EDGE:EDGE_MAT); e.raycast = ()=>{}; e.userData.painted=!!pk; m.add(e); }
   (o.parent || ctx.root).add(m); ctx.parts.push(m); return m;
@@ -781,6 +781,7 @@ const MODELS = {
       ['Fit the sleeping box divider','Screw the divider between the front and back middle posts, with its 7″ × 8″ pop hole at the bottom, toward the back. It stops 2″ below the top rail so stale air can leave through the run side.'],
       ['Close in the walls and top','Screw ½″ plywood to the back and the sleeping-box end, from the bottom of the floor rail to the top of the top rail; the end sheet laps the back edge. Staple hardware cloth over the run end, pulled tight, every 2–3″. Then screw the plywood top down onto the top rails and cross rail.'],
       ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post. The run door\'s latch runs along its top rail, the only place on the mesh door with 4″ of wood for the bar and guide; the box door\'s latch screws to its plywood. Each catch screws to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
+      ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Paint the hinges and latches black if they are not already. Skip the floor and the hardware cloth, and let the paint cure for a few days before the birds move in.'],
       ['Set it in place','Carry the coop to the porch with the open front facing away from the wind. On cold days, hang a tarp over the front.']],
     stepRules1:[[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/\(plywood\)|^Run side hardware cloth/,5],[/^Sleeping box divider/,4],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
     cutNotes1:[[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^End wall/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the back and the box end'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
@@ -846,7 +847,8 @@ const MODELS = {
       ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. The end sheet is cut to the roof slope and laps the back sheet\'s edge. Staple hardware cloth over the run end, also cut to the slope, every 2–3″.'],
       ['Put on the roof','Screw down the 7/16″ OSB roof deck so it overhangs 3″ at the front and back, and paint the top face and all the edges. Cut one 8 ft steel panel into two pieces and screw them down side by side with neoprene-washer roofing screws, overlapping one corrugation.'],
       ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post. The run door\'s latch runs along its top rail, the only place on the mesh door with 4″ of wood for the bar and guide; the box door\'s latch screws to its plywood. Each catch screws to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
-      ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind. Paint or seal the outside, including the OSB edges.']],
+      ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.'],
+      ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind.']],
     stepRules:[[/hinge|latch|carabiner|knuckle|Carry handle/i,7],[/door/i,7],[/^Roof|roofing/i,6],[/brace/,2],[/\(plywood\)|^Run end hardware cloth/,5],[/^Sleeping box divider/,4],[/^Floor \(|ledger/,3],[/\(sides\)|joist|sloped/,1],[/./,0]],
     cutNotes:[[/^Bottom stretcher/,'Pressure-treated'],[/leg zone/,'Pressure-treated; angled ends, mark off the frame'],[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
       [/^End wall/,'Top edge cut to the roof slope; laps the back edge of the back wall'],[/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],
@@ -932,7 +934,14 @@ function rebuild(){
   applyLayers(); setDoors(); renderPanel(); dirty=true;
 }
 let buildStep=-1;
-function applyLayers(){ if(!current) return; const ls=M().layerState; current.parts.forEach(m=>{ m.visible=!!ls[m.userData.layer] && (buildStep<0 || m.userData.step<=buildStep); }); if(selected && !selected.visible) clearPick(); dirty=true; }
+function applyLayers(){ if(!current) return; const ls=M().layerState;
+  /* paint shows only from the Paint step on (or in the finished view); earlier steps show bare wood, so pressure-treated parts stand out */
+  const pi=M().steps.findIndex(st=>st[0]==='Paint'), painted = buildStep<0 || pi<0 || buildStep>=pi;
+  if(selected) clearPick();
+  current.parts.forEach(m=>{ m.visible=!!ls[m.userData.layer] && (buildStep<0 || m.userData.step<=buildStep);
+    m.material = painted ? m.userData.paintMat : m.userData.rawMat;
+    m.children.forEach(c=>{ if(c.isLineSegments) c.material=(painted&&c.userData.painted)?PAINT_EDGE:EDGE_MAT; }); });
+  dirty=true; }
 function setDoors(){ if(!current) return; current.pivots.forEach(d=>{ d.p.rotation[d.axis]=d.open*doorT; }); dirty=true; }
 
 /* camera views */
