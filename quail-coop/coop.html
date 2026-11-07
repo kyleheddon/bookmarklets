@@ -390,13 +390,13 @@ function meshPanel(ctx,o){
   else g.translate(uc, vc, o.at);
   return addMesh(ctx,g,Object.assign({mat:'mesh', layer:'mesh', bom:{k:'mesh',w,h}}, o));
 }
-function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer){
+function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer, pt){
   const [u0,u1,v0,v1]=r; const A = up?[u0,v0]:[u0,v1], Bp = up?[u1,v1]:[u1,v0];
   const dx=Bp[0]-A[0], dy=Bp[1]-A[1], l=Math.hypot(dx,dy), d=[dx/l,dy/l], n=[-d[1],d[0]], h=D/2;
   const band=[[A[0]-d[0]*D-n[0]*h, A[1]-d[1]*D-n[1]*h],[Bp[0]+d[0]*D-n[0]*h, Bp[1]+d[1]*D-n[1]*h],[Bp[0]+d[0]*D+n[0]*h, Bp[1]+d[1]*D+n[1]*h],[A[0]-d[0]*D+n[0]*h, A[1]-d[1]*D+n[1]*h]];
   const poly = clipRect(band,u0,u1,v0,v1);
   const pr = poly.map(p=>p[0]*d[0]+p[1]*d[1]); const len = Math.max(...pr)-Math.min(...pr);
-  prism(ctx,{axis, poly, range, mat:mat||'wood', layer:layer||'framing', name, parent, bom:{k:'lum', size, len}});
+  prism(ctx,{axis, poly, range, mat:mat||'wood', layer:layer||'framing', name, parent, bom:Object.assign({k:'lum', size, len}, pt?{pt:true}:{})});
 }
 function hw(ctx, item, wt, use){ ctx.bom.push({k:'hw', item, wt, use, mod:ctx.mod}); }
 function hwBox(ctx, parent, x,y,z, mat, name){ box(ctx,{x:rng(...x),y,z,mat:mat||'steel',layer:'hardware',name:name||'Hardware',parent,desc:'Hardware',noEdges:true}); }
@@ -487,8 +487,9 @@ function buildShed(cfg, ctx){
 
   /* Rails */
   for(const [y0,nm] of [[yS,'Bottom stretcher'],[f1,'Floor rail']]){
-    for(const zs of [[0,T],[L-T,L]]) B({...fr,name:nm+' (front and back)',x:[T,W-T],y:[y0,y0+T],z:zs,bom:lum(W-2*T)});
-    for(const xs of [[0,T],[W-T,W]]) B({...fr,name:nm+' (sides)',x:xs,y:[y0,y0+T],z:[T,L-T],bom:lum(L-2*T)});
+    const L1 = y0===yS ? ptl : lum;   /* the bottom stretchers sit 3" off the ground: pressure-treated */
+    for(const zs of [[0,T],[L-T,L]]) B({...fr,name:nm+' (front and back)',x:[T,W-T],y:[y0,y0+T],z:zs,bom:L1(W-2*T)});
+    for(const xs of [[0,T],[W-T,W]]) B({...fr,name:nm+' (sides)',x:xs,y:[y0,y0+T],z:[T,L-T],bom:L1(L-2*T)});
   }
   B({...fr,name:'Floor joist',x:[m0,m1],y:[f1-tf,f1+T-tf],z:[T,L-T],bom:lum(L-2*T)});
   B({...fr,name:'Top rail, front (high side)',x:[T,W-T],y:[yTF-T,yTF],z:[0,T],bom:lum(W-2*T)});
@@ -498,10 +499,11 @@ function buildShed(cfg, ctx){
   P({...fr,name:'Top middle rail (sloped)',axis:'x',poly:sl(T,L-T),range:[m0,m1],bom:lum((L-2*T)/cosA)});
 
   /* Braces: leg zone, plus the mesh run end */
-  brace(ctx,'z',[T,m0,yS+T,f1],true,[L-T,L],'Back diagonal brace',T,F);
-  brace(ctx,'z',[m1,W-T,yS+T,f1],false,[L-T,L],'Back diagonal brace',T,F);
-  brace(ctx,'x',[T,L-T,yS+T,f1],true,[0,T],'Side diagonal brace',T,F);
-  brace(ctx,'x',[T,L-T,yS+T,f1],false,[W-T,W],'Side diagonal brace',T,F);
+  /* leg-zone braces reach down to the stretchers near the ground: pressure-treated */
+  brace(ctx,'z',[T,m0,yS+T,f1],true,[L-T,L],'Back diagonal brace (leg zone)',T,F,null,null,null,true);
+  brace(ctx,'z',[m1,W-T,yS+T,f1],false,[L-T,L],'Back diagonal brace (leg zone)',T,F,null,null,null,true);
+  brace(ctx,'x',[T,L-T,yS+T,f1],true,[0,T],'Side diagonal brace (leg zone)',T,F,null,null,null,true);
+  brace(ctx,'x',[T,L-T,yS+T,f1],false,[W-T,W],'Side diagonal brace (leg zone)',T,F,null,null,null,true);
   brace(ctx,'x',[T,L-T,f1+T,f2],true,[0,T],'Side diagonal brace, run end',T,F);
 
   /* OSB floor inset on 1x2 ledgers */
@@ -838,9 +840,9 @@ const MODELS = {
       ['Clear height',fIn(g.clearFront)+' front, '+fIn(g.clearBack)+' back'],['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+', about '+fIn(g.box[2])+' tall'],['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft ('+((g.runArea+g.boxArea)/4).toFixed(1)+' per bird)']],
     steps:[
-      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, 45″ rails with their bottoms 3″ and 18″ above the ground, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, as the middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Back: two 45½″ pressure-treated corner posts, the same 3″ and 18″ rails, a top rail flush with the post tops, and a middle post in two pieces, 13½″ and 24½″. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
-      ['Join the frames','Stand the frames up and join them with 21″ side rails at 3″ and 18″. Screw the 21″ floor joist between the front and back floor rails with its top 7/16″ below the rail tops. Then fit the three sloped top rails, one on each side and one in the middle, from the front top rail down to the back top rail; cut both ends at 15° so they sit flat against the top rails.'],
-      ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, below the floor, and one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: mark each off the frame. The plywood back and box end lock the rest square.'],
+      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a 45″ pressure-treated bottom stretcher 3″ above the ground, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, as the middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Back: two 45½″ pressure-treated corner posts, the same pressure-treated stretcher and floor rail, a top rail flush with the post tops, and a middle post in two pieces, 13½″ and 24½″. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
+      ['Join the frames','Stand the frames up and join them with 21″ side rails: pressure-treated at 3″, untreated at 18″. Screw the 21″ floor joist between the front and back floor rails with its top 7/16″ below the rail tops. Then fit the three sloped top rails, one on each side and one in the middle, from the front top rail down to the back top rail; cut both ends at 15° so they sit flat against the top rails.'],
+      ['Add the diagonal braces','Fit pressure-treated braces in the back and both sides of the leg zone, below the floor, and an untreated one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: mark each off the frame. The plywood back and box end lock the rest square.'],
       ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, 7/16″ below the rail tops and level with the joist; the front and back ledgers go in two pieces, one each side of the joist. Drop in the 45″ × 21″ OSB floor and glue and screw it down. It finishes flush with the rails.'],
       ['Fit the sleeping box divider','Screw the divider between the front and back middle posts with its 7″ × 8″ pop hole at the bottom, toward the back. Its top follows the roof slope and stops 2″ below the middle top rail so stale air can leave through the run side.'],
       ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. The end sheet is cut to the roof slope and laps the back sheet\'s edge. Staple hardware cloth over the run end, also cut to the slope, every 2–3″.'],
@@ -848,7 +850,7 @@ const MODELS = {
       ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post. The run door\'s latch runs along its top rail, the only place on the mesh door with 4″ of wood for the bar and guide; the box door\'s latch screws to its plywood. Each catch screws to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
       ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind. Paint or seal the outside, including the OSB edges.']],
     stepRules:[[/hinge|latch|carabiner|knuckle|Carry handle/i,7],[/door/i,7],[/^Roof|roofing/i,6],[/brace/,2],[/\(plywood\)|^Run end hardware cloth/,5],[/^Sleeping box divider/,4],[/^Floor \(|ledger/,3],[/\(sides\)|joist|sloped/,1],[/./,0]],
-    cutNotes:[[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
+    cutNotes:[[/^Bottom stretcher/,'Pressure-treated'],[/leg zone/,'Pressure-treated; angled ends, mark off the frame'],[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
       [/^End wall/,'Top edge cut to the roof slope; laps the back edge of the back wall'],[/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops']],
     have:[
@@ -860,7 +862,7 @@ const MODELS = {
       ['How it goes together','It is the porch coop\'s one-level design with a roof. The front frame is 6″ taller than the back, and three sloped top rails carry a 7/16″ OSB roof deck that sheds rain to the back. The pressure-treated corner posts double as legs.'],
       ['Roof','Corrugated steel over the OSB deck, at about '+g.pitch12.toFixed(1)+' in 12 ('+Math.round(g.pitch)+'°), which suits corrugated steel. There is no felt or foam closure: the solid OSB deck keeps rodents and drips out, and the coop is small enough that any condensation under the steel just dries. Paint the deck\'s top face and edges so dampness under the steel does not swell it.'],
       ['OSB','OSB swells if it stays wet. The roof deck is covered and the floor is under the roof, but paint or seal every cut edge, and use a removable liner on the floor so wet bedding does not sit on it.'],
-      ['Legs','Only the four corner posts are pressure-treated, because they reach the ground. Set them on pavers or patio blocks so they stay dry.'],
+      ['Legs','The four corner posts (the legs), the bottom stretchers 3″ off the ground and the leg-zone braces are pressure-treated, since they get splashback and stay damp. Everything above the floor is untreated. Set the legs on pavers or patio blocks so they stay dry.'],
       ['Wind and cold','Plywood closes the back and the sleeping-box end, the roof covers the top, and the sleeping box gives the birds a draft-free corner. The run end and run door are mesh. Set the coop with the run end away from the prevailing wind, and on cold days hang a tarp over the run end and front.'],
       ['Racking','The plywood back and box end lock the cage square. The leg zone gets diagonal braces on the back and both sides, and the mesh run end gets one more above the floor.'],
       ['Predators','Raccoons, cats, rats, opossums and snakes. Plywood and the roof close the back, the box end and the top; ½″ hardware cloth covers the run end and the run door. Both doors sit flush with ⅛″ gaps and close with a gate latch and a locking carabiner.'],
@@ -1035,7 +1037,7 @@ const PRICE={
   'lum:2x3':[3.48,'https://www.lowes.com/pd/2-in-x-3-in-x-96-in-Euro-Spruce-Kiln-dried-Stud/5014776465','store',1,'Euro Spruce kiln-dried 96″ stud.'],
   'lum:2x4pt':[4.48,'https://www.lowes.com/pd/severe-weather-common-2-in-x-4-in-x-8-ft-actual-1-5-in-x-3-5-in-x-8-ft-2-treated-lumber/4564778','store',1,'Severe Weather #2 SYP, above-ground treatment: set the legs on pavers, not soil.'],
   'lum:2x3pt':[4.48,'https://www.lowes.com/pd/severe-weather-common-2-in-x-4-in-x-8-ft-actual-1-5-in-x-3-5-in-x-8-ft-2-treated-lumber/4564778','store',1,'Pressure-treated 2×3 is rarely stocked; buy this pressure-treated 2×4 and rip it to 2½″. Above-ground treatment: set the legs on pavers.'],
-  'lum:2x2pt':[3.68,LS('2 in x 2 in x 8 ft pressure treated'),'online',1,'Pressure-treated, for the corner posts, which double as legs. Price from your earlier Lowe\'s list.'],
+  'lum:2x2pt':[3.68,LS('2 in x 2 in x 8 ft pressure treated'),'online',1,'Pressure-treated, for the corner posts (the legs), bottom stretchers and leg-zone braces. Price from your earlier Lowe\'s list.'],
   'lum:2x2':[2.98,'https://www.lowes.com/pd/2-in-x-2-in-x-8-ft-Furring-Strip/1000483975','store',1,'Untreated furring strip.'],
   'lum:1x4':[3.48,'https://www.lowes.com/pd/1-in-x-4-in-x-8-ft-Furring-Strip/1000427895','store',1,'Spruce-pine-fir furring strip.'],
   'lum:1x2':[1.58,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Furring-Strip/1000427899','store',1,'Untreated furring strip.'],
@@ -1069,7 +1071,7 @@ const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
   for(const k of an.lumKeys){ const g=an.lum[k];
-    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?'Corner posts, which double as legs':(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
+    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?'Corner posts (the legs), bottom stretchers and leg-zone braces':(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
   for(const k of an.plyKeys){ const p=an.ply[k]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
     rows.push(['Plywood & OSB', p.osb ? '7/16″ OSB sheathing, 4 × 8 ft' : fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
   rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
