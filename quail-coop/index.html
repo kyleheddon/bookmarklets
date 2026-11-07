@@ -93,6 +93,14 @@ button{font:inherit;color:inherit}
 .eyebrow{font:600 11.5px/1 var(--font-body);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 h1{font:700 40px/0.95 var(--font-display);letter-spacing:.005em;margin:6px 0 8px;text-wrap:balance;text-transform:uppercase}
 .lede{margin:0;color:var(--muted);max-width:60ch}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 14px}
+.kpi{display:flex;flex-direction:column;gap:4px;text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:12px 14px;cursor:pointer;min-width:0}
+.kpi:hover{border-color:var(--accent)}
+.kpi:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.kpi .k{font:600 11.5px/1 var(--font-body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font:700 34px/1 var(--font-display);font-variant-numeric:tabular-nums;color:var(--fg)}
+.kpi .v small{font-size:18px;font-weight:600;margin-left:2px}
+.kpi .s{font-size:12px;color:var(--muted);line-height:1.3}
 h2{font:700 20px/1.1 var(--font-display);text-transform:uppercase;letter-spacing:.02em;margin:0 0 10px}
 .specs{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
 .specs div{background:var(--panel);padding:9px 11px;min-width:0}
@@ -221,6 +229,10 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
     <header>
       <div class="eyebrow" id="eyebrow"></div>
       <h1 id="title"></h1>
+      <div class="kpis">
+        <button type="button" class="kpi" id="kpiCost"><span class="k">Materials cost</span><span class="v" id="kCost">—</span><span class="s" id="kCostSub">before tax</span></button>
+        <button type="button" class="kpi" id="kpiWeight"><span class="k">Weight, empty</span><span class="v" id="kWeight">—</span><span class="s" id="kWeightSub"></span></button>
+      </div>
       <p class="lede" id="lede"></p>
     </header>
 
@@ -234,7 +246,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <div id="opts" class="opt"></div>
     </section>
 
-    <section class="weight" aria-label="Weight estimate">
+    <section class="weight" id="weightCard" aria-label="Weight estimate">
       <div>
         <div class="eyebrow">Estimated weight, empty</div>
         <div class="wbig"><strong id="wTotal">—</strong><div class="pp">≈ <b id="wPer">—</b> each for two carriers</div></div>
@@ -934,6 +946,8 @@ function pick(m){ clearPick(); selected=m; m.userData.orig=m.material; const hm=
   $('#pickName').textContent=m.userData.name; $('#pickInfo').textContent=m.userData.info||''; $('#pick').hidden=false; dirty=true; }
 function clearPick(){ if(selected){ selected.material.dispose(); selected.material=selected.userData.orig; selected=null; dirty=true; } $('#pick').hidden=true; }
 $('#pickClose').addEventListener('click',clearPick);
+$('#kpiCost').addEventListener('click',()=>{ $('#tab-shop').click(); $('#tab-shop').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'}); });
+$('#kpiWeight').addEventListener('click',()=>{ $('#weightCard').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'}); });
 
 /* ---------- UI ---------- */
 function renderModelTabs(){
@@ -971,6 +985,7 @@ function renderPanel(){
   const cols={Lumber:'--bar-1',Plywood:'--bar-2','Hardware cloth':'--bar-3',Roofing:'--bar-4','Hardware & fasteners':'--bar-5'};
   const ws=Object.entries(an.w).filter(([,v])=>v>0.05);
   $('#wTotal').innerHTML=fLb(an.total)+'<small>lb</small>'; $('#wPer').textContent=fLb(an.total/2)+' lb';
+  $('#kWeight').innerHTML=fLb(an.total)+'<small>lb</small>'; $('#kWeightSub').textContent='≈ '+fLb(an.total/2)+' lb each for two people';
   $('#wStack').innerHTML=ws.map(([k,v])=>`<i style="flex:${v};background:var(${cols[k]})" title="${k}"></i>`).join('');
   $('#wLegend').innerHTML=ws.map(([k,v])=>`<li><i style="background:var(${cols[k]})"></i>${k}<span>${fLb(v)} lb</span></li>`).join('');
   $('#wSplit').innerHTML=m.split(an);
@@ -1048,6 +1063,7 @@ function renderCostTotal(rows){
   const fresh=rows.filter(r=>!(r[4] in myPrices));
   const mine=rows.length-fresh.length, sto=fresh.filter(r=>srcOf(r[4])==='store').length, amz=fresh.filter(r=>srcOf(r[4])==='amazon').length, onl=fresh.filter(r=>isOnline(r[4])).length, est=fresh.length-sto-amz-onl;
   $('#costTotal').textContent=money(costTotal(rows));
+  $('#kCost').textContent=money(costTotal(rows)); $('#kCostSub').textContent= (est||onl) ? 'before tax · '+(est+onl)+' price'+(est+onl>1?'s':'')+' not confirmed' : 'before tax · all prices confirmed';
   const parts=[]; if(sto) parts.push(sto+' confirmed at Edgewood'); if(amz) parts.push(amz+' from Amazon'); if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' online, unconfirmed'); if(est) parts.push(est+' estimated');
   $('#costNote').textContent='Total before sales tax · '+parts.join(', ')+'.';
 }
