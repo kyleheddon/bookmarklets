@@ -414,7 +414,7 @@ const FAST={
   scr114:['1¼″ deck screw','1¼″ deck screws','#8 × 1¼″ deck screw'],
   sup:['screw supplied with the hinge or latch','screws supplied with the hinges and latches','Supplied with the hinge or latch'],
   roof:['2″ roofing screw','2″ roofing screws with neoprene washers','2″ roofing screw with neoprene washer, in a valley of the wave'],
-  staple:['fence staple','fence staples',''], brad:['brad','brads',''], glue:['wood glue','exterior wood glue','']};
+  staple:['fence staple','fence staples','']};
 const FAST_DIRS={x:[1,0,0],'-x':[-1,0,0],y:[0,1,0],'-y':[0,-1,0],z:[0,0,1],'-z':[0,0,-1]};
 function fast(ctx,item,p,d,parent){
   ctx.bom.push({k:'fast',item,n:1,step:ctx.st,mod:ctx.mod});
@@ -532,7 +532,6 @@ function buildCoop(cfg, ctx){
   B({...fr,name:'Back middle post, upper (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,yTB-T],z:[L-T,L],bom:lum(yTB-T-f1-T,'2x4')});
   for(const x of [pm0+0.9,pm1-0.9]) sc('scr3',[x,yTB,L-0.75],'y');
   for(const x of [pm0+0.5,pm1-0.5]) sc('scr3',[x,f1,L-0.75],'-y');
-  fastN(ctx,'glue');
 
   /* ---- 2. join the frames ---- */
   ctx.st='join';
@@ -546,7 +545,6 @@ function buildCoop(cfg, ctx){
   sc('scr3',[cxm,yTF-0.75,0],'-z'); sc('scr3',[cxm,yTB-0.75,L],'z');
   B({...fr,name:'Floor joist',x:[m0,m1],y:[f1-tf,f1+T-tf],z:[T,L-T],bom:lum(L-2*T)});
   sc('scr3',[cxm+0.4,f1+0.5,0],'-z'); sc('scr3',[cxm+0.4,f1+0.5,L],'z');
-  fastN(ctx,'glue');
 
   /* ---- 3. diagonal braces, toe-screwed at each end ---- */
   ctx.st='braces';
@@ -564,7 +562,6 @@ function buildCoop(cfg, ctx){
   braceAt('x',[T,L-T,yS+T,f1],true,[0,T],0,'-x','Side diagonal brace (leg zone)',bracePT);
   braceAt('x',[T,L-T,yS+T,f1],false,[W-T,W],W,'x','Side diagonal brace (leg zone)',bracePT);
   braceAt('x',[T,L-T,f1+T,f2],true,[0,T],0,'-x','Side diagonal brace, run end',false);
-  fastN(ctx,'glue');
 
   /* ---- 4. floor ledgers ---- */
   ctx.st='ledgers';
@@ -575,14 +572,12 @@ function buildCoop(cfg, ctx){
   for(const [xs,face,dir] of [[[T,T+lg],T+lg,'x'],[[W-T-lg,W-T],W-T-lg,'-x']]){
     B({...fr,name:'Floor ledger (1×2)',x:xs,y:[ft0-lh,ft0],z:[T+lg,L-T-lg],bom:lum(L-2*T-2*lg,'1x2')});
     for(const z of along(T+lg,L-T-lg,6,1.5)) sc('scr158',[face,ft0-0.75,z],dir); }
-  fastN(ctx,'glue');
 
   /* ---- 5. floor ---- */
   ctx.st='floor';
   P({mat:out?'osb':'ply',layer:'floors',name:out?'Floor (OSB)':'Floor',axis:'y',poly:[[T,T],[W-T,T],[W-T,L-T],[T,L-T]],range:[ft0,yLF],bom:Object.assign({k:'ply',th:tf,w:W-2*T,h:L-2*T},out?{osb:true}:{})});
   for(const x of along(T,W-T,6,1.5)){ sc('scr158',[x,yLF,T+0.4],'y'); sc('scr158',[x,yLF,L-T-0.4],'y'); }
   for(const z of along(T+lg,L-T-lg,6,1.5)){ sc('scr158',[T+0.4,yLF,z],'y'); sc('scr158',[W-T-0.4,yLF,z],'y'); sc('scr158',[cxm+0.4,yLF,z],'y'); }
-  fastN(ctx,'glue');
 
   /* ---- 6. divider cleats: 1x2 laid flat on the run side of the centre line ---- */
   ctx.st='cleats';
@@ -685,7 +680,6 @@ function buildCoop(cfg, ctx){
     /* 1-1/4" screws through the plywood into the frame */
     for(const y of along(0,dh,6,2)) sc('scr114',[-0.75,y,0],'-z',BR.pivot);
     for(const y of [0.75,dh-0.75]) for(const x of along(-bw,-T,6,1.5)) sc('scr114',[x,y,0],'-z',BR.pivot); }
-  fastN(ctx,'glue');
 
   /* ---- 14. hang the doors ---- */
   ctx.st='hang';
@@ -756,7 +750,6 @@ const MODELS = {
     have:[
       ['#8 deck screws, 3″','Frame joints, middle posts, floor joist and cross rail. Predrill the 2×2.','scr3'],
       ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls and top, door stops.','scr158'],
-      ['Brad nailer and brads','Optional: tack pieces in place while the glue sets, before screwing.','brad'],
       ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple']],
     uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Posts, rails, floor joist, braces, door frames','1x2':'Floor ledgers, divider cleats, door stops'},
     cfgLabel:s=>'one level, ½″ plywood',
@@ -766,23 +759,23 @@ const MODELS = {
       ['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],
       ['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft, half run and half sleeping box'],['Per bird',((g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
     steps:[
-      ['Build the front and back frames','Lay each frame flat. Front: two 45½″ corner posts with 45″ rails between them, their bottoms 3″, 18″ and 44″ above the ground, and a 24½″ 2×4, laid flat, between the floor rail and the top rail. Back: the same posts and rails, a 13½″ 2×2 middle post below the floor rail, and a 24½″ 2×4, laid flat, above it. Predrill and glue every joint. Each rail gets one 3″ screw through the post into its end, about 1″ up from the rail bottom. Each middle post gets 3″ screws through the rails into its ends; screw the lower back post through the floor rail before fitting the 2×4 above it. Check the diagonals match.','frames'],
-      ['Join the frames','Stand the frames up and join them with 21″ side rails at all three heights: one 3″ screw through each corner post into the rail end, about ½″ up from the rail bottom so it misses the front rail\'s screw. Fit the 21″ floor joist between the floor rails with its top ½″ below theirs, and the 21″ top cross rail between the top rails, each with one 3″ screw through the rail into each end. Glue the joints.','join'],
-      ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, and one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Toe-screw each end: start one 2½″ screw on the outside face about 1¼″ from the end and drive it at about 45° toward the end, so it passes out through the end cut into the post or rail. Predrill at that angle and glue the ends; a 3″ screw would come out the far side.','braces'],
-      ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops ½″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Glue, and drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
-      ['Lay the floor','Cut the floor to 45″ × 21″ and drop it onto the ledgers and joist. Glue, and drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist. It finishes flush with the rails.','floor'],
+      ['Build the front and back frames','Lay each frame flat. Front: two 45½″ corner posts with 45″ rails between them, their bottoms 3″, 18″ and 44″ above the ground, and a 24½″ 2×4, laid flat, between the floor rail and the top rail. Back: the same posts and rails, a 13½″ 2×2 middle post below the floor rail, and a 24½″ 2×4, laid flat, above it. Predrill every joint. Each rail gets one 3″ screw through the post into its end, about 1″ up from the rail bottom. Each middle post gets 3″ screws through the rails into its ends; screw the lower back post through the floor rail before fitting the 2×4 above it. Check the diagonals match.','frames'],
+      ['Join the frames','Stand the frames up and join them with 21″ side rails at all three heights: one 3″ screw through each corner post into the rail end, about ½″ up from the rail bottom so it misses the front rail\'s screw. Fit the 21″ floor joist between the floor rails with its top ½″ below theirs, and the 21″ top cross rail between the top rails, each with one 3″ screw through the rail into each end.','join'],
+      ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, and one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Toe-screw each end: start one 2½″ screw on the outside face about 1¼″ from the end and drive it at about 45° toward the end, so it passes out through the end cut into the post or rail. Predrill at that angle; a 3″ screw would come out the far side.','braces'],
+      ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops ½″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
+      ['Lay the floor','Cut the floor to 45″ × 21″ and drop it onto the ledgers and joist. Drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist. It finishes flush with the rails.','floor'],
       ['Fit the divider cleats','On the run side of the centre line, screw three 1×2 cleats, laid flat, with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Drive 1⅝″ screws about every 6″ through the post cleats into the posts, and 2½″ screws down through the floor cleat and floor into the joist.','cleats'],
       ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
       ['Close in the walls and top','Screw ½″ plywood to the back and to the sleeping-box end (the end sheet laps the back sheet\'s edge), then screw the top down onto the top rails and cross rail. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
       ['Staple on the hardware cloth','Cut hardware cloth for the run end and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
       ['Fit the door stops','Fit the stops the doors close against. Run door: a 1×2 laid flat on the back face of the top rail, hanging ¾″ below it across the opening, with 1⅝″ screws into the rail every 8″; and a 1×2 laid flat on the floor across the bottom of the opening, tight to the back of the floor rail, with 2½″ screws down through it and the floor into the ledger. The floor strip also keeps bedding in. Box door: a 1×2 down the box side of the front 2×4, set back ½″ (the plywood\'s thickness), between the box door\'s top and bottom rails, with 1⅝″ screws every 8″.','stops'],
-      ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 2×2 frame, predrilled and joined with one 2½″ screw through each stile into each rail end, plus glue; a 2×2 diagonal brace rising from the bottom hinge corner, toe-screwed at each end with a 2½″ screw; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 2×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), glued and fastened with 1¼″ screws through the plywood into the frame about every 6″.','doors'],
+      ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 2×2 frame, predrilled and joined with one 2½″ screw through each stile into each rail end; a 2×2 diagonal brace rising from the bottom hinge corner, toe-screwed at each end with a 2½″ screw; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 2×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), fastened with 1¼″ screws through the plywood into the frame about every 6″.','doors'],
       ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge; door-side leaves take #8 × 1¼″ deck screws, which bite ¾″ into the 2×2 door frames without coming through. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with 1¼″ screws on the door side and the supplied screws for each catch on the 2×4.','hang'],
       ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Skip the floor and the hardware cloth, and let the paint cure for a few days before the birds move in.','paint'],
       ['Set it in place','Carry the coop to the porch with the run end away from the wind. On cold days, hang a tarp over the front.','place']],
     cutNotes:[[/^Divider cleat/,'Laid flat; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
-      [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, glued and screwed through the plywood'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top ½″ below the rail tops']],
+      [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, screwed through the plywood'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top ½″ below the rail tops']],
     notes:(g,an)=>[
       ['How it goes together','Build two ladder frames, front and back, then join them with side rails at three levels: a bottom stretcher at 3″, the floor at 18″ and the top frame at 44″. The posts double as legs. Plywood closes the back, the box end and the top; the run end is hardware cloth. The build steps list every screw.'],
       ['Weight','About '+fLb(an.total)+' lb. Two people can carry it by lifting under the floor rails.'],
@@ -803,7 +796,6 @@ const MODELS = {
     have:[
       ['#8 deck screws, 3″','Frame joints, middle posts, floor joist and top rails. Predrill the 2×2. Coated deck screws are fine in the pressure-treated posts.','scr3'],
       ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls, roof deck, door stops.','scr158'],
-      ['Brad nailer and brads','Optional: tack pieces in place while the glue sets, before screwing.','brad'],
       ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple'],
       ['Roofing screws with neoprene washers, 2″','Through the valleys of the steel into the top rails. 1½″ or longer reaches through the steel and the 7/16″ OSB well into the rails.','roof']],
     uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Rails, lower back middle post, floor joist, braces, door frames','1x2':'Floor ledgers, divider cleats, door stops'},
@@ -814,11 +806,11 @@ const MODELS = {
       ['Clear height',fIn(g.clearFront)+' front, '+fIn(g.clearBack)+' back'],['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+', about '+fIn(g.box[2])+' tall'],['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft ('+((g.runArea+g.boxArea)/4).toFixed(1)+' per bird)']],
     steps:[
-      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a pressure-treated 45″ bottom stretcher 3″ up, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, between the floor rail and the top rail. Back: two 45½″ pressure-treated corner posts, the same stretcher and floor rail, a top rail flush with the post tops, a 13½″ pressure-treated 2×2 middle post below the floor rail and a 24½″ 2×4, laid flat, above it. Predrill and glue every joint. Each rail gets one 3″ screw through the post into its end, about 1″ up from the rail bottom. Each middle post gets 3″ screws through the rails into its ends; screw the lower back post through the floor rail before fitting the 2×4 above it. Check the diagonals match.','frames'],
-      ['Join the frames','Stand the frames up and join them with 21″ side rails at 3″ (pressure-treated) and 18″: one 3″ screw through each corner post into the rail end, about ½″ up from the rail bottom so it misses the front rail\'s screw. Fit the three sloped top rails, both ends cut at 15°, between the front and back top rails: through the corner posts into the side ones, and through the top rails into the middle one. Fit the 21″ floor joist between the floor rails, its top 7/16″ below theirs, with one 3″ screw through each rail into its end. Glue the joints.','join'],
-      ['Add the diagonal braces','Fit pressure-treated braces in the back and both sides of the leg zone, and an untreated one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Toe-screw each end: start one 2½″ screw on the outside face about 1¼″ from the end and drive it at about 45° toward the end, so it passes out through the end cut into the post or rail. Predrill at that angle and glue the ends; a 3″ screw would come out the far side.','braces'],
-      ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops 7/16″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Glue, and drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
-      ['Lay the floor','Cut the OSB floor to 45″ × 21″, seal its edges, and drop it onto the ledgers and joist. Glue, and drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist.','floor'],
+      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a pressure-treated 45″ bottom stretcher 3″ up, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, between the floor rail and the top rail. Back: two 45½″ pressure-treated corner posts, the same stretcher and floor rail, a top rail flush with the post tops, a 13½″ pressure-treated 2×2 middle post below the floor rail and a 24½″ 2×4, laid flat, above it. Predrill every joint. Each rail gets one 3″ screw through the post into its end, about 1″ up from the rail bottom. Each middle post gets 3″ screws through the rails into its ends; screw the lower back post through the floor rail before fitting the 2×4 above it. Check the diagonals match.','frames'],
+      ['Join the frames','Stand the frames up and join them with 21″ side rails at 3″ (pressure-treated) and 18″: one 3″ screw through each corner post into the rail end, about ½″ up from the rail bottom so it misses the front rail\'s screw. Fit the three sloped top rails, both ends cut at 15°, between the front and back top rails: through the corner posts into the side ones, and through the top rails into the middle one. Fit the 21″ floor joist between the floor rails, its top 7/16″ below theirs, with one 3″ screw through each rail into its end.','join'],
+      ['Add the diagonal braces','Fit pressure-treated braces in the back and both sides of the leg zone, and an untreated one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Toe-screw each end: start one 2½″ screw on the outside face about 1¼″ from the end and drive it at about 45° toward the end, so it passes out through the end cut into the post or rail. Predrill at that angle; a 3″ screw would come out the far side.','braces'],
+      ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops 7/16″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
+      ['Lay the floor','Cut the OSB floor to 45″ × 21″, seal its edges, and drop it onto the ledgers and joist. Drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist.','floor'],
       ['Fit the divider cleats','On the run side of the centre line, screw three 1×2 cleats, laid flat, with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Drive 1⅝″ screws about every 6″ through the post cleats into the posts, and 2½″ screws down through the floor cleat and floor into the joist.','cleats'],
       ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, its top following the roof slope, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
       ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. Both are cut to the roof slope at the top, and the end sheet laps the back sheet\'s edge. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
@@ -826,13 +818,13 @@ const MODELS = {
       ['Put on the steel','Cut one 8 ft steel panel into two pieces and lay them side by side, overlapping one corrugation. Drive the roofing screws through the low points (valleys) of the waves, where the steel sits flat on the deck: every other valley over the front and back top rails, plus one into each sloped rail mid-roof. Snug the neoprene washers until they just bulge, without crushing them.','roofing'],
       ['Staple on the hardware cloth','Cut hardware cloth for the run end, top edge cut to the roof slope, and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
       ['Fit the door stops','Fit the stops the doors close against. Run door: a 1×2 laid flat on the back face of the top rail, hanging ¾″ below it across the opening, with 1⅝″ screws into the rail every 8″; and a 1×2 laid flat on the floor across the bottom of the opening, tight to the back of the floor rail, with 2½″ screws down through it and the floor into the ledger. The floor strip also keeps bedding in. Box door: a 1×2 down the box side of the front 2×4, set back ½″ (the plywood\'s thickness), between the box door\'s top and bottom rails, with 1⅝″ screws every 8″.','stops'],
-      ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 2×2 frame, predrilled and joined with one 2½″ screw through each stile into each rail end, plus glue; a 2×2 diagonal brace rising from the bottom hinge corner, toe-screwed at each end with a 2½″ screw; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 2×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), glued and fastened with 1¼″ screws through the plywood into the frame about every 6″.','doors'],
+      ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 2×2 frame, predrilled and joined with one 2½″ screw through each stile into each rail end; a 2×2 diagonal brace rising from the bottom hinge corner, toe-screwed at each end with a 2½″ screw; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 2×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), fastened with 1¼″ screws through the plywood into the frame about every 6″.','doors'],
       ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge; door-side leaves take #8 × 1¼″ deck screws, which bite ¾″ into the 2×2 door frames without coming through. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with 1¼″ screws on the door side and the supplied screws for each catch on the 2×4.','hang'],
       ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
       ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind.','place']],
     cutNotes:[[/^Divider cleat/,'Laid flat; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
-      [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, glued and screwed through the plywood'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops'],
+      [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, screwed through the plywood'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops'],
       [/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],
       [/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],[/^Bottom stretcher|^Back middle post, lower/,'Pressure-treated']],
     notes:(g,an)=>[
@@ -1048,7 +1040,6 @@ const PRICE={
   'x:scr25':[8.98,'https://www.lowes.com/pd/Hillman-10-x-2-1-2-in-Ceramic-Deck-Screws-40-Count/999994998','store',1,''],
   'x:scr114':[8.98,'https://www.lowes.com/pd/Hillman-8-x-1-1-4-in-Ceramic-Deck-Screws-75-Count/999994986','store',1,''],
   'x:roof':[9.98,LS('#10 x 2 in roofing screws neoprene washer'),'',1,''],
-  'x:glue':[5.98,LS('Titebond III 8 oz wood glue'),'',1,''],
   'hw:Pull handle, 6½″ black utility (carry handle)':[4.98,'https://www.lowes.com/pd/ReliaBilt-ReliaBilt-6-1-2-in-Black-Utility-Pull-Handle-1-Pack/5002385973','store',1,'RELIABILT screen/storm door pull. Its included screws are too short for carrying weight: bolt it through into the floor framing with ¼″ bolts instead.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
@@ -1071,7 +1062,7 @@ function shopRows(an){
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
     rows.push(['Hardware', pk>1 ? k+', '+pk+'-pack' : k, Math.ceil(v.qty/pk), pk>1 ? v.qty+' needed: '+uses : uses, 'hw:'+k]); }
-  for(const [id,item,d] of [['scr25','Hillman #10 × 2½″ deck screws, 40-count','Brace ends (toe-screwed), run-door corners and brace, the floor cleat and the run-door threshold.'],['scr114','Hillman #8 × 1¼″ deck screws, 75-count','Hinges and latches (door side), and the box door plywood into its frame. They bite ¾″ into the 2×2 door frames without coming through.'],['glue','Exterior wood glue (such as Titebond III), 8 oz','For every frame joint, the ledgers, floor and door frames.']])
+  for(const [id,item,d] of [['scr25','Hillman #10 × 2½″ deck screws, 40-count','Brace ends (toe-screwed), run-door corners and brace, the floor cleat and the run-door threshold.'],['scr114','Hillman #8 × 1¼″ deck screws, 75-count','Hinges and latches (door side), and the box door plywood into its frame. They bite ¾″ into the 2×2 door frames without coming through.']])
     if(an.fast[id]!==undefined) rows.push(['Fasteners',item,1,(an.fast[id]?'About '+an.fast[id]+' needed. ':'')+d,'x:'+id]);
   (m.have||[]).forEach(([item,d,fid],i)=>rows.push(['Already have',item,0,(fid&&an.fast[fid]?'About '+an.fast[fid]+' needed. ':'')+d,'have:'+i]));
   return rows;
@@ -1115,10 +1106,10 @@ $('#copyShop').addEventListener('click',async e=>{
 function resetCopy(){ const ta=$('#copyFallback'); if(ta){ ta.hidden=true; ta.value=''; } const b=$('#copyShop'); clearTimeout(b._t); b.textContent='Copy shopping list'; }
 /* Build steps */
 function stepFast(key){
-  if(!current||!key) return ''; const c={}; let glue=false;
-  current.bom.forEach(b=>{ if(b.k!=='fast'||b.step!==key) return; if(b.item==='glue'){ glue=true; return; } c[b.item]=(c[b.item]||0)+(b.n||0); });
-  const parts=Object.entries(c).filter(([,n])=>n>0).map(([k,n])=>(k==='staple'||k==='brad'?'about ':'')+n+' × '+(n===1?FAST[k][0]:FAST[k][1]));
-  if(glue) parts.push('exterior wood glue'); return parts.join(' · ');
+  if(!current||!key) return ''; const c={}; 
+  current.bom.forEach(b=>{ if(b.k!=='fast'||b.step!==key) return; c[b.item]=(c[b.item]||0)+(b.n||0); });
+  const parts=Object.entries(c).filter(([,n])=>n>0).map(([k,n])=>(k==='staple'?'about ':'')+n+' × '+(n===1?FAST[k][0]:FAST[k][1]));
+  return parts.join(' · ');
 }
 function renderSteps(){
   const st=M().steps;
