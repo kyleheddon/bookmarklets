@@ -219,7 +219,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
         <button type="button" data-v="top" aria-pressed="false">Top</button>
       </div>
       <div class="steppill" id="stepPill" hidden><button type="button" id="stepPrev" aria-label="Previous build step">‹</button><span id="stepName"></span><button type="button" id="stepNext" aria-label="Next build step">›</button><button type="button" id="stepExit" aria-label="Show the finished coop">✕</button></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" id="paintToggle" checked><span class="track"></span>House colors</label><label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label></div>
+      <label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label>
     </div>
   </section>
 
@@ -342,7 +342,7 @@ function describe(b){
   return '';
 }
 function rec(ctx,o){ if(o.bom) ctx.bom.push(Object.assign({name:o.name, layer:o.layer, mod:ctx.mod}, o.bom)); }
-let paintOn=true;
+const paintOn=true;   /* the coops always show in the house colors */
 function addMesh(ctx, geo, o){
   if(o.bom && o.bom.pt && MAT[o.mat+'PT']) o = Object.assign({}, o, {mat:o.mat+'PT'});
   // painted version in the house colors: walls siding blue, framing and mesh-door frames white, solid doors brown
@@ -828,7 +828,7 @@ const MODELS = {
       {key:'lumber',label:'Framing lumber',choices:[['2x4','2×4','As planned'],['2x3','2×3','Lighter, same layout']]},
       {key:'roof',label:'Roof',choices:[['alum-ply','Steel panels','over ½″ plywood deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
     compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Steel'],['shingle','Shingles']],
-      note:'Weight by lumber and roof. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base (shown with a green tint) is figured about 40% heavier, since it is sold wet.'},
+      note:'Weight by lumber and roof. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base is figured about 40% heavier, since it is sold wet.'},
     have:[
       ['#8 deck screws, 3″','All 2×4 framing: studs to plates, joists, rafters and braces. Coated deck screws are fine in the pressure-treated base.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Plywood floors, wall sheathing and roof deck, every 6″ on edges and 12″ in the field.'],
@@ -1138,8 +1138,6 @@ document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.c
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
 $('#views').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) goView(b.dataset.v); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
-$('#paintToggle').addEventListener('change',e=>{ paintOn=e.target.checked; clearPick();
-  current.parts.forEach(m=>{ m.material = paintOn ? m.userData.paintMat : m.userData.rawMat; m.children.forEach(c=>{ if(c.isLineSegments) c.material=(paintOn&&c.userData.painted)?PAINT_EDGE:EDGE_MAT; }); }); dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed','false')); });
 window.addEventListener('hashchange',()=>setModel(location.hash.slice(1), false));
 
