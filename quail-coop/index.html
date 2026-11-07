@@ -355,6 +355,7 @@ function addMesh(ctx, geo, o){
   if(o.layer==='sheathing' && /^ply/.test(o.mat)) pk='siding';
   else if(o.mat==='door') pk = (o.bom && o.bom.k==='ply') ? 'doorPaint' : 'trim';
   else if(/^wood/.test(o.mat) && (o.layer==='framing' || o.layer==='doors' || o.layer==='sheathing')) pk='trim';
+  if(pk && ctx.paintAll) pk=ctx.paintAll;
   const m = new THREE.Mesh(geo, MAT[o.mat]);
   m.castShadow = o.mat!=='mesh'; m.receiveShadow = true;
   m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom), rawMat:MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};
@@ -775,7 +776,7 @@ const MODELS = {
     tab:'Porch coop', dims:'4′ × 2′ × 6′ · no roof',
     eyebrow:'Build plan · 4 quail · covered porch', title:'Four-Quail Porch Coop',
     lede:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ½″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
-    build:buildPorch, center:37, radius:46, fasten:2,
+    build:buildPorch, center:37, radius:46, fasten:2, paintAll:'trim',
     state:{floorPly:0.5, boxPly:0.5},
     layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
     options:[],
@@ -911,7 +912,7 @@ function rebuild(){
   clearPick();
   holder.children.slice().forEach(c=>{ c.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); holder.remove(c); });
   const root=new THREE.Group(); root.rotation.y=Math.PI;
-  const ctx={dry:false,root,parts:[],bom:[],pivots:[]}; M().build(M().state,ctx);
+  const ctx={dry:false,root,parts:[],bom:[],pivots:[],paintAll:M().paintAll}; M().build(M().state,ctx);
   root.position.set(ctx.g.W/2,0,ctx.g.L/2); holder.add(root);
   current=ctx; current.an=analyze(ctx.bom, M().fasten);
   const rules=M().stepRules||[]; ctx.parts.forEach(pt=>{ const r=rules.find(([re])=>re.test(pt.userData.name)); pt.userData.step = r ? r[1] : (M().steps.length-1); });
