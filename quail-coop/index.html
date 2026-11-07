@@ -689,7 +689,7 @@ function buildPorch(cfg, ctx){
     B({...wp,name:'Back wall (plywood)',x:[0,W],y:[f1,H],z:[L,L+tb],bom:{k:'ply',th:tb,w:W,h:H-f1}});
     B({...wp,name:'Side wall (plywood)',x:[-tb,0],y:[f1,H],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:H-f1}});
     B({...wp,name:'Side wall (plywood)',x:[W,W+tb],y:[f1,H],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:H-f1}});
-    meshPanel(ctx,{name:'Top hardware cloth',axis:'y',at:H+0.05,u:[-tb,W+tb],v:[0,L+tb]});
+    B({...wp,name:'Top (plywood)',x:[-tb,W+tb],y:[H,H+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W+2*tb,h:L+tb}});
   } else {
     meshPanel(ctx,{name:'Back hardware cloth, lower level',axis:'z',at:L+0.05,u:[0,W],v:[f1,f2]});
     meshPanel(ctx,{name:'Back hardware cloth, upper run',axis:'z',at:L+0.05,u:[0,mx],v:[f2,H]});
@@ -790,7 +790,7 @@ const MODELS = {
   porch:{
     tab:'Porch coop', dims:'4′ × 2′ × 6′ · no roof',
     eyebrow:'Build plan · 4 quail · covered porch', title:'Four-Quail Porch Coop',
-    lede1:'A lightweight one-level cage for a covered porch, about 3′-10″ tall. Plywood on the back and both sides blocks the wind, hardware cloth over the top lets in light and air, and the front is one wide mesh door with a gate latch and a locking carabiner. On cold days, hang a tarp over the front and top.',
+    lede1:'A lightweight one-level cage for a covered porch, about 3′-10″ tall. Plywood on the back, both sides and the top blocks wind and weather, and the front is one wide mesh door with a gate latch and a locking carabiner. On cold days, hang a tarp over the front.',
     lede2:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ½″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
     build:buildPorch, get center(){ return this.state.levels==='1' ? 24 : 37; }, get radius(){ return this.state.levels==='1' ? 42 : 54; }, fasten:2, paintAll:'trim',
     state:{floorPly:0.5, boxPly:0.5, levels:'2'},
@@ -805,7 +805,7 @@ const MODELS = {
     get uses(){ return {'2x2':'Posts, rails, floor joists, braces','1x2': this.state.levels==='1' ? 'Floor ledgers and door frame' : 'Floor ledgers, door frames, ramp cleats, box door stiffeners'}; },
     cfgLabel:s=>(s.levels==='1'?'one level':'two levels')+', ½″ plywood throughout',
     split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
-    specs:g=> g.single ? [['Overall size',fIn(g.W+2*g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H)],
+    specs:g=> g.single ? [['Overall size',fIn(g.W+2*g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
       ['Floor height',fIn(g.yLF)+' off ground'],['Clear height',fIn(g.lowerClear)],
       ['Door',fIn(g.ldw)+' × '+fIn(g.ldh)],['Floor space',g.lowerArea.toFixed(1)+' sq ft ('+(g.lowerArea/4).toFixed(1)+' per bird)']]
      : [['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
@@ -819,11 +819,11 @@ const MODELS = {
       ['Join the frames','Stand the frames up facing each other and join them with 21″ side rails at the same three heights. Screw a 21″ middle joist between the front and back floor rails with its top ½″ below the rail tops, and a 21″ cross rail in the top frame.'],
       ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, below the floor. Their ends are cut at an angle: hold each piece in place and mark it off the frame instead of cutting from the list. The run above needs no braces: the plywood walls lock it square.'],
       ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, level with the top of the middle joist (½″ below the rail tops). The front and back ledgers go in two pieces, one each side of the joist. Cut the floor to 45″ × 21″, drop it in and glue and screw it to the ledgers and joist. It finishes flush with the rails, so no plywood edge shows outside.'],
-      ['Close in the walls and top','Screw ½″ plywood to the back and both sides, from the bottom of the floor rail to the top of the top rail; the side sheets lap the back edges. Then staple hardware cloth over the whole top, pulled tight, every 2–3″.'],
+      ['Close in the walls and top','Screw ½″ plywood to the back and both sides, from the bottom of the floor rail to the top of the top rail; the side sheets lap the back edges. Then screw the plywood top down onto the top rails and cross rail, overlapping the wall edges.'],
       ['Make and hang the door','Measure the opening and build the door ⅛″ smaller all round: a 1×2 frame with a middle stile, two diagonal braces and hardware cloth stapled to the back. Hang it on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Then mount the latch and bolt the carry handles to the top side rails.'],
-      ['Set it in place','Carry the coop to the porch with the open front facing away from the wind. On cold days, hang a tarp over the front and top.']],
-    stepRules1:[[/hinge|latch|carabiner|knuckle|Carry handle/i,5],[/door/i,5],[/brace/,2],[/hardware cloth|wall \(plywood\)/,4],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
-    cutNotes1:[[/^Side wall \(plywood\)/,'Laps the back edge of the back wall'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
+      ['Set it in place','Carry the coop to the porch with the open front facing away from the wind. On cold days, hang a tarp over the front.']],
+    stepRules1:[[/hinge|latch|carabiner|knuckle|Carry handle/i,5],[/door/i,5],[/brace/,2],[/\(plywood\)/,4],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
+    cutNotes1:[[/^Side wall \(plywood\)/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the tops of all three walls'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
     get steps(){ return this.state.levels==='1' ? this.steps1 : this.steps2; },
     get stepRules(){ return this.state.levels==='1' ? this.stepRules1 : this.stepRules2; },
     get cutNotes(){ return this.state.levels==='1' ? this.cutNotes1 : this.cutNotes2; },
@@ -842,13 +842,13 @@ const MODELS = {
       [/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Ramp cleat/,'Every 3″ along the ramp']],
     stepRules2:[[/^Ramp/,7],[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/hardware cloth/,4],[/^Sleeping box/,5],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
     notes:(g,an)=> g.single ? [
-      ['How it goes together','Build two ladder frames, front and back, from 45½″ corner posts and 45″ rails, then join them with 21″ side rails at three levels: a bottom stretcher at 3″, the floor at 18″ and the top frame at 44″. The posts double as legs. Plywood closes the back and sides, and hardware cloth the top.'],
-      ['Why it is light','With no upper level, sleeping box or ramp, the cage is about '+fLb(an.total)+' lb. The floor and the three plywood walls come from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets.'],
+      ['How it goes together','Build two ladder frames, front and back, from 45½″ corner posts and 45″ rails, then join them with 21″ side rails at three levels: a bottom stretcher at 3″, the floor at 18″ and the top frame at 44″. The posts double as legs. Plywood closes the back, sides and top.'],
+      ['Why it is light','With no upper level, sleeping box or ramp, the cage is about '+fLb(an.total)+' lb. The floor, three walls and top come from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets.'],
       ['Space','The run has about '+g.lowerArea.toFixed(1)+' sq ft of floor, about '+(g.lowerArea/4).toFixed(1)+' sq ft per bird. That is enough for four quail, though less than the two-level version gives them.'],
-      ['Wind and cold','Plywood on the back and both sides blocks the wind on three sides. Set the coop with the open front facing away from the prevailing wind, and on cold days hang a tarp over the front and top, leaving a gap for air. A small box or a lean-to board on the floor gives the birds somewhere to tuck in.'],
-      ['Racking','The plywood walls lock the run square, so only the leg zone below the floor needs diagonal braces, on the back and both sides.'],
-      ['Predators','On a porch the main threats are raccoons, cats, rats, opossums and snakes. Plywood closes the back and sides and ½″ hardware cloth covers the top and the door. The door sits flush in its opening with ⅛″ gaps and closes with a gate latch and a locking carabiner.'],
-      ['Flighty birds','Quail flush straight up when startled, and the run has about '+fIn(g.lowerClear)+' of headroom. Staple soft bird netting or shade cloth a few inches under the top mesh to cushion them.'],
+      ['Wind and cold','Plywood closes the back, both sides and the top, so the mesh door is the only opening and supplies all the light and air. Set the coop with the door facing away from the prevailing wind, and on cold days hang a tarp over the front, leaving a gap at the top for air.'],
+      ['Racking','The plywood walls and top lock the run square, so only the leg zone below the floor needs diagonal braces, on the back and both sides.'],
+      ['Predators','On a porch the main threats are raccoons, cats, rats, opossums and snakes. Plywood closes the back, sides and top, and ½″ hardware cloth covers the door. The door sits flush in its opening with ⅛″ gaps and closes with a gate latch and a locking carabiner.'],
+      ['Flighty birds','Quail flush straight up when startled, and the run has about '+fIn(g.lowerClear)+' of headroom under a solid plywood top. Stretch soft bird netting or shade cloth a few inches below the top to cushion them.'],
       ['Not shown','Fasteners you still need: exterior wood glue. Also not shown: the tarp, bird netting, feeders, waterers and bedding.']]
      : [
       ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
