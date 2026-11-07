@@ -465,7 +465,7 @@ function ramp(ctx, o){
 /* ---------- outdoor coop: the one-level porch design with a shed roof, 4' wide x 2' deep ---------- */
 function buildShed(cfg, ctx){
   const T=1.5, W=48, L=24, tb=0.5, tf=0.4375, F='2x2', g8=0.125, ft=0.75;
-  const m0=(W-T)/2, m1=(W+T)/2;
+  const m0=(W-T)/2, m1=(W+T)/2, pm0=W/2-1.75, pm1=W/2+1.75;   /* 2x4 latch post laid flat */
   const yS=3, f1=18, f2=44, rise=6;
   const yLF=f1+T, yTF=f2+rise+T, yTB=f2+T;     /* floor top; tops of the front (high) and back (low) top rails */
   const slope=rise/(L-T), cosA=1/Math.hypot(1,slope), sinA=slope*cosA, Tv=T/cosA;
@@ -482,7 +482,7 @@ function buildShed(cfg, ctx){
     B({...fr,name:'Back corner post (pressure-treated, doubles as leg)',x:xs,y:[0,yTB],z:[L-T,L],bom:ptl(yTB)});
   }
   for(const [a,b] of [[yS+T,f1],[f1+T,f2]]) B({...fr,name:'Back middle post',x:[m0,m1],y:[a,b],z:[L-T,L],bom:lum(b-a)});
-  B({...fr,name:'Front middle post',x:[m0,m1],y:[f1+T,yTF-T],z:[0,T],bom:lum(yTF-T-f1-T)});
+  B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,yTF-T],z:[0,T],bom:lum(yTF-T-f1-T,'2x4')});
 
   /* Rails */
   for(const [y0,nm] of [[yS,'Bottom stretcher'],[f1,'Floor rail']]){
@@ -550,7 +550,7 @@ function buildShed(cfg, ctx){
     brace(ctx,'z',[1.5,dw-1.5,1.5,dh-1.5],true,[0,ft],name+' diagonal brace (1×2)',1.5,'1x2',R.pivot,'door','doors');
     meshPanel(ctx,{name:name+' hardware cloth',axis:'z',at:ft+0.03,u:[0.1,dw-0.1],v:[0.1,dh-0.1],parent:R.pivot});
   };
-  const top=yTF-T, udw=m0-g8-(T+g8), udh=top-g8-(yLF+g8), bdw=(W-T-g8)-(m1+g8);
+  const top=yTF-T, udw=pm0-g8-(T+g8), udh=top-g8-(yLF+g8), bdw=(W-T-g8)-(pm1+g8);
   const UR=rig(ctx,[T+g8,yLF+g8,0],'Run door','y',1.8);
   doorFrame(UR,udw,udh,'Run door');
   for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1); insetLatch(ctx,UR,udw,udh*0.72,1);
@@ -570,7 +570,7 @@ function buildShed(cfg, ctx){
 function buildPorch(cfg, ctx){
   const one = cfg.levels==='1';   /* one level: the upper floor rail becomes the top of the cage */
   const T=1.5, W=48, L=24, tf=+cfg.floorPly, tb=+cfg.boxPly, F='2x2';
-  const m0=(W-T)/2, m1=(W+T)/2, mx=W/2;
+  const m0=(W-T)/2, m1=(W+T)/2, mx=W/2, pm0=W/2-1.75, pm1=W/2+1.75;   /* 2x4 latch post laid flat */
   const yS=3, f1=18, f2=44, H = one ? f2+T : 72, yTop=H-T;
   const yLF=f1+T, yUF=f2+T;   // floors sit inside the frame, flush with the rail tops
   const lum=(len,size)=>({k:'lum',size:size||F,len});
@@ -582,7 +582,7 @@ function buildPorch(cfg, ctx){
   for(const xs of [[0,T],[W-T,W]]) for(const zs of [[0,T],[L-T,L]]) B({...fr,name:'Corner post (full height, doubles as leg)',x:xs,y:[0,H],z:zs,bom:lum(H)});
   for(const [a,b] of (one ? [[yS+T,f1],[f1+T,f2]] : [[yS+T,f1],[f1+T,f2],[f2+T,yTop]])) B({...fr,name:'Back middle post',x:[m0,m1],y:[a,b],z:[L-T,L],bom:lum(b-a)});
   if(!one) B({...fr,name:'Front middle post (upper level only)',x:[m0,m1],y:[f2+T,yTop],z:[0,T],bom:lum(yTop-f2-T)});
-  else B({...fr,name:'Front middle post',x:[m0,m1],y:[f1+T,f2],z:[0,T],bom:lum(f2-f1-T)});
+  else B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,f2],z:[0,T],bom:lum(f2-f1-T,'2x4')});
 
   /* Rails: a bottom stretcher, two floor frames and a top frame */
   const railSets = one ? [[yS,'Bottom stretcher',null],[f1,'Lower floor rail','Lower floor joist'],[yTop,'Top rail','Top cross rail']]
@@ -658,11 +658,11 @@ function buildPorch(cfg, ctx){
   /* Split front: a mesh run door hinged on the left corner post and a plywood sleeping-box door hinged on the right,
      both latching to the front middle post. yb = bottom of the opening, top = underside of the rail above. */
   const splitDoors=(yb,top,runName)=>{
-    udw=m0-g8-(T+g8); udh=top-g8-(yb+g8);
+    udw=pm0-g8-(T+g8); udh=top-g8-(yb+g8);
     const UR=rig(ctx,[T+g8,yb+g8,0],runName,'y',1.8);
     doorFrame(UR,udw,udh,runName,false);
     for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1); insetLatch(ctx,UR,udw,udh*0.72,1);
-    bdw=(W-T-g8)-(m1+g8);
+    bdw=(W-T-g8)-(pm1+g8);
     const BR=rig(ctx,[W-T-g8,yb+g8,0],'Sleeping box door','y',-1.8);
     box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
     for(const ys of [[1,2.5],[udh-2.5,udh-1]]) box(ctx,{mat:'wood',layer:'doors',name:'Box door stiffener (1×2, inside face)',x:[-bdw+0.75,-0.75],y:ys,z:[tb,tb+0.75],parent:BR.pivot,bom:lum(bdw-1.5,'1x2')});
@@ -747,7 +747,7 @@ const MODELS = {
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Floors and sleeping-box plywood to the frame, 1×2 door-frame corners (predrill), and the ramp hanger cleat.'],
       ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.'],
       ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every rail it crosses, closer where it wraps the top and the corners.']],
-    get uses(){ return {'2x2':'Posts, rails, floor joists, braces','1x2': this.state.levels==='1' ? 'Floor ledgers and door frame' : 'Floor ledgers, door frames, ramp cleats, box door stiffeners'}; },
+    get uses(){ return {'2x4':'Front middle post, which the latches screw into','2x2':'Posts, rails, floor joists, braces','1x2': this.state.levels==='1' ? 'Floor ledgers and door frame' : 'Floor ledgers, door frames, ramp cleats, box door stiffeners'}; },
     cfgLabel:s=>(s.levels==='1'?'one level':'two levels')+', ½″ plywood throughout',
     split:an=>'Two people can carry it by lifting under the floor rails.',
     specs:g=> g.single ? [['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
@@ -761,7 +761,7 @@ const MODELS = {
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
       ['Floor space',(g.lowerArea+g.runArea+g.boxArea).toFixed(1)+' sq ft over two levels'],['Per bird',((g.lowerArea+g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
     steps1:[
-      ['Build the front and back ladder frames','Lay each frame flat: two 45½″ corner posts joined by three 45″ rails whose bottoms sit 3″, 18″ and 44″ above the floor. Fit the back frame\'s middle post in two pieces between the rails, 13½″ and 24½″, and the front frame\'s 24½″ middle post between the floor rail and the top rail; the two doors latch to it. Drive two 3″ screws through the post into each rail end, predrilling so the 2×2 does not split. Check that the diagonals match.'],
+      ['Build the front and back ladder frames','Lay each frame flat: two 45½″ corner posts joined by three 45″ rails whose bottoms sit 3″, 18″ and 44″ above the floor. Fit the back frame\'s middle post in two pieces between the rails, 13½″ and 24½″, and a 24½″ 2×4, laid flat, as the front middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Drive two 3″ screws through the post into each rail end, predrilling so the 2×2 does not split. Check that the diagonals match.'],
       ['Join the frames','Stand the frames up facing each other and join them with 21″ side rails at the same three heights. Screw a 21″ middle joist between the front and back floor rails with its top ½″ below the rail tops, and a 21″ cross rail in the top frame.'],
       ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, below the floor, and one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: hold each piece in place and mark it off the frame instead of cutting from the list. The plywood back and box end lock the rest square.'],
       ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, level with the top of the middle joist (½″ below the rail tops). The front and back ledgers go in two pieces, one each side of the joist. Cut the floor to 45″ × 21″, drop it in and glue and screw it to the ledgers and joist. It finishes flush with the rails, so no plywood edge shows outside.'],
@@ -770,7 +770,7 @@ const MODELS = {
       ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post.'],
       ['Set it in place','Carry the coop to the porch with the open front facing away from the wind. On cold days, hang a tarp over the front.']],
     stepRules1:[[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/\(plywood\)|^Run side hardware cloth/,5],[/^Sleeping box divider/,4],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
-    cutNotes1:[[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^End wall/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the back and the box end'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
+    cutNotes1:[[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^End wall/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the back and the box end'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
     get steps(){ return this.state.levels==='1' ? this.steps1 : this.steps2; },
     get stepRules(){ return this.state.levels==='1' ? this.stepRules1 : this.stepRules2; },
     get cutNotes(){ return this.state.levels==='1' ? this.cutNotes1 : this.cutNotes2; },
@@ -817,7 +817,7 @@ const MODELS = {
     layers:[['framing','Framing'],['floors','Floor'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors'],['hardware','Latches & hinges']],
     options:[],
     compare:null,
-    uses:{'2x2':'Rails, middle posts, floor joist, braces','1x2':'Floor ledgers and door frame'},
+    uses:{'2x4':'Front middle post, which the latches screw into','2x2':'Rails, back middle post, floor joist, braces','1x2':'Floor ledgers and door frame'},
     cfgLabel:s=>'steel roof over OSB',
     split:an=>'',
     specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep; roof '+fIn(g.deck[0])+' × 30″'],['Height',fFt(g.roofTop)+' at the front'],
@@ -825,7 +825,7 @@ const MODELS = {
       ['Clear height',fIn(g.clearFront)+' front, '+fIn(g.clearBack)+' back'],['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+', about '+fIn(g.box[2])+' tall'],['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft ('+((g.runArea+g.boxArea)/4).toFixed(1)+' per bird)']],
     steps:[
-      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, 45″ rails with their bottoms 3″ and 18″ above the ground, a 45″ top rail flush with the post tops, and a 30½″ middle post between the floor rail and the top rail. Back: two 45½″ pressure-treated corner posts, the same 3″ and 18″ rails, a top rail flush with the post tops, and a middle post in two pieces, 13½″ and 24½″. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
+      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, 45″ rails with their bottoms 3″ and 18″ above the ground, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, as the middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Back: two 45½″ pressure-treated corner posts, the same 3″ and 18″ rails, a top rail flush with the post tops, and a middle post in two pieces, 13½″ and 24½″. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
       ['Join the frames','Stand the frames up and join them with 21″ side rails at 3″ and 18″. Screw the 21″ floor joist between the front and back floor rails with its top 7/16″ below the rail tops. Then fit the three sloped top rails, one on each side and one in the middle, from the front top rail down to the back top rail; cut both ends at 15° so they sit flat against the top rails.'],
       ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, below the floor, and one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: mark each off the frame. The plywood back and box end lock the rest square.'],
       ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, 7/16″ below the rail tops and level with the joist; the front and back ledgers go in two pieces, one each side of the joist. Drop in the 45″ × 21″ OSB floor and glue and screw it down. It finishes flush with the rails.'],
@@ -835,7 +835,7 @@ const MODELS = {
       ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post.'],
       ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind. Paint or seal the outside, including the OSB edges.']],
     stepRules:[[/hinge|latch|carabiner|knuckle|Carry handle/i,7],[/door/i,7],[/^Roof|roofing/i,6],[/brace/,2],[/\(plywood\)|^Run end hardware cloth/,5],[/^Sleeping box divider/,4],[/^Floor \(|ledger/,3],[/\(sides\)|joist|sloped/,1],[/./,0]],
-    cutNotes:[[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
+    cutNotes:[[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
       [/^End wall/,'Top edge cut to the roof slope; laps the back edge of the back wall'],[/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops']],
     have:[
