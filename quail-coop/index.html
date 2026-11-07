@@ -224,7 +224,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
         <button type="button" data-v="top" aria-pressed="false">Top</button>
       </div>
       <div class="steppill" id="stepPill" hidden><button type="button" id="stepPrev" aria-label="Previous build step">‹</button><span id="stepName"></span><button type="button" id="stepNext" aria-label="Next build step">›</button><button type="button" id="stepExit" aria-label="Show the finished coop">✕</button></div>
-      <label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" id="paintToggle" checked><span class="track"></span>House colors</label><label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label></div>
     </div>
   </section>
 
@@ -327,12 +327,15 @@ function shingleTex(){ const c=document.createElement('canvas'); c.width=288; c.
 const MAT = {
   wood: std('#cf9f62'), ply: std('#e0c294',.9), door: std('#5c8a7d',.7),
   woodPT: std('#b3a464'), plyPT: std('#c4c18e',.9),   // pressure-treated: the same wood with a slight green cast
+  // house colors: slate blue-gray siding, white trim, dark-stained front door
+  siding: std('#74839a',.8), trim: std('#ecebe4',.75), doorPaint: std('#4e3226',.7),
   alum: new THREE.MeshStandardMaterial({color:lin('#c6ccd2'), metalness:.7, roughness:.34, side:THREE.DoubleSide}),
   shingle: new THREE.MeshStandardMaterial({map:shingleTex(), roughness:.95, side:THREE.DoubleSide}),
   shingleEdge: std('#3a3e43',.9), steel: std('#41474d',.4,.8), carabiner: std('#e2552b',.35,.35),
   mesh: new THREE.MeshStandardMaterial({map:meshTex(), transparent:true, side:THREE.DoubleSide, depthWrite:false, metalness:.4, roughness:.5})
 };
 const EDGED = {wood:1, ply:1, door:1, woodPT:1, plyPT:1};
+const PAINT_EDGE = new THREE.LineBasicMaterial({color:0x3a4250, transparent:true, opacity:.28});
 const EDGE_MAT = new THREE.LineBasicMaterial({color:0x4a3016, transparent:true, opacity:.38});
 
 /* ---------- part builders (ctx.dry = BOM only, no meshes) ---------- */
@@ -344,12 +347,19 @@ function describe(b){
   return '';
 }
 function rec(ctx,o){ if(o.bom) ctx.bom.push(Object.assign({name:o.name, layer:o.layer, mod:ctx.mod}, o.bom)); }
+let paintOn=true;
 function addMesh(ctx, geo, o){
   if(o.bom && o.bom.pt && MAT[o.mat+'PT']) o = Object.assign({}, o, {mat:o.mat+'PT'});
+  // painted version in the house colors: walls siding blue, framing and mesh-door frames white, solid doors brown
+  let pk=null;
+  if(o.layer==='sheathing' && /^ply/.test(o.mat)) pk='siding';
+  else if(o.mat==='door') pk = (o.bom && o.bom.k==='ply') ? 'doorPaint' : 'trim';
+  else if(/^wood/.test(o.mat) && (o.layer==='framing' || o.layer==='doors')) pk='trim';
   const m = new THREE.Mesh(geo, MAT[o.mat]);
   m.castShadow = o.mat!=='mesh'; m.receiveShadow = true;
-  m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom)};
-  if(EDGED[o.mat] && !o.noEdges){ const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), EDGE_MAT); e.raycast = ()=>{}; m.add(e); }
+  m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom), rawMat:MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};
+  if(paintOn) m.material=m.userData.paintMat;
+  if(EDGED[o.mat] && !o.noEdges){ const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), (paintOn&&pk)?PAINT_EDGE:EDGE_MAT); e.raycast = ()=>{}; e.userData.painted=!!pk; m.add(e); }
   (o.parent || ctx.root).add(m); ctx.parts.push(m); return m;
 }
 function box(ctx,o){
@@ -1127,6 +1137,8 @@ document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.c
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
 $('#views').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) goView(b.dataset.v); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
+$('#paintToggle').addEventListener('change',e=>{ paintOn=e.target.checked; clearPick();
+  current.parts.forEach(m=>{ m.material = paintOn ? m.userData.paintMat : m.userData.rawMat; m.children.forEach(c=>{ if(c.isLineSegments) c.material=(paintOn&&c.userData.painted)?PAINT_EDGE:EDGE_MAT; }); }); dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed','false')); });
 window.addEventListener('hashchange',()=>setModel(location.hash.slice(1), false));
 
