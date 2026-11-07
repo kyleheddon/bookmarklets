@@ -978,13 +978,13 @@ function setModel(k, push){
 function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare?m.compare.note:''; $('#cmpWrap').hidden=!m.compare; $('#optSection').hidden=!m.options.length; }
 function renderLayers(){
   const el=$('#layers'), m=M(), ls=m.layerState; el.innerHTML='<span class="lbl">Layers</span>';
-  m.layers.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(ls[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
-    l.innerHTML=`<input type="checkbox" id="lay-${k}" ${ls[k]?'checked':''}><span class="sw"></span>${lbl}`;
-    l.querySelector('input').addEventListener('change',e=>{ ls[k]=e.target.checked; l.classList.toggle('off',!ls[k]); applyLayers(); }); el.appendChild(l); });
   const all=m.layers.map(l=>l[0]);
   const presets=[['Framing only',['framing']],['No plywood',all.filter(k=>!['sheathing','roofdeck','roofing'].includes(k))],['Show all',all]];
   presets.forEach(([lbl,on])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip preset'; b.textContent=lbl;
     b.addEventListener('click',()=>{ all.forEach(k=>ls[k]=on.includes(k)); renderLayers(); applyLayers(); }); el.appendChild(b); });
+  m.layers.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(ls[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
+    l.innerHTML=`<input type="checkbox" id="lay-${k}" ${ls[k]?'checked':''}><span class="sw"></span>${lbl}`;
+    l.querySelector('input').addEventListener('change',e=>{ ls[k]=e.target.checked; l.classList.toggle('off',!ls[k]); applyLayers(); }); el.appendChild(l); });
 }
 function renderOptions(){
   const m=M();
