@@ -12,7 +12,7 @@
 /* Layout: full-height 3D stage with layer toggles floating on it; spec, options, weight and materials docked in a right panel that stacks below the model on phones. */
 :root{
   --bg:#edf1ee; --panel:#f8faf8; --fg:#1b2420; --muted:#5a6761; --line:#d2dad4; --soft:#e5ebe7;
-  --accent:#1d5bb8; --accent-ink:#ffffff; --accent-soft:rgba(29,91,184,.10);
+  --accent:#1d5bb8; --accent-ink:#ffffff; --accent-soft:rgba(29,91,184,.10); --ok:#2e6b3a; --ok-soft:rgba(46,107,58,.12);
   --chip:rgba(255,255,255,.88); --chip-line:rgba(27,36,32,.16);
   --scene-bg:#e2e8e4; --ground:#cbd5ce; --grid:#a9b8ae;
   --sw-framing:#cf9f62; --sw-floors:#a8763f; --sw-sheathing:#e0c294; --sw-mesh:#7f8b87; --sw-roofdeck:#d6b27d; --sw-roofing:#a9b2ba; --sw-doors:#5c8a7d; --sw-ramp:#b98447; --sw-hardware:#e2552b;
@@ -24,7 +24,7 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#121715; --panel:#171e1b; --fg:#e3eae5; --muted:#94a29b; --line:#29332f; --soft:#1f2824;
-    --accent:#86b2ff; --accent-ink:#0b1830; --accent-soft:rgba(134,178,255,.14);
+    --accent:#86b2ff; --accent-ink:#0b1830; --accent-soft:rgba(134,178,255,.14); --ok:#8fd19e; --ok-soft:rgba(143,209,158,.14);
     --chip:rgba(23,30,27,.86); --chip-line:rgba(227,234,229,.16);
     --scene-bg:#19201d; --ground:#222b27; --grid:#34413b;
     --bar-5:#b7c0c8; color-scheme:dark;
@@ -32,7 +32,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#121715; --panel:#171e1b; --fg:#e3eae5; --muted:#94a29b; --line:#29332f; --soft:#1f2824;
-  --accent:#86b2ff; --accent-ink:#0b1830; --accent-soft:rgba(134,178,255,.14);
+  --accent:#86b2ff; --accent-ink:#0b1830; --accent-soft:rgba(134,178,255,.14); --ok:#8fd19e; --ok-soft:rgba(143,209,158,.14);
   --chip:rgba(23,30,27,.86); --chip-line:rgba(227,234,229,.16);
   --scene-bg:#19201d; --ground:#222b27; --grid:#34413b;
   --bar-5:#b7c0c8; color-scheme:dark;
@@ -141,6 +141,7 @@ h2{font:700 20px/1.1 var(--font-display);text-transform:uppercase;letter-spacing
 .price input{width:5.2em;border:0;background:transparent;color:var(--fg);font:500 13px/1 var(--font-mono);padding:5px 6px 5px 2px;outline:none}
 .tag{font:600 10.5px/1 var(--font-body);letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px;background:var(--soft);color:var(--muted)}
 .tag.mine{background:var(--accent-soft);color:var(--accent)}
+.tag.store{background:var(--ok-soft);color:var(--ok)}
 .store{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;display:flex;flex-direction:column;gap:4px}
 .store a{color:var(--accent)}
 .total{display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px 0 2px;font-variant-numeric:tabular-nums}
@@ -254,7 +255,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       </div>
       <div role="tabpanel" id="pane-shop" aria-labelledby="tab-shop">
         <div class="store"><b>Lowe's Atlanta-Edgewood, store #1875</b><span>1280 Caroline St NE, Atlanta, GA 30307 · <a href="https://www.lowes.com/store/GA-Atlanta/1875" target="_blank" rel="noopener">Store page ↗</a></span>
-          <span class="note"><span class="tag">Lowe's online</span> prices come from your Lowe's list and are lowes.com prices, not checked against the Edgewood shelf. <span class="tag">est.</span> prices are estimates. To check one, open its link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div>
+          <span class="note"><span class="tag store">Edgewood</span> prices are confirmed at the Edgewood store. <span class="tag">Online, unconfirmed</span> prices are earlier lowes.com prices that still need checking. <span class="tag">est.</span> prices are estimates. To check one, open its link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div>
         <ul class="list" id="shop"></ul>
         <div class="total"><b id="costTotal">—</b><span id="costNote"></span></div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div><textarea id="copyFallback" class="copybox" rows="8" readonly hidden aria-label="Shopping list text to copy"></textarea></div>
@@ -279,7 +280,7 @@ const LUM = {'2x4':[1.5,3.5],'2x3':[1.5,2.5],'2x2':[1.5,1.5],'1x4':[0.75,3.5],'1
 const LUM_LABEL = {'2x4':'2×4','2x3':'2×3','2x2':'2×2','1x4':'1×4','1x2':'1×2'};
 const STOCK = 96, KERF = 0.125;
 const DENS_LUM = 34/1728, DENS_PLY = 32/1728, PT_FACTOR = 1.4; // lb per cubic inch; new pressure-treated stock is wet and ~40% heavier
-const W_MESH = 0.18, W_ALUM = 0.40, W_SHINGLE = 2.4, W_UNDER = 0.04, W_DRIP = 0.08;
+const W_MESH = 0.18, W_ALUM = 0.65, W_SHINGLE = 2.4, W_UNDER = 0.04, W_DRIP = 0.08;
 
 /* ---------- formatting ---------- */
 const FR = {1:'⅛',2:'¼',3:'⅜',4:'½',5:'⅝',6:'¾',7:'⅞'};
@@ -401,7 +402,7 @@ function frontLatch(ctx, R, dw, hm, th){
   hwBox(ctx,R.pivot,[dw-4.6,dw-3.4],[hm-0.9,hm+0.9],[-0.15,0],'steel','Gate latch bar bracket');
   hwBox(ctx,R.fixed,[dw+0.4,dw+2.2],[hm-1.3,hm+0.9],[-0.65,th],'steel','Gate latch keeper');
   torus(ctx,R.fixed,[dw+1.3,hm-2.0,-0.8],0);
-  hw(ctx,'Gate latch, self-locking with padlock hole',0.6,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
+  hw(ctx,'Gate latch, 4″ with padlock hole',0.4,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
 }
 /* Inset door (porch coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
 function insetHinge(ctx, R, h, s){
@@ -415,7 +416,7 @@ function insetLatch(ctx, R, dw, hm, s){
   hwBox(ctx,R.pivot,[s*(dw-4.1),s*(dw-3)],[hm-0.8,hm+0.8],[-0.12,0],'steel','Gate latch bar bracket');
   hwBox(ctx,R.fixed,[s*(dw+0.25),s*(dw+1.4)],[hm-1.2,hm+0.8],[-0.6,0],'steel','Gate latch keeper');
   torus(ctx,R.fixed,[s*(dw+0.8),hm-1.9,-0.7],0);
-  hw(ctx,'Gate latch, small, with padlock hole',0.35,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
+  hw(ctx,'Gate latch, 4″ with padlock hole',0.4,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
 }
 function handle(ctx, face, dir, yc, zc, use){
   const bx = dir<0?[face-1.4,face-0.9]:[face+0.9,face+1.4], px=dir<0?[face-1.4,face]:[face,face+1.4];
@@ -529,7 +530,7 @@ function buildOutdoor(cfg, ctx){
       for(let i=0;i<p.count;i++) p.setZ(i, amp*Math.sin(2*Math.PI*(p.getX(i)+Wr/2)/2.67));
       g.computeVertexNormals();
       const [cz,cy]=SP(Lr/2, base+amp); const m=new THREE.Matrix4().makeBasis(e1,e2,e3).setPosition(W/2,cy,cz); g.applyMatrix4(m);
-      addMesh(ctx,g,{mat:'alum',layer:'roofing',name:'Corrugated aluminum roofing',desc:n+' panels, 26″ wide, cut to '+fIn(Lp),noEdges:true});
+      addMesh(ctx,g,{mat:'alum',layer:'roofing',name:'Corrugated galvanized steel roofing',desc:n+' panels, 26″ wide, cut to '+fIn(Lp),noEdges:true});
     }
   } else {
     const Ws=W+2*tw+0.75, Ls=Lr+0.75;
@@ -596,7 +597,7 @@ function buildOutdoor(cfg, ctx){
   hwBox(ctx,WR.pivot,[0,0.15],[-fh+3.3,-fh+4.6],[fzc-0.9,fzc+0.9],'steel','Gate latch bar bracket');
   hwBox(ctx,WR.fixed,[-tw,0.65],[-fh-2.2,-fh-0.4],[fzc-1.3,fzc+0.9],'steel','Gate latch keeper');
   torus(ctx,WR.fixed,[0.8,-fh-1.3,fzc+2.0],Math.PI/2);
-  hw(ctx,'Gate latch, self-locking with padlock hole',0.6,'Vent window'); hw(ctx,'Locking carabiner',0.1,'Vent window');
+  hw(ctx,'Gate latch, 4″ with padlock hole',0.4,'Vent window'); hw(ctx,'Locking carabiner',0.1,'Vent window');
 
   /* Carry handles on the coop floor joists */
   for(const zc of [10,L-10]) for(const [face,dir] of [[-tw,-1],[W+tw,1]]) handle(ctx,face,dir,yUb+D/2,zc,'Bolted to the coop floor joists');
@@ -801,11 +802,11 @@ const MODELS = {
     options:[
       {key:'lumber',label:'Framing lumber',choices:[['2x4','2×4','As planned'],['2x3','2×3','Lighter, same layout']]},
       {key:'wallPly',label:'Wall plywood',num:true,choices:[[0.5,'½″','Stiffer'],[0.375,'⅜″','Lighter']]},
-      {key:'roof',label:'Roof',choices:[['alum-ply','Aluminum','over ½″ plywood deck'],['alum-purlin','Aluminum','on 1×4 purlins, no deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
-    compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Alum + deck'],['alum-purlin','Alum + purlins'],['shingle','Shingles']],
+      {key:'roof',label:'Roof',choices:[['alum-ply','Steel panels','over ½″ plywood deck'],['alum-purlin','Steel panels','on 1×4 purlins, no deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
+    compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Steel + deck'],['alum-purlin','Steel + purlins'],['shingle','Shingles']],
       note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base (shown with a green tint) is figured about 40% heavier, since it is sold wet.'},
     uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'},
-    cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'aluminum over deck','alum-purlin':'aluminum on purlins','shingle':'shingles'})[s.roof],
+    cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'steel over deck','alum-purlin':'steel on purlins','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
     specs:g=>[['Overall footprint',fIn(g.overall[0])+' × '+fIn(g.overall[1])],['Highest point',"8′-0″ (front eave)"],
       ['Roof pitch','4 in 12, sheds to back'],['Back wall height',fFt(g.yBP)+' at top plate'],
@@ -823,8 +824,8 @@ const MODELS = {
       ['Cleaning','The run door is nearly the full front ('+fIn(g.lowerOpen[0])+' wide) and the coop door is '+fIn(g.upperOpen[0])+' × '+fIn(g.upperOpen[1])+'. Both keep a 1½″ sill (the bottom plate), which holds bedding in. Pull bedding over it with a scraper.'],
       ['Wind and air','The coop walls are solid plywood. Air comes in through hardware-cloth eave vents between the rafters at the front and back. The side vent window has a hinged plywood flap that latches shut in winter and props open in summer.'],
       ['Predators','Use ½″ galvanized hardware cloth, not chicken wire. The cloth wraps down over the run floor framing so there is no gap at the floor. Raccoons can open plain latches, so every latch takes a locking carabiner through its padlock hole.'],
-      ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Aluminum is about 0.4 lb/sq ft against about 2.4 for 3-tab shingles. Putting aluminum on 1×4 purlins also drops the plywood deck. The trade-off is that a bare metal roof is louder in rain and can drip condensation in a cold coop. The deck prevents that.'],
-      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and aluminum on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
+      ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Corrugated galvanized steel is about 0.65 lb/sq ft against about 2.4 for 3-tab shingles. Putting the steel on 1×4 purlins also drops the plywood deck. The trade-off is that a bare metal roof is louder in rain and can drip condensation in a cold coop. The deck prevents that.'],
+      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and steel on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
       ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
     lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'},
@@ -836,7 +837,7 @@ const MODELS = {
       ['Frame the coop walls','Frame the front with the door studs, header and cripple, then the back. Cut the side-wall top plates and stud tops to the 4-in-12 slope, and add the window sill and header in one side wall.'],
       ['Set the rafters','Cut the three rafters with plumb-cut ends and a shallow seat notch where each crosses a top plate, and fasten them at 24″ centers.'],
       ['Sheathe the walls','Put on the side sheets first, then front and back, which lap their edges. Cut out the door and window openings. Staple hardware cloth over the eave vents and behind the window opening.'],
-      ['Put on the roof','Fasten the deck or purlins, then the underlayment, then the roofing. Start aluminum panels at the end away from the prevailing wind; for shingles, start with drip edge and a starter course.'],
+      ['Put on the roof','Fasten the deck or purlins, then the underlayment, then the roofing. Start the steel panels at the end away from the prevailing wind; for shingles, start with drip edge and a starter course.'],
       ['Make and hang the doors','Build the run door from 2×2 with a diagonal brace that rises from the bottom hinge corner, and staple hardware cloth to its back. Cut the coop door and window flap from plywood offcuts. Hang everything, then mount the latches and carry handles. Paint or seal the outside.'],
       ['Add the ramp','Glue and nail the cleats to the ramp board, add the hanger cleat, and hang it in the hatch.']],
     stepRules:[[/^Ramp/,9],[/hinge|latch|carabiner|knuckle|Carry handle/i,8],[/^Run door (stile|rail|diagonal|hardware)/,8],[/^Coop door \(plywood|^Vent window flap/,8],[/^Run floor|^Leg$/,0],[/^Run (back|side) hardware cloth/,2],[/^Run /,1],[/^Coop floor/,3],[/^Rafter/,5],[/plywood|eave vent|Window hardware cloth/,6],[/^Coop |^Window |^Cripple/,4],[/oof|hingle|urlin|orrugated/,7]]
@@ -986,37 +987,38 @@ $('#cmp').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!
 /* Lowe's links and estimated prices. Lowe's only shows a price for a chosen store, so these are estimates the viewer can overwrite. */
 const LS=q=>'https://www.lowes.com/search?searchTerm='+encodeURIComponent(q);
 const PRICE={
-  'lum:2x4':[4.28,'https://www.lowes.com/pd/2-in-x-4-in-x-96-in-Hemlock-Fir-Kiln-dried-Stud/5003830039'],
-  'lum:2x3':[3.68,LS('2 in x 3 in x 8 ft stud')],
-  'lum:2x4pt':[4.08,'https://www.lowes.com/pd/Severe-Weather-2-4-8-TC-TREATED-2-PRIME/5014119401','online',1,'Severe Weather ground-contact treated.'],
-  'lum:2x3pt':[4.08,'https://www.lowes.com/pd/Severe-Weather-2-4-8-TC-TREATED-2-PRIME/5014119401','online',1,'Pressure-treated 2×3 is rarely stocked; buy pressure-treated 2×4 and rip it to 2½″.'],
-  'lum:2x2':[2.98,'https://www.lowes.com/pd/2-in-x-2-in-x-8-ft-Furring-Strip/5002631285','',1,'Must be untreated. Lowe\'s shows no price for this listing.'],
-  'lum:1x2':[1.78,'https://www.lowes.com/pl/building-supplies/whitewood/4294934297-4294402389','',1,'Untreated whitewood. Store price unavailable.'],
-  'lum:1x4':[3.18,LS('1 in x 4 in x 8 ft furring strip')],
-  'ply:0.5':[33.98,LS('1/2 in x 4 ft x 8 ft plywood sheathing'),'',1,'Plywood, not OSB.'],
-  'ply:0.5pt':[38.88,'https://www.lowes.com/pd/Severe-Weather-1-2-in-Common-Douglas-Fir-Plywood-Sheathing-Application-as-4-x-8/50113178','online'],
-  'ply:0.375':[22.13,LS('3/8 in x 4 ft x 8 ft plywood sheathing'),'online',1,'Check the grade and that it is untreated.'],
-  'ply:0.25':[30.08,LS('1/4 in x 4 ft x 8 ft sanded plywood'),'online',1,'Check the grade and that it is untreated.'],
+  // [unit price, Lowe's link, source ('store' = confirmed at Edgewood, 'online' = earlier online price, '' = estimate), pack size, note]
+  'lum:2x4':[4.25,'https://www.lowes.com/pd/Interfor-2-in-x-4-in-x-8-ft-Euro-Spruce-Kiln-dried-Lumber/5001997955','store',1,'Interfor Euro Spruce, kiln-dried.'],
+  'lum:2x3':[3.48,'https://www.lowes.com/pd/2-in-x-3-in-x-96-in-Euro-Spruce-Kiln-dried-Stud/5014776465','store',1,'Euro Spruce kiln-dried 96″ stud.'],
+  'lum:2x4pt':[4.48,'https://www.lowes.com/pd/severe-weather-common-2-in-x-4-in-x-8-ft-actual-1-5-in-x-3-5-in-x-8-ft-2-treated-lumber/4564778','store',1,'Severe Weather #2 SYP, above-ground treatment: set the legs on pavers, not soil.'],
+  'lum:2x3pt':[4.48,'https://www.lowes.com/pd/severe-weather-common-2-in-x-4-in-x-8-ft-actual-1-5-in-x-3-5-in-x-8-ft-2-treated-lumber/4564778','store',1,'Pressure-treated 2×3 is rarely stocked; buy this pressure-treated 2×4 and rip it to 2½″. Above-ground treatment: set the legs on pavers.'],
+  'lum:2x2':[2.98,'https://www.lowes.com/pd/2-in-x-2-in-x-8-ft-Furring-Strip/1000483975','store',1,'Untreated furring strip.'],
+  'lum:1x4':[3.48,'https://www.lowes.com/pd/1-in-x-4-in-x-8-ft-Furring-Strip/1000427895','store',1,'Spruce-pine-fir furring strip.'],
+  'lum:1x2':[1.58,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Furring-Strip/1000427899','store',1,'Untreated furring strip.'],
+  'ply:0.375':[24.72,'https://www.lowes.com/pd/3-8-in-x-4-ft-x-8-ft-Rated-Pine-Plywood-Sheathing/5016108365','store',1,'Rated pine sheathing, unsanded.'],
+  'ply:0.5':[27.81,'https://www.lowes.com/pd/plytanium-15-32-in-x-4-ft-x-8-ft-rated-pine-plywood-sheathing/5016108363','store',1,'Plytanium 15/32″, the standard actual thickness sold as ½″. Plywood, not OSB.'],
+  'ply:0.5pt':[48.78,LS('Severe Weather 15/32 pressure treated plywood 4x8'),'store',1,'Severe Weather 15/32″ pressure-treated SYP CDX. Search link; the exact product page is not confirmed.'],
+  'ply:0.25':[30.08,LS('1/4 in x 4 ft x 8 ft plywood'),'online',1,'Not used: only sold sanded.'],
   'mesh:10':[27.98,LS('hardware cloth 1/2 in 36 in x 10 ft')],
-  'mesh:25':[79.97,'https://www.lowes.com/pd/GARDEN-CRAFT-25-ft-x-3-ft-Gray-Steel-Welded-Wire-Garden-Hardware-Cloth-Rolled-Fencing/5001503005','online',1,'Gauge not confirmed; check the label for ½″ mesh, 19 gauge before buying.'],
+  'mesh:25':[79.97,'https://www.lowes.com/pd/GARDEN-CRAFT-25-ft-x-3-ft-Gray-Steel-Welded-Wire-Garden-Hardware-Cloth-Rolled-Fencing/5001503005','store',1,'Garden Craft. ½″ mesh and 19 gauge not confirmed; check the label.'],
   'mesh:50':[94.98,LS('hardware cloth 1/2 in 36 in x 50 ft')],
-  'alum':[34.98,LS('corrugated aluminum roof panel 26 in x 8 ft')],
-  'closure':[4.48,LS('corrugated metal roof foam closure strip')],
-  'underlay':[27.98,'https://www.lowes.com/pl/roofing/roofing-underlayment/felt/432-sq-foot-coverage-area/4294858150-4294931012-4294550725'],
-  'shingle':[38.98,LS('3-tab asphalt shingles bundle')],
-  'drip':[8.98,LS('aluminum drip edge 10 ft')],
-  'hw:T-hinge, 4″ heavy duty':[6.98,LS('4 in heavy duty t-hinge')],
-  'hw:Strap hinge, 3″ light duty':[4.78,LS('3 in strap hinge 2-pack'),'online',2,'Three 2-packs make six hinges.'],
-  'hw:Gate latch, self-locking with padlock hole':[11.98,LS('self-locking gate latch padlockable')],
-  'hw:Gate latch, small, with padlock hole':[5.98,LS('4 in zinc gate latch'),'online',1,'Your list has a 4″ zinc gate latch; confirm the padlock hole fits the carabiner and the latch fits the 1½″ post face.'],
-  'hw:Locking carabiner':[3.78,LS('3 in locking carabiner'),'online',1,'3″; make sure the gate actually locks (screw or twist lock).'],
-  'hw:Steel pull handle, 6″ (carry handle)':[5.48,LS('6.5 in steel gate pull handle'),'online',1,'Your list has the 6½″ steel gate pull handle.']
+  'alum':[19.98,LS('Union Corrugating Oval galvanized steel corrugated panel 8 ft'),'store',1,'Union Corrugating Oval galvanized steel, 2.16 ft (about 26″) wide. Search link; the exact product page is not confirmed.'],
+  'closure':[4.48,LS('corrugated metal roof foam closure strip'),'',1,'Match the profile to the Union Corrugating panel.'],
+  'underlay':[34.97,'https://www.lowes.com/pd/RELIABILT-15w-Asphalt-saturated-roofing-felt/5016180073','store',1,'RELIABILT #15, 36″ × 144 ft. Check the label allows use under metal roofing; some #15 felts do not.'],
+  'shingle':[42.50,LS('3-tab asphalt shingles bundle'),'online',1,'Brand not chosen yet; confirm product and price.'],
+  'drip':[7.18,'https://www.lowes.com/pd/Amerimax-Drip-Edge-50-Pack-2-56-in-x-10-ft-Brown-Aluminum-Drip-Edge/5014648661','store',1,'Amerimax C4.5, 2.56″ × 10 ft, mill-finish aluminum.'],
+  'hw:T-hinge, 4″ heavy duty':[4.98,'https://www.lowes.com/pd/ReliaBilt-RB-4-IN-ZN-EXT-HD-T-HINGE/5001634685','online',1,'RELIABILT 4″ extra-heavy-duty. Check whether it is sold singly or in pairs.'],
+  'hw:Strap hinge, 3″ light duty':[4.78,LS('3 in strap hinge 2-pack'),'online',2,'Three 2-packs make six hinges. Specific product not chosen yet.'],
+  'hw:Gate latch, 4″ with padlock hole':[6.48,'https://www.lowes.com/pd/national-hardware-steel-painted-gate-latch/50414134','store',1,'National Hardware N184-861, black. Check the carabiner fits through its hole.'],
+  'hw:Locking carabiner':[3.78,LS('3 in locking carabiner'),'online',1,'3″. Model not chosen yet; make sure the gate actually locks.'],
+  'hw:Steel pull handle, 6″ (carry handle)':[5.48,LS('6.5 in steel gate pull handle'),'online',1,'A 6½″ steel gate pull handle works. Model not chosen yet.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
 const savePrices=()=>{ try{ localStorage.setItem('coopPrices',JSON.stringify(myPrices)); }catch(_){} };
 const unitPrice=k=> (k in myPrices) ? myPrices[k] : (PRICE[k]?PRICE[k][0]:0);
-const isOnline=k=>PRICE[k]&&PRICE[k][2]==='online';
-const srcTag=k=>isOnline(k)?'Lowe\'s online':'est.';
+const srcOf=k=>(PRICE[k]&&PRICE[k][2])||'';
+const isOnline=k=>srcOf(k)==='online';
+const srcTag=k=>({store:'Edgewood',online:'Online, unconfirmed'})[srcOf(k)]||'est.';
 const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
@@ -1026,7 +1028,7 @@ function shopRows(an){
     rows.push(['Plywood', fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
   rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
   const r=an.roof;
-  if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation. Aluminum, not galvanized steel.','alum']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves; match the profile and pack size to the panel you buy','closure']); }
+  if(r.alum){ rows.push(['Roofing','Corrugated galvanized steel panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+' with snips or a metal-cutting blade; overlap one corrugation.','alum']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves; match the profile and pack size to the panel you buy','closure']); }
   if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course','shingle']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges','drip']); }
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
@@ -1035,17 +1037,18 @@ function shopRows(an){
 }
 function costTotal(rows){ return rows.reduce((a,r)=>a+r[2]*unitPrice(r[4]),0); }
 function renderCostTotal(rows){
-  const mine=rows.filter(r=>r[4] in myPrices).length, onl=rows.filter(r=>!(r[4] in myPrices)&&isOnline(r[4])).length, est=rows.length-mine-onl;
+  const fresh=rows.filter(r=>!(r[4] in myPrices));
+  const mine=rows.length-fresh.length, sto=fresh.filter(r=>srcOf(r[4])==='store').length, onl=fresh.filter(r=>isOnline(r[4])).length, est=fresh.length-sto-onl;
   $('#costTotal').textContent=money(costTotal(rows));
-  const parts=[]; if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' Lowe\'s online'); if(est) parts.push(est+' estimated');
-  $('#costNote').textContent='Total before sales tax · '+parts.join(', ')+'. Store prices at Edgewood can differ.';
+  const parts=[]; if(sto) parts.push(sto+' confirmed at Edgewood'); if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' online, unconfirmed'); if(est) parts.push(est+' estimated');
+  $('#costNote').textContent='Total before sales tax · '+parts.join(', ')+'.';
 }
 function renderShop(an){
   const rows=shopRows(an); let h='', last='';
   rows.forEach(([grp,item,qty,d,key],i)=>{ if(grp!==last){ h+=`<h3>${grp}</h3>`; last=grp; }
     const url=PRICE[key]?PRICE[key][1]:LS(item), mine=key in myPrices, up=unitPrice(key);
     h+=`<li class="item"><span class="n"><a href="${url}" target="_blank" rel="noopener">${item} ↗</a></span><span class="q" id="lt-${i}">${money(qty*up)}</span>
-      <span class="calc">${qty} ×<label class="price">$<input type="number" inputmode="decimal" min="0" step="0.01" id="pr-${i}" data-k="${key}" data-i="${i}" data-q="${qty}" value="${up.toFixed(2)}" aria-label="Unit price for ${item.replace(/"/g,'')}"></label><span class="tag${mine?' mine':''}" id="tg-${i}">${mine?'your price':srcTag(key)}</span></span>
+      <span class="calc">${qty} ×<label class="price">$<input type="number" inputmode="decimal" min="0" step="0.01" id="pr-${i}" data-k="${key}" data-i="${i}" data-q="${qty}" value="${up.toFixed(2)}" aria-label="Unit price for ${item.replace(/"/g,'')}"></label><span class="tag${mine?' mine':(srcOf(key)==='store'?' store':'')}" id="tg-${i}">${mine?'your price':srcTag(key)}</span></span>
       <span class="d">${d}${PRICE[key]&&PRICE[key][4]?' · '+PRICE[key][4]:''}</span></li>`; });
   $('#shop').innerHTML=h; renderCostTotal(rows);
 }
