@@ -648,7 +648,7 @@ function buildPorch(cfg, ctx){
   const hatch=[3.5,12.5,12,20];
   P({mat:'ply',layer:'floors',name:'Upper floor (ramp hatch cut out)',axis:'y',poly:floorPoly(true),holes:[[[hatch[0],hatch[2]],[hatch[1],hatch[2]],[hatch[1],hatch[3]],[hatch[0],hatch[3]]]],range:[f2+T,yUF],bom:{k:'ply',th:tf,w:W,h:L}});
 
-  /* Sleeping box: thin plywood on the right half of the upper level */
+  /* Sleeping box: 3/8" unsanded plywood on the right half of the upper level */
   const sb={mat:'ply',layer:'sheathing'};
   B({...sb,name:'Sleeping box back',x:[mx,W],y:[f2,H],z:[L,L+tb],bom:{k:'ply',th:tb,w:W-mx,h:H-f2}});
   B({...sb,name:'Sleeping box side',x:[W,W+tb],y:[f2,H],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:H-f2}});
@@ -685,7 +685,7 @@ function buildPorch(cfg, ctx){
   const UR=rig(ctx,[T+g8,yUF+g8,0],'Upper run door','y',1.8);
   doorFrame(UR,udw,udh,'Upper run door',false);
   for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1); insetLatch(ctx,UR,udw,udh*0.72,1);
-  // sleeping box door: thin plywood with 1x2 stiffeners, hinged on the right corner post
+  // sleeping box door: plywood with 1x2 stiffeners, hinged on the right corner post
   const bdw=(W-T-g8)-(m1+g8);
   const BR=rig(ctx,[W-T-g8,yUF+g8,0],'Sleeping box door','y',-1.8);
   box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
@@ -751,14 +751,14 @@ const MODELS = {
   porch:{
     tab:'Porch coop', dims:'4′ × 2′ × 6′ · no roof',
     eyebrow:'Build plan · 4 quail · covered porch', title:'Four-Quail Porch Coop',
-    lede:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A thin-plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
+    lede:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ⅜″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
     build:buildPorch, center:37, radius:46, fasten:2,
-    state:{floorPly:0.375, boxPly:0.25},
+    state:{floorPly:0.375, boxPly:0.375},
     layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
     options:[
       {key:'floorPly',label:'Floor plywood',num:true,choices:[[0.375,'⅜″','Lighter'],[0.5,'½″','Stiffer underfoot']]},
-      {key:'boxPly',label:'Sleeping box plywood',num:true,choices:[[0.25,'¼″','Lightest'],[0.375,'⅜″','Sturdier']]}],
-    compare:{row:'floorPly',col:'boxPly',rows:[[0.375,'⅜″ floors'],[0.5,'½″ floors']],cols:[[0.25,'¼″ box'],[0.375,'⅜″ box']],
+      {key:'boxPly',label:'Sleeping box plywood',num:true,choices:[[0.375,'⅜″','Lightest unsanded'],[0.5,'½″','Sturdier']]}],
+    compare:{row:'floorPly',col:'boxPly',rows:[[0.375,'⅜″ floors'],[0.5,'½″ floors']],cols:[[0.375,'⅜″ box'],[0.5,'½″ box']],
       note:'Weight by floor and sleeping-box plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried lumber.'},
     uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
     cfgLabel:s=>fIn(s.floorPly)+' floors, '+fIn(s.boxPly)+' sleeping box',
