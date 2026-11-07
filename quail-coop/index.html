@@ -511,17 +511,11 @@ function buildOutdoor(cfg, ctx){
   /* Rafters, 24" on center */
   for(const xs of [[0,T],[m0,m1],[W-T,W]]) P({...fr,name:'Rafter (plumb-cut ends, seat cut at plates)',axis:'x',poly:[[zA,plane(zA)],[zB,plane(zB)],[zB,plane(zB)+Dv],[zA,plane(zA)+Dv]],range:xs,bom:lum(Lr)});
 
-  /* Roof deck or purlins */
+  /* Plywood roof deck under either roofing */
   const R0y=plane(zA)+Dv; const SP=(u,v)=>[zA+u*cosA+v*sinA, R0y-u*sinA+v*cosA];
-  let base;
-  if(cfg.roof==='alum-purlin'){
-    base=0.75; const us=[]; for(let u=1.75; u<Lr-1.75; u+=24) us.push(u); if(Lr-1.75-us[us.length-1]>4) us.push(Lr-1.75);
-    for(const u of us) P({mat:'wood',layer:'roofdeck',name:'Roof purlin (laid flat)',axis:'x',poly:[SP(u-1.75,0),SP(u+1.75,0),SP(u+1.75,.75),SP(u-1.75,.75)],range:[-tw-1.5,W+tw+1.5],bom:lum(W+2*tw+3,'1x4')});
-  } else {
-    base=0.5;
-    P({mat:'ply',layer:'roofdeck',name:'Roof deck',axis:'x',poly:[SP(0,0),SP(Lr,0),SP(Lr,.5),SP(0,.5)],range:[-tw,W+tw],bom:{k:'ply',th:0.5,w:W+2*tw,h:Lr}});
-    ctx.bom.push({k:'underlay',name:'Roof underlayment',area:(W+2*tw)*Lr/144,mod:'coop'});
-  }
+  const base=0.5;
+  P({mat:'ply',layer:'roofdeck',name:'Roof deck',axis:'x',poly:[SP(0,0),SP(Lr,0),SP(Lr,.5),SP(0,.5)],range:[-tw,W+tw],bom:{k:'ply',th:0.5,w:W+2*tw,h:Lr}});
+  ctx.bom.push({k:'underlay',name:'Roof underlayment',area:(W+2*tw)*Lr/144,mod:'coop'});
   const e1=new THREE.Vector3(1,0,0), e2=new THREE.Vector3(0,sinA,-cosA), e3=new THREE.Vector3(0,cosA,sinA);
   if(cfg.roof.startsWith('alum')){
     const Wr=W+2*tw+3, Lp=Lr+2, amp=0.3, n=Math.ceil((Wr-2)/24);
@@ -804,11 +798,11 @@ const MODELS = {
     options:[
       {key:'lumber',label:'Framing lumber',choices:[['2x4','2×4','As planned'],['2x3','2×3','Lighter, same layout']]},
       {key:'wallPly',label:'Wall plywood',num:true,choices:[[0.5,'½″','Stiffer'],[0.375,'⅜″','Lighter']]},
-      {key:'roof',label:'Roof',choices:[['alum-ply','Steel panels','over ½″ plywood deck'],['alum-purlin','Steel panels','on 1×4 purlins, no deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
-    compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Steel + deck'],['alum-purlin','Steel + purlins'],['shingle','Shingles']],
+      {key:'roof',label:'Roof',choices:[['alum-ply','Steel panels','over ½″ plywood deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
+    compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Steel'],['shingle','Shingles']],
       note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base (shown with a green tint) is figured about 40% heavier, since it is sold wet.'},
-    uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'},
-    cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'steel over deck','alum-purlin':'steel on purlins','shingle':'shingles'})[s.roof],
+    uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger'},
+    cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'steel roof','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
     specs:g=>[['Overall footprint',fIn(g.overall[0])+' × '+fIn(g.overall[1])],['Highest point',"8′-0″ (front eave)"],
       ['Roof pitch','4 in 12, sheds to back'],['Back wall height',fFt(g.yBP)+' at top plate'],
@@ -826,11 +820,11 @@ const MODELS = {
       ['Cleaning','The run door is nearly the full front ('+fIn(g.lowerOpen[0])+' wide) and the coop door is '+fIn(g.upperOpen[0])+' × '+fIn(g.upperOpen[1])+'. Both keep a 1½″ sill (the bottom plate), which holds bedding in. Pull bedding over it with a scraper.'],
       ['Wind and air','The coop walls are solid plywood. Air comes in through hardware-cloth eave vents between the rafters at the front and back. The side vent window has a hinged plywood flap that latches shut in winter and props open in summer.'],
       ['Predators','Use ½″ galvanized hardware cloth, not chicken wire. The cloth wraps down over the run floor framing so there is no gap at the floor. Raccoons can open plain latches, so every latch takes a locking carabiner through its padlock hole.'],
-      ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Corrugated galvanized steel is about 0.65 lb/sq ft against about 2.4 for 3-tab shingles. Putting the steel on 1×4 purlins also drops the plywood deck. The trade-off is that a bare metal roof is louder in rain and can drip condensation in a cold coop. The deck prevents that.'],
-      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and steel on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
+      ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Corrugated galvanized steel is about 0.65 lb/sq ft against about 2.4 for 3-tab shingles. Both go over a ½″ plywood deck, which keeps the steel from dripping condensation into the coop, quiets rain, and leaves no gaps under the panels for mice to get into the coop.'],
+      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and the steel roof brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
       ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
-    lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'},
+    lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-ply'},
     steps:[
       ['Build the run floor platform','Screw the two rim joists to three joists on 24″ centers and check the diagonals match. Add the four legs inside the corners, then glue and screw down the plywood floor.'],
       ['Frame the run walls','Frame each wall flat on the floor. The back and sides get studs and two diagonal braces each; the front is just the plates and the two flat door posts. Stand the back up first, then the sides and the front, and screw the corners together.'],
@@ -839,7 +833,7 @@ const MODELS = {
       ['Frame the coop walls','Frame the front with the door studs, header and cripple, then the back. Cut the side-wall top plates and stud tops to the 4-in-12 slope, and add the window sill and header in one side wall.'],
       ['Set the rafters','Cut the three rafters with plumb-cut ends and a shallow seat notch where each crosses a top plate, and fasten them at 24″ centers.'],
       ['Sheathe the walls','Put on the side sheets first, then front and back, which lap their edges. Cut out the door and window openings. Staple hardware cloth over the eave vents and behind the window opening.'],
-      ['Put on the roof','Fasten the deck or purlins, then the underlayment, then the roofing. Start the steel panels at the end away from the prevailing wind; for shingles, start with drip edge and a starter course.'],
+      ['Put on the roof','Fasten the plywood deck, then the underlayment, then the roofing. Start the steel panels at the end away from the prevailing wind; for shingles, start with drip edge and a starter course.'],
       ['Make and hang the doors','Build the run door from 2×2 with a diagonal brace that rises from the bottom hinge corner, and staple hardware cloth to its back. Cut the coop door and window flap from plywood offcuts. Hang everything, then mount the latches and carry handles. Paint or seal the outside.'],
       ['Add the ramp','Glue and nail the cleats to the ramp board, add the hanger cleat, and hang it in the hatch.']],
     stepRules:[[/^Ramp/,9],[/hinge|latch|carabiner|knuckle|Carry handle/i,8],[/^Run door (stile|rail|diagonal|hardware)/,8],[/^Coop door \(plywood|^Vent window flap/,8],[/^Run floor|^Leg$/,0],[/^Run (back|side) hardware cloth/,2],[/^Run /,1],[/^Coop floor/,3],[/^Rafter/,5],[/plywood|eave vent|Window hardware cloth/,6],[/^Coop |^Window |^Cripple/,4],[/oof|hingle|urlin|orrugated/,7]]
