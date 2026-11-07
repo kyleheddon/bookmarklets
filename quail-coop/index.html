@@ -127,12 +127,40 @@ h2{font:700 20px/1.1 var(--font-display);text-transform:uppercase;letter-spacing
 .split b{font-family:var(--font-mono);font-weight:500}
 .note{font-size:12.5px;color:var(--muted);margin:0}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:12px}
-.tabs button{border:0;background:transparent;padding:8px 10px 9px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button{white-space:nowrap;border:0;background:transparent;padding:8px 10px 9px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
 .tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
 .list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
 .list h3{font:700 15px/1 var(--font-display);text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 6px}
 .list h3:first-child{margin-top:0}
-.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:7px 0;border-bottom:1px dashed var(--line)}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 12px;padding:8px 0;border-bottom:1px dashed var(--line)}
+.item .n a{color:inherit;text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.item .n a:hover{text-decoration-color:var(--accent);color:var(--accent)}
+.item .calc{grid-column:1 / -1;display:flex;flex-wrap:wrap;align-items:center;gap:6px;font:400 13px/1.2 var(--font-mono);color:var(--muted)}
+.price{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:6px;padding:0 0 0 6px;background:var(--panel)}
+.price:focus-within{border-color:var(--accent);outline:2px solid var(--accent-soft)}
+.price input{width:5.2em;border:0;background:transparent;color:var(--fg);font:500 13px/1 var(--font-mono);padding:5px 6px 5px 2px;outline:none}
+.tag{font:600 10.5px/1 var(--font-body);letter-spacing:.06em;text-transform:uppercase;padding:3px 6px;border-radius:4px;background:var(--soft);color:var(--muted)}
+.tag.mine{background:var(--accent-soft);color:var(--accent)}
+.store{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px;display:flex;flex-direction:column;gap:4px}
+.store a{color:var(--accent)}
+.total{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 0 2px;font-variant-numeric:tabular-nums}
+.total b{font:700 28px/1 var(--font-display)}
+.total span{font-size:12.5px;color:var(--muted)}
+.linkbtn{border:0;background:transparent;color:var(--accent);padding:0;font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0;counter-reset:st}
+.steps li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 10px;padding:12px 0;border-bottom:1px dashed var(--line);counter-increment:st}
+.steps li::before{content:counter(st);grid-row:1 / span 3;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--fg);display:grid;place-items:center;font:700 15px/1 var(--font-display)}
+.steps li.on::before{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.steps b{font-size:14.5px}
+.steps p{margin:0;font-size:13.5px;color:var(--muted);max-width:60ch}
+.steps button{justify-self:start;border:1px solid var(--line);background:var(--panel);border-radius:7px;padding:5px 10px;font-size:12.5px;font-weight:600;cursor:pointer;margin-top:4px}
+.steps button:hover{border-color:var(--accent)}
+.steps li.on button{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.steppill{display:inline-flex;align-items:center;gap:2px;border-radius:10px;background:var(--panel);border:1px solid var(--accent);padding:3px;font:600 13px/1.1 var(--font-body);max-width:100%;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.steppill span{padding:0 8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.steppill button{border:0;background:transparent;border-radius:7px;padding:6px 9px;cursor:pointer;font-size:14px;line-height:1}
+.steppill button:hover{background:var(--accent-soft)}
+.steppill button:disabled{opacity:.35;cursor:default}
 .item .q{font:500 14px/1.3 var(--font-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 .item .n{font-weight:600;font-size:14px;min-width:0}
 .item .d{grid-column:1 / -1;font-size:12.5px;color:var(--muted)}
@@ -180,6 +208,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
         <button type="button" data-v="back" aria-pressed="false">Back</button>
         <button type="button" data-v="top" aria-pressed="false">Top</button>
       </div>
+      <div class="steppill" id="stepPill" hidden><button type="button" id="stepPrev" aria-label="Previous build step">‹</button><span id="stepName"></span><button type="button" id="stepNext" aria-label="Next build step">›</button><button type="button" id="stepExit" aria-label="Show the finished coop">✕</button></div>
       <label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label>
     </div>
   </section>
@@ -217,15 +246,22 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 
     <section>
       <div class="tabs" role="tablist">
-        <button type="button" role="tab" aria-selected="true" data-tab="shop" id="tab-shop">Shopping list</button>
+        <button type="button" role="tab" aria-selected="true" data-tab="shop" id="tab-shop">Materials</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="steps" id="tab-steps">Build steps</button>
         <button type="button" role="tab" aria-selected="false" data-tab="cut" id="tab-cut">Cut list</button>
-        <button type="button" role="tab" aria-selected="false" data-tab="notes" id="tab-notes">Build notes</button>
+        <button type="button" role="tab" aria-selected="false" data-tab="notes" id="tab-notes">Notes</button>
       </div>
-      <div role="tabpanel" id="pane-shop" aria-labelledby="tab-shop"><ul class="list" id="shop"></ul><button type="button" class="copy" id="copyShop">Copy shopping list</button></div>
+      <div role="tabpanel" id="pane-shop" aria-labelledby="tab-shop">
+        <div class="store"><b>Lowe's Atlanta-Edgewood, store #1875</b><span>1280 Caroline St NE, Atlanta, GA 30307 · <a href="https://www.lowes.com/store/GA-Atlanta/1875" target="_blank" rel="noopener">Store page ↗</a></span>
+          <span class="note">Prices marked <span class="tag">est.</span> are estimates. Lowe's shows prices only after you choose a store, so open each item's link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div>
+        <ul class="list" id="shop"></ul>
+        <div class="total"><b id="costTotal">—</b><span id="costNote"></span></div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div></div>
+      <div role="tabpanel" id="pane-steps" aria-labelledby="tab-steps" hidden><p class="note" style="margin:0 0 6px">Build in this order. Tap <b>Show in 3D</b> to see the coop as it stands at the end of each step.</p><ol class="steps" id="steps"></ol></div>
       <div role="tabpanel" id="pane-cut" aria-labelledby="tab-cut" hidden><div class="tablewrap"><table class="cut" id="cut"></table></div></div>
       <div role="tabpanel" id="pane-notes" aria-labelledby="tab-notes" hidden><div class="notes" id="notes"></div></div>
     </section>
-    <p class="foot">Fasteners (screws, staples, bolts, roofing screws) are left out of the model and lists. Lumber counts are 8 ft boards packed with a ⅛″ saw kerf; plywood counts are 4 × 8 sheets.</p>
+    <p class="foot">Fasteners (screws, staples, bolts, roofing screws) are left out of the model, the lists and the cost. Lumber counts are 8 ft boards packed with a ⅛″ saw kerf; plywood counts are 4 × 8 sheets.</p>
   </aside>
 </div>
 
@@ -726,6 +762,16 @@ const MODELS = {
       ['Lower door',fIn(g.ldw)+' × '+fIn(g.ldh)],['Upper doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
       ['Floor space',(g.lowerArea+g.runArea+g.boxArea).toFixed(1)+' sq ft over two levels'],['Per bird',((g.lowerArea+g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
+    steps:[
+      ['Build the front and back ladder frames','Lay each frame flat: two 72″ corner posts joined by 45″ rails at 3″, 18″, 44″ and 70½″. The back frame gets a middle post in three pieces between the rails; the front gets one only on the upper level. Measure both diagonals of each frame and adjust until they match.'],
+      ['Join the frames','Stand the frames up facing each other and connect them with 21″ side rails at all four heights. Add the middle joists under both floors and across the top.'],
+      ['Add the diagonal braces','Fit braces on the back and both sides of the leg zone and the lower level, and on the open upper side. Mark each one directly off the frame rather than trusting the cut list; once they are in, the frame is locked square.'],
+      ['Put in the floors','Notch the two floor sheets around the posts, cut the 9″ × 8″ ramp hatch in the upper one, and glue and screw both down to the rails and joists.'],
+      ['Wrap it in hardware cloth','Cover the back, the sides and the top of the run, pulled tight and fastened every 4″. Do it before the sleeping box so you can still reach every rail from inside.'],
+      ['Build the sleeping box','Fit the divider with its pop hole first, then the back, the side and the lid.'],
+      ['Make and hang the doors','Measure the real openings and build each door ⅛″ smaller all round: 1×2 frames with braces and hardware cloth for the two run doors, plywood with two stiffeners for the box door. Hang them, then mount the latches and the carry handles.'],
+      ['Add the ramp and set it in place','Glue and nail the cleats to the ramp, add the hanger cleat, and hang it in the hatch. Carry the coop to the porch and strap the back top rail to the house wall.']],
+    stepRules:[[/^Ramp/,7],[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/hardware cloth/,4],[/^Sleeping box/,5],[/floor \(/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
     notes:(g,an)=>[
       ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
       ['Why it is light','There is no roof and no wall sheathing except the sleeping box, so the 2×2 frame only carries hardware cloth, two floors and a small plywood box. All the plywood comes from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets. The whole cage is about '+fLb(an.total)+' lb, roughly a quarter of the outdoor coop.'],
@@ -774,7 +820,19 @@ const MODELS = {
       ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and aluminum on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. Use pressure-treated lumber only for the legs and run floor frame; it is much heavier when new.'],
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
       ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
-    lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'}
+    lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'},
+    steps:[
+      ['Build the run floor platform','Screw the two rim joists to three joists on 24″ centers and check the diagonals match. Add the four legs inside the corners, then glue and screw down the plywood floor.'],
+      ['Frame the run walls','Frame each wall flat on the floor. The back and sides get studs and two diagonal braces each; the front is just the plates and the two flat door posts. Stand the back up first, then the sides and the front, and screw the corners together.'],
+      ['Wrap the run in hardware cloth','Cover the back and both sides from the bottom of the floor frame to the top plates. Do it now, while you can still reach inside.'],
+      ['Build the coop floor','Build a second platform the same way, cut the 12″ × 10″ ramp hatch in its plywood, and set it on the run. Bolt it through the top plates if you want the coop to lift off as a separate piece.'],
+      ['Frame the coop walls','Frame the front with the door studs, header and cripple, then the back. Cut the side-wall top plates and stud tops to the 4-in-12 slope, and add the window sill and header in one side wall.'],
+      ['Set the rafters','Cut the three rafters with plumb-cut ends and a shallow seat notch where each crosses a top plate, and fasten them at 24″ centers.'],
+      ['Sheathe the walls','Put on the side sheets first, then front and back, which lap their edges. Cut out the door and window openings. Staple hardware cloth over the eave vents and behind the window opening.'],
+      ['Put on the roof','Fasten the deck or purlins, then the underlayment, then the roofing. Start aluminum panels at the end away from the prevailing wind; for shingles, start with drip edge and a starter course.'],
+      ['Make and hang the doors','Build the run door from 2×2 with a diagonal brace that rises from the bottom hinge corner, and staple hardware cloth to its back. Cut the coop door and window flap from plywood offcuts. Hang everything, then mount the latches and carry handles. Paint or seal the outside.'],
+      ['Add the ramp','Glue and nail the cleats to the ramp board, add the hanger cleat, and hang it in the hatch.']],
+    stepRules:[[/^Ramp/,9],[/hinge|latch|carabiner|knuckle|Carry handle/i,8],[/^Run door (stile|rail|diagonal|hardware)/,8],[/^Coop door \(plywood|^Vent window flap/,8],[/^Run floor|^Leg$/,0],[/^Run (back|side) hardware cloth/,2],[/^Run /,1],[/^Coop floor/,3],[/^Rafter/,5],[/plywood|eave vent|Window hardware cloth/,6],[/^Coop |^Window |^Cripple/,4],[/oof|hingle|urlin|orrugated/,7]]
   }
 };
 
@@ -820,9 +878,11 @@ function rebuild(){
   const ctx={dry:false,root,parts:[],bom:[],pivots:[]}; M().build(M().state,ctx);
   root.position.set(ctx.g.W/2,0,ctx.g.L/2); holder.add(root);
   current=ctx; current.an=analyze(ctx.bom, M().fasten);
+  const rules=M().stepRules||[]; ctx.parts.forEach(pt=>{ const r=rules.find(([re])=>re.test(pt.userData.name)); pt.userData.step = r ? r[1] : (M().steps.length-1); });
   applyLayers(); setDoors(); renderPanel(); dirty=true;
 }
-function applyLayers(){ if(!current) return; const ls=M().layerState; current.parts.forEach(m=>{ m.visible=!!ls[m.userData.layer]; }); if(selected && !selected.visible) clearPick(); dirty=true; }
+let buildStep=-1;
+function applyLayers(){ if(!current) return; const ls=M().layerState; current.parts.forEach(m=>{ m.visible=!!ls[m.userData.layer] && (buildStep<0 || m.userData.step<=buildStep); }); if(selected && !selected.visible) clearPick(); dirty=true; }
 function setDoors(){ if(!current) return; current.pivots.forEach(d=>{ d.p.rotation[d.axis]=d.open*doorT; }); dirty=true; }
 
 /* camera views */
@@ -873,7 +933,7 @@ function setModel(k, push){
   if(k==='garage') k='porch'; if(!MODELS[k]) k='porch'; const changed = k!==MK || !current; MK=k;
   if(push){ try{ history.replaceState(null,'','#'+k); }catch(_){ location.hash=k; } }
   renderModelTabs(); renderHeader(); renderLayers(); renderOptions();
-  if(changed){ rebuild(); goView('iso', !push); }
+  if(changed){ buildStep=-1; rebuild(); goView('iso', !push); }
 }
 function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare.note; }
 function renderLayers(){
@@ -909,38 +969,97 @@ function renderPanel(){
   for(const [rv,rl] of c.rows){ h+=`<tr><th>${rl}</th>`; for(const [cv,cl] of c.cols){ const on=String(rv)===String(m.state[c.row])&&String(cv)===String(m.state[c.col]); const w=grid[rv+'|'+cv];
     h+=`<td><button type="button" data-r="${rv}" data-c="${cv}" aria-pressed="${on}" class="${w===min?'best':''}" aria-label="${rl}, ${cl}: ${fLb(w)} pounds">${fLb(w)}</button></td>`; } h+='</tr>'; }
   $('#cmp').innerHTML=h+'</tbody>';
-  renderShop(an); renderCut(an);
+  renderShop(an); renderCut(an); renderSteps();
   const lightest = m.lightest ? dryWeight(m, m.lightest) : 0;
   $('#notes').innerHTML=m.notes(g,an,lightest).map(([a,b])=>`<p><b>${a}.</b> ${b}</p>`).join('');
 }
 $('#cmp').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const m=M(), c=m.compare;
   const num=k=>(m.options.find(o=>o.key===k)||{}).num; m.state[c.row]=num(c.row)?+b.dataset.r:b.dataset.r; m.state[c.col]=num(c.col)?+b.dataset.c:b.dataset.c; renderOptions(); rebuild(); });
 
+/* Lowe's links and estimated prices. Lowe's only shows a price for a chosen store, so these are estimates the viewer can overwrite. */
+const LS=q=>'https://www.lowes.com/search?searchTerm='+encodeURIComponent(q);
+const PRICE={
+  'lum:2x4':[4.28,'https://www.lowes.com/pd/2-in-x-4-in-x-96-in-Hemlock-Fir-Kiln-dried-Stud/5003830039'],
+  'lum:2x3':[3.68,LS('2 in x 3 in x 8 ft stud')],
+  'lum:2x2':[2.98,'https://www.lowes.com/pd/Spruce-Pine-Fir-Furring-Strip-Common-2-in-x-2-in-x-8-ft-Actual-1-5-in-x-1-5-in-x-8-ft/50236013'],
+  'lum:1x2':[1.78,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Whitewood-Furring-Strip/1000427899'],
+  'lum:1x4':[3.18,LS('1 in x 4 in x 8 ft furring strip')],
+  'ply:0.5':[33.98,LS('1/2 in x 4 ft x 8 ft plywood sheathing')],
+  'ply:0.375':[27.98,LS('3/8 in x 4 ft x 8 ft plywood sheathing')],
+  'ply:0.25':[29.98,LS('1/4 in x 4 ft x 8 ft sanded plywood')],
+  'mesh:10':[27.98,LS('hardware cloth 1/2 in 36 in x 10 ft')],
+  'mesh:25':[54.98,LS('hardware cloth 1/2 in 36 in x 25 ft')],
+  'mesh:50':[94.98,LS('hardware cloth 1/2 in 36 in x 50 ft')],
+  'alum':[34.98,LS('corrugated aluminum roof panel 26 in x 8 ft')],
+  'closure':[4.48,LS('corrugated metal roof foam closure strip')],
+  'underlay':[27.98,LS('15 lb roofing felt')],
+  'shingle':[38.98,LS('3-tab asphalt shingles bundle')],
+  'drip':[8.98,LS('aluminum drip edge 10 ft')],
+  'hw:T-hinge, 4″ heavy duty':[6.98,LS('4 in heavy duty t-hinge')],
+  'hw:Strap hinge, 3″ light duty':[4.28,LS('3 in strap hinge')],
+  'hw:Gate latch, self-locking with padlock hole':[11.98,LS('self-locking gate latch padlockable')],
+  'hw:Gate latch, small, with padlock hole':[7.98,LS('gate latch padlockable')],
+  'hw:Locking carabiner':[5.98,LS('locking carabiner')],
+  'hw:Steel pull handle, 6″ (carry handle)':[4.98,LS('6 in steel pull handle')]
+};
+let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
+const savePrices=()=>{ try{ localStorage.setItem('coopPrices',JSON.stringify(myPrices)); }catch(_){} };
+const unitPrice=k=> (k in myPrices) ? myPrices[k] : (PRICE[k]?PRICE[k][0]:0);
+const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
-  for(const sz of ['2x4','2x3','2x2','1x4','1x2']) if(an.lum[sz]) rows.push(['Lumber', LUM_LABEL[sz]+' × 8 ft', an.lum[sz].boards.length, (m.uses[sz]||'')+' · '+an.lum[sz].length+' pieces']);
+  for(const sz of ['2x4','2x3','2x2','1x4','1x2']) if(an.lum[sz]) rows.push(['Lumber', LUM_LABEL[sz]+' × 8 ft', an.lum[sz].boards.length, (m.uses[sz]||'')+' · '+an.lum[sz].length+' pieces','lum:'+sz]);
   for(const th of Object.keys(an.ply).sort((a,b)=>b-a)){ const p=an.ply[th]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
-    rows.push(['Plywood', fIn(+th)+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', ')]); }
-  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used']);
+    rows.push(['Plywood', fIn(+th)+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+(+th)]); }
+  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
   const r=an.roof;
-  if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves']); }
-  if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges']); }
-  if(r.underlay) rows.push(['Roofing','Synthetic roof underlayment',1,'Smallest roll; about '+Math.ceil(r.underlay.area)+' sq ft needed']);
-  for(const [k,v] of Object.entries(an.hw)) rows.push(['Hardware',k,v.qty,Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ')]);
+  if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation. If Edgewood stocks only galvanized steel panels, they work the same and weigh a little more.','alum']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves','closure']); }
+  if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course','shingle']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges','drip']); }
+  if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
+  for(const [k,v] of Object.entries(an.hw)) rows.push(['Hardware',k,v.qty,Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', '),'hw:'+k]);
   return rows;
+}
+function costTotal(rows){ return rows.reduce((a,r)=>a+r[2]*unitPrice(r[4]),0); }
+function renderCostTotal(rows){
+  const mine=rows.filter(r=>r[4] in myPrices).length;
+  $('#costTotal').textContent=money(costTotal(rows));
+  $('#costNote').textContent= mine===rows.length ? 'Total before sales tax, all your prices' : mine ? 'Total before sales tax · '+mine+' of '+rows.length+' prices are yours, the rest are estimates' : 'Estimated total before sales tax';
 }
 function renderShop(an){
   const rows=shopRows(an); let h='', last='';
-  rows.forEach(([grp,item,qty,d])=>{ if(grp!==last){ h+=`<h3>${grp}</h3>`; last=grp; } h+=`<li class="item"><span class="n">${item}</span><span class="q">× ${qty}</span><span class="d">${d}</span></li>`; });
-  $('#shop').innerHTML=h;
+  rows.forEach(([grp,item,qty,d,key],i)=>{ if(grp!==last){ h+=`<h3>${grp}</h3>`; last=grp; }
+    const url=PRICE[key]?PRICE[key][1]:LS(item), mine=key in myPrices, up=unitPrice(key);
+    h+=`<li class="item"><span class="n"><a href="${url}" target="_blank" rel="noopener">${item} ↗</a></span><span class="q" id="lt-${i}">${money(qty*up)}</span>
+      <span class="calc">${qty} ×<label class="price">$<input type="number" inputmode="decimal" min="0" step="0.01" id="pr-${i}" data-k="${key}" data-i="${i}" data-q="${qty}" value="${up.toFixed(2)}" aria-label="Unit price for ${item.replace(/"/g,'')}"></label><span class="tag${mine?' mine':''}" id="tg-${i}">${mine?'your price':'est.'}</span></span>
+      <span class="d">${d}</span></li>`; });
+  $('#shop').innerHTML=h; renderCostTotal(rows);
 }
+$('#shop').addEventListener('input',e=>{ const t=e.target; if(!t.dataset||!t.dataset.k) return; const v=parseFloat(t.value);
+  if(isNaN(v)||v<0) return; myPrices[t.dataset.k]=v; savePrices();
+  $('#lt-'+t.dataset.i).textContent=money(v*+t.dataset.q); const tg=$('#tg-'+t.dataset.i); tg.textContent='your price'; tg.classList.add('mine');
+  renderCostTotal(shopRows(current.an)); });
+$('#resetPrices').addEventListener('click',()=>{ myPrices={}; savePrices(); renderShop(current.an); });
 $('#copyShop').addEventListener('click',async e=>{
-  const rows=shopRows(current.an); let last=''; const lines=[M().title+': shopping list ('+M().cfgLabel(M().state)+')'];
-  rows.forEach(([g,i,q])=>{ if(g!==last){ lines.push('', g.toUpperCase()); last=g; } lines.push(`${q} × ${i}`); });
+  const rows=shopRows(current.an); let last=''; const lines=[M().title+': shopping list ('+M().cfgLabel(M().state)+')',"Lowe's Atlanta-Edgewood #1875, 1280 Caroline St NE"];
+  rows.forEach(([g,i,q,,k])=>{ if(g!==last){ lines.push('', g.toUpperCase()); last=g; } lines.push(`${q} × ${i} @ ${money(unitPrice(k))}${k in myPrices?'':' (est.)'} = ${money(q*unitPrice(k))}`); });
+  lines.push('', 'TOTAL before tax: '+money(costTotal(rows)));
   const txt=lines.join('\n'), b=e.currentTarget;
   try{ await navigator.clipboard.writeText(txt); b.textContent='Copied'; }catch(_){ const ta=document.createElement('textarea'); ta.value=txt; b.after(ta); ta.select(); b.textContent='Select and copy the text below'; }
   setTimeout(()=>{ b.textContent='Copy shopping list'; },2200);
 });
+/* Build steps */
+function renderSteps(){
+  const st=M().steps;
+  $('#steps').innerHTML=st.map(([t,d],i)=>`<li class="${i===buildStep?'on':''}"><b>${t}</b><p>${d}</p><button type="button" data-s="${i}" aria-pressed="${i===buildStep}">${i===buildStep?'Showing in 3D':'Show in 3D'}</button></li>`).join('');
+  const pill=$('#stepPill'); pill.hidden = buildStep<0;
+  if(buildStep>=0){ $('#stepName').textContent='Step '+(buildStep+1)+' of '+st.length+': '+st[buildStep][0]; $('#stepPrev').disabled=buildStep===0; $('#stepNext').disabled=buildStep===st.length-1; }
+}
+function setStep(i){ buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps(); }
+$('#steps').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.s; setStep(i===buildStep?-1:i);
+  if(window.matchMedia('(max-width: 880px)').matches) stage.scrollIntoView({behavior:reduceMotion?'auto':'smooth'}); });
+$('#stepPrev').addEventListener('click',()=>setStep(Math.max(0,buildStep-1)));
+$('#stepNext').addEventListener('click',()=>setStep(Math.min(M().steps.length-1,buildStep+1)));
+$('#stepExit').addEventListener('click',()=>setStep(-1));
 function renderCut(an){
   let h='<thead><tr><th>Part</th><th>Qty</th><th>Size</th></tr></thead><tbody>';
   for(const sz of ['2x4','2x3','2x2','1x4','1x2']){ if(!an.lum[sz]) continue; h+=`<tr class="sec"><td colspan="3">${LUM_LABEL[sz]} lumber</td></tr>`;
@@ -954,7 +1073,7 @@ function renderCut(an){
   $('#cut').innerHTML=h+'</tbody>';
 }
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
-  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
 $('#views').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) goView(b.dataset.v); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed','false')); });
