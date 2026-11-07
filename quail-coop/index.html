@@ -364,7 +364,7 @@ function frontLatch(ctx, R, dw, hm, th){
   torus(ctx,R.fixed,[dw+1.3,hm-2.0,-0.8],0);
   hw(ctx,'Gate latch, self-locking with padlock hole',0.6,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
 }
-/* Inset door (garage coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
+/* Inset door (porch coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
 function insetHinge(ctx, R, h, s){
   hwBox(ctx,R.pivot,[s*0.3,s*5.5],[h-0.4,h+0.4],[-0.1,0],'steel','Strap hinge');
   hwBox(ctx,R.fixed,[-s*0.15,-s*1.35],[h-1.3,h+1.3],[-0.1,0],'steel','Strap hinge leaf');
@@ -569,8 +569,8 @@ function buildOutdoor(cfg, ctx){
   return ctx.g;
 }
 
-/* ---------- garage coop: 4' wide x 2' deep x 6' tall, light 2x2 frame ---------- */
-function buildGarage(cfg, ctx){
+/* ---------- porch coop: 4' wide x 2' deep x 6' tall, light 2x2 frame ---------- */
+function buildPorch(cfg, ctx){
   const T=1.5, W=48, L=24, H=72, tf=+cfg.floorPly, tb=+cfg.boxPly, F='2x2';
   const m0=(W-T)/2, m1=(W+T)/2, mx=W/2;
   const yS=3, f1=18, f2=44, yTop=H-T;
@@ -705,6 +705,39 @@ function analyze(bom, fasten){
 
 /* ---------- the two designs ---------- */
 const MODELS = {
+  porch:{
+    tab:'Porch coop', dims:'4′ × 2′ × 6′ · no roof',
+    eyebrow:'Build plan · 4 quail · covered porch', title:'Four-Quail Porch Coop',
+    lede:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A thin-plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
+    build:buildPorch, center:37, radius:46, fasten:2,
+    state:{floorPly:0.375, boxPly:0.25},
+    layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
+    options:[
+      {key:'floorPly',label:'Floor plywood',num:true,choices:[[0.375,'⅜″','Lighter'],[0.5,'½″','Stiffer underfoot']]},
+      {key:'boxPly',label:'Sleeping box plywood',num:true,choices:[[0.25,'¼″','Lightest'],[0.375,'⅜″','Sturdier']]}],
+    compare:{row:'floorPly',col:'boxPly',rows:[[0.375,'⅜″ floors'],[0.5,'½″ floors']],cols:[[0.25,'¼″ box'],[0.375,'⅜″ box']],
+      note:'Weight by floor and sleeping-box plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried lumber.'},
+    uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
+    cfgLabel:s=>fIn(s.floorPly)+' floors, '+fIn(s.boxPly)+' sleeping box',
+    split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
+    specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
+      ['Lower floor height',fIn(g.yLF)+' off ground'],['Lower clear height',fIn(g.lowerClear)],
+      ['Upper floor height',fFt(g.yUF)],['Upper clear height',fIn(g.upperClear)],
+      ['Lower door',fIn(g.ldw)+' × '+fIn(g.ldh)],['Upper doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
+      ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
+      ['Floor space',(g.lowerArea+g.runArea+g.boxArea).toFixed(1)+' sq ft over two levels'],['Per bird',((g.lowerArea+g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
+    notes:(g,an)=>[
+      ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
+      ['Why it is light','There is no roof and no wall sheathing except the sleeping box, so the 2×2 frame only carries hardware cloth, two floors and a small plywood box. All the plywood comes from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets. The whole cage is about '+fLb(an.total)+' lb, roughly a quarter of the outdoor coop.'],
+      ['Racking','A tall, narrow cage on 2×2s will rack unless it is braced. Diagonal braces run on the back and both sides of the leg zone and the lower level, and on the left side of the upper run. The sleeping-box plywood stiffens the upper right. Fasten the hardware cloth tight with washer-head screws every 4″ and it helps too.'],
+      ['Tipping','At 6′ tall and 2′ deep it can tip if a dog jumps on it or a door is leaned on. Strap the back top rail to the house wall with a short furniture anti-tip strap screwed into a stud.'],
+      ['Sleeping box','It fills the right half of the upper level. The divider has a 7″ × 8″ pop hole at the back and stops 2″ below the top rail, so stale air can leave through the run side. In winter, clip a sheet of clear corrugated plastic or a tarp over the top and windward side of the run to cut drafts and blown-in rain or snow.'],
+      ['Predators','On a porch the main threats are raccoons, cats, rats, opossums and snakes. ½″ hardware cloth covers every open face including the top. ¼″ cloth also stops mice and is about the same weight, if you prefer it. The three doors sit flush in their openings with ⅛″ gaps. Each closes with a gate latch and a locking carabiner, because raccoons can work plain latches.'],
+      ['Flighty birds','Quail flush straight up when startled. Each level has about '+fIn(Math.min(g.lowerClear,g.upperClear))+' of headroom, which is high enough for them to hit the top hard. Staple soft bird netting or shade cloth a few inches under the top mesh of the upper run to cushion them.'],
+      ['Ramp','The rise is '+fIn(g.rise)+', so the 7″-wide ramp runs at about '+Math.round(g.rampDeg)+'° with '+g.cleats+' cleats. It hangs from a cleat at the 9″ × 8″ hatch and lifts out for cleaning. Teach the birds the route by placing them in the sleeping box at dusk for the first few nights.'],
+      ['Cleaning','The lower door spans almost the whole front. The two upper doors open the run half and the sleeping box separately. To keep shavings off the porch, slide a cut-down boot tray or a scrap of vinyl flooring onto each floor as a removable liner.'],
+      ['Not shown','Fasteners: screws, washer-head screws or staples for the hardware cloth, and glue. Also not shown: the anti-tip wall strap, bird netting, feeders, waterers, a heat lamp (if you add one, guard it and keep it clear of the plywood), and bedding.']]
+  },
   outdoor:{
     tab:'Outdoor coop', dims:'4′ × 4′ × 8′ · shed roof',
     eyebrow:'Build plan · 4 quail · outdoors', title:'Four-Quail Shed Coop',
@@ -742,44 +775,11 @@ const MODELS = {
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
       ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
     lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'}
-  },
-  garage:{
-    tab:'Garage coop', dims:'4′ × 2′ × 6′ · no roof',
-    eyebrow:'Build plan · 4 quail · indoors', title:'Four-Quail Garage Coop',
-    lede:'A lightweight two-level cage for a garage. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out rats, cats and raccoons. A thin-plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
-    build:buildGarage, center:37, radius:46, fasten:2,
-    state:{floorPly:0.375, boxPly:0.25},
-    layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
-    options:[
-      {key:'floorPly',label:'Floor plywood',num:true,choices:[[0.375,'⅜″','Lighter'],[0.5,'½″','Stiffer underfoot']]},
-      {key:'boxPly',label:'Sleeping box plywood',num:true,choices:[[0.25,'¼″','Lightest'],[0.375,'⅜″','Sturdier']]}],
-    compare:{row:'floorPly',col:'boxPly',rows:[[0.375,'⅜″ floors'],[0.5,'½″ floors']],cols:[[0.25,'¼″ box'],[0.375,'⅜″ box']],
-      note:'Weight by floor and sleeping-box plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried lumber.'},
-    uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
-    cfgLabel:s=>fIn(s.floorPly)+' floors, '+fIn(s.boxPly)+' sleeping box',
-    split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
-    specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
-      ['Lower floor height',fIn(g.yLF)+' off ground'],['Lower clear height',fIn(g.lowerClear)],
-      ['Upper floor height',fFt(g.yUF)],['Upper clear height',fIn(g.upperClear)],
-      ['Lower door',fIn(g.ldw)+' × '+fIn(g.ldh)],['Upper doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
-      ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
-      ['Floor space',(g.lowerArea+g.runArea+g.boxArea).toFixed(1)+' sq ft over two levels'],['Per bird',((g.lowerArea+g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
-    notes:(g,an)=>[
-      ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
-      ['Why it is light','There is no roof and no wall sheathing except the sleeping box, so the 2×2 frame only carries hardware cloth, two floors and a small plywood box. All the plywood comes from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets. The whole cage is about '+fLb(an.total)+' lb, roughly a quarter of the outdoor coop.'],
-      ['Racking','A tall, narrow cage on 2×2s will rack unless it is braced. Diagonal braces run on the back and both sides of the leg zone and the lower level, and on the left side of the upper run. The sleeping-box plywood stiffens the upper right. Fasten the hardware cloth tight with washer-head screws every 4″ and it helps too.'],
-      ['Tipping','At 6′ tall and 2′ deep it can tip if a dog jumps on it or a door is leaned on. Strap the back top rail to a wall stud with a short furniture anti-tip strap.'],
-      ['Sleeping box','It fills the right half of the upper level. The divider has a 7″ × 8″ pop hole at the back and stops 2″ below the top rail, so stale air can leave through the run side. In a cold garage, a sheet of cardboard over the top mesh of the run in winter cuts drafts.'],
-      ['Predators','In a garage the threats are rats, mice, weasels, cats and the occasional raccoon. ½″ hardware cloth covers every open face including the top. ¼″ cloth also stops mice and is about the same weight, if you prefer it. The three doors sit flush in their openings with ⅛″ gaps. Each closes with a gate latch and a locking carabiner, because raccoons can work plain latches.'],
-      ['Flighty birds','Quail flush straight up when startled. Each level has about '+fIn(Math.min(g.lowerClear,g.upperClear))+' of headroom, which is high enough for them to hit the top hard. Staple soft bird netting or shade cloth a few inches under the top mesh of the upper run to cushion them.'],
-      ['Ramp','The rise is '+fIn(g.rise)+', so the 7″-wide ramp runs at about '+Math.round(g.rampDeg)+'° with '+g.cleats+' cleats. It hangs from a cleat at the 9″ × 8″ hatch and lifts out for cleaning. Teach the birds the route by placing them in the sleeping box at dusk for the first few nights.'],
-      ['Cleaning','The lower door spans almost the whole front. The two upper doors open the run half and the sleeping box separately. To keep shavings off the garage floor, slide a cut-down boot tray or a scrap of vinyl flooring onto each floor as a removable liner.'],
-      ['Not shown','Fasteners: screws, washer-head screws or staples for the hardware cloth, and glue. Also not shown: the anti-tip wall strap, bird netting, feeders, waterers, a heat lamp (if you add one, guard it and keep it clear of the plywood), and bedding.']]
   }
 };
 
 /* ---------- three.js scene ---------- */
-let MK = 'outdoor';
+let MK = 'porch';
 const M = () => MODELS[MK];
 const runtime = {open:false};
 for(const k in MODELS){ MODELS[k].layerState={}; MODELS[k].layers.forEach(([l])=>MODELS[k].layerState[l]=true); }
@@ -870,7 +870,7 @@ function renderModelTabs(){
 }
 $('#models').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setModel(b.dataset.m, true); });
 function setModel(k, push){
-  if(!MODELS[k]) k='outdoor'; const changed = k!==MK || !current; MK=k;
+  if(k==='garage') k='porch'; if(!MODELS[k]) k='porch'; const changed = k!==MK || !current; MK=k;
   if(push){ try{ history.replaceState(null,'','#'+k); }catch(_){ location.hash=k; } }
   renderModelTabs(); renderHeader(); renderLayers(); renderOptions();
   if(changed){ rebuild(); goView('iso', !push); }
@@ -964,7 +964,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',appl
 new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 applyTheme(); resize();
-setModel(MODELS[location.hash.slice(1)] ? location.hash.slice(1) : 'outdoor', false);
+setModel(location.hash.slice(1), false);
 $('#load').remove();
 requestAnimationFrame(loop);
 })();
