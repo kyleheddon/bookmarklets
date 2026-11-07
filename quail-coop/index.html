@@ -988,21 +988,21 @@ const LS=q=>'https://www.lowes.com/search?searchTerm='+encodeURIComponent(q);
 const PRICE={
   'lum:2x4':[4.28,'https://www.lowes.com/pd/2-in-x-4-in-x-96-in-Hemlock-Fir-Kiln-dried-Stud/5003830039'],
   'lum:2x3':[3.68,LS('2 in x 3 in x 8 ft stud')],
-  'lum:2x4pt':[5.48,LS('2 in x 4 in x 8 ft pressure treated lumber'),'',1,'Ground-contact rated.'],
-  'lum:2x3pt':[5.48,LS('2 in x 4 in x 8 ft pressure treated lumber'),'',1,'Pressure-treated 2×3 is rarely stocked; buy pressure-treated 2×4 and rip it to 2½″.'],
+  'lum:2x4pt':[4.08,'https://www.lowes.com/pd/Severe-Weather-2-4-8-TC-TREATED-2-PRIME/5014119401','online',1,'Severe Weather ground-contact treated.'],
+  'lum:2x3pt':[4.08,'https://www.lowes.com/pd/Severe-Weather-2-4-8-TC-TREATED-2-PRIME/5014119401','online',1,'Pressure-treated 2×3 is rarely stocked; buy pressure-treated 2×4 and rip it to 2½″.'],
   'lum:2x2':[2.98,'https://www.lowes.com/pd/Spruce-Pine-Fir-Furring-Strip-Common-2-in-x-2-in-x-8-ft-Actual-1-5-in-x-1-5-in-x-8-ft/50236013','',1,'Untreated spruce-pine-fir. Your Lowe\'s list had the pressure-treated version at $3.68.'],
   'lum:1x2':[1.78,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Whitewood-Furring-Strip/1000427899','',1,'Untreated whitewood. Your Lowe\'s list had the pressure-treated version at $2.88.'],
   'lum:1x4':[3.18,LS('1 in x 4 in x 8 ft furring strip')],
-  'ply:0.5':[33.98,LS('1/2 in x 4 ft x 8 ft plywood sheathing')],
-  'ply:0.5pt':[44.98,'https://www.lowes.com/pd/Severe-Weather-1-2-in-x-4-ft-x-8-ft-Pressure-Treated-Cdx-Hemlock-Fir-Plywood-Sheathing/5002421377'],
+  'ply:0.5':[33.98,LS('1/2 in x 4 ft x 8 ft plywood sheathing'),'',1,'Plywood, not OSB.'],
+  'ply:0.5pt':[38.88,'https://www.lowes.com/pd/Severe-Weather-1-2-in-Common-Douglas-Fir-Plywood-Sheathing-Application-as-4-x-8/50113178','online'],
   'ply:0.375':[22.13,LS('3/8 in x 4 ft x 8 ft plywood sheathing'),'online'],
   'ply:0.25':[30.08,LS('1/4 in x 4 ft x 8 ft sanded plywood'),'online'],
   'mesh:10':[27.98,LS('hardware cloth 1/2 in 36 in x 10 ft')],
-  'mesh:25':[79.97,LS('hardware cloth 1/2 in 36 in x 25 ft'),'online',1,'Check the label says 19 gauge.'],
+  'mesh:25':[79.97,'https://www.lowes.com/pd/GARDEN-CRAFT-25-ft-x-3-ft-Gray-Steel-Welded-Wire-Garden-Hardware-Cloth-Rolled-Fencing/5001503005','online',1,'Check the label says ½″ mesh, 19 gauge.'],
   'mesh:50':[94.98,LS('hardware cloth 1/2 in 36 in x 50 ft')],
   'alum':[34.98,LS('corrugated aluminum roof panel 26 in x 8 ft')],
   'closure':[4.48,LS('corrugated metal roof foam closure strip')],
-  'underlay':[27.98,LS('15 lb roofing felt')],
+  'underlay':[27.98,'https://www.lowes.com/pl/roofing/roofing-underlayment/felt/432-sq-foot-coverage-area/4294858150-4294931012-4294550725'],
   'shingle':[38.98,LS('3-tab asphalt shingles bundle')],
   'drip':[8.98,LS('aluminum drip edge 10 ft')],
   'hw:T-hinge, 4″ heavy duty':[6.98,LS('4 in heavy duty t-hinge')],
@@ -1026,7 +1026,7 @@ function shopRows(an){
     rows.push(['Plywood', fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
   rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
   const r=an.roof;
-  if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation. If Edgewood stocks only galvanized steel panels, they work the same and weigh a little more.','alum']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves','closure']); }
+  if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation. Aluminum, not galvanized steel.','alum']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves; match the profile and pack size to the panel you buy','closure']); }
   if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course','shingle']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges','drip']); }
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
