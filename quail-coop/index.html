@@ -328,13 +328,23 @@ const MAT = {
   wood: std('#cf9f62'), ply: std('#e0c294',.9), door: std('#5c8a7d',.7),
   woodPT: std('#b3a464'), plyPT: std('#c4c18e',.9),   // pressure-treated: the same wood with a slight green cast
   // house colors: slate blue-gray siding, white trim, dark-stained front door
-  siding: std('#74839a',.8), trim: std('#ecebe4',.75), doorPaint: std('#4e3226',.7),
+  siding: std('#74839a',.8), trim: std('#ecebe4',.75), doorPaint: std('#6a3a33',.72),
   alum: new THREE.MeshStandardMaterial({color:lin('#c6ccd2'), metalness:.7, roughness:.34, side:THREE.DoubleSide}),
   shingle: new THREE.MeshStandardMaterial({map:shingleTex(), roughness:.95, side:THREE.DoubleSide}),
   shingleEdge: std('#3a3e43',.9), steel: std('#41474d',.4,.8), carabiner: std('#e2552b',.35,.35),
   mesh: new THREE.MeshStandardMaterial({map:meshTex(), transparent:true, side:THREE.DoubleSide, depthWrite:false, metalness:.4, roughness:.5})
 };
 const EDGED = {wood:1, ply:1, door:1, woodPT:1, plyPT:1};
+function lineTex(w,h,draw,rx,ry){ const c=document.createElement('canvas'); c.width=w; c.height=h; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,w,h); draw(x); const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(rx,ry); t.anisotropy=8; t.encoding=THREE.sRGBEncoding; return t; }
+// lap siding: a shadow line every 6" (UVs are in inches)
+MAT.siding.map=lineTex(8,64,x=>{ const g=x.createLinearGradient(0,0,0,14); g.addColorStop(0,'#8c929a'); g.addColorStop(1,'#ffffff'); x.fillStyle=g; x.fillRect(0,0,8,14); x.fillStyle='#d6d9de'; x.fillRect(0,60,8,4); },1/8,1/6);
+// door: vertical boards 3-1/2" wide
+MAT.doorPaint.map=lineTex(64,8,x=>{ x.fillStyle='#7a6f6c'; x.fillRect(0,0,4,8); x.fillStyle='#efe9e7'; x.fillRect(4,0,3,8); },1/3.5,1/8);
+/* Give a geometry UVs in inches, projected along each face's normal, so tiled textures keep real scale. */
+function inchUV(geo){ const P=geo.attributes.position, N=geo.attributes.normal, uv=geo.attributes.uv; if(!N||!uv) return;
+  for(let i=0;i<P.count;i++){ const nx=Math.abs(N.getX(i)), ny=Math.abs(N.getY(i));
+    if(ny>0.7) uv.setXY(i,0.4,1.8);   // tops and bottoms stay plain else if(nx>0.7) uv.setXY(i,P.getZ(i),P.getY(i)); else uv.setXY(i,P.getX(i),P.getY(i)); }
+  uv.needsUpdate=true; }
 const PAINT_EDGE = new THREE.LineBasicMaterial({color:0x3a4250, transparent:true, opacity:.28});
 const EDGE_MAT = new THREE.LineBasicMaterial({color:0x4a3016, transparent:true, opacity:.38});
 
@@ -354,7 +364,8 @@ function addMesh(ctx, geo, o){
   let pk=null;
   if(o.layer==='sheathing' && /^ply/.test(o.mat)) pk='siding';
   else if(o.mat==='door') pk = (o.bom && o.bom.k==='ply') ? 'doorPaint' : 'trim';
-  else if(/^wood/.test(o.mat) && (o.layer==='framing' || o.layer==='doors')) pk='trim';
+  else if(/^wood/.test(o.mat) && (o.layer==='framing' || o.layer==='doors' || o.layer==='sheathing')) pk='trim';
+  if(pk==='siding' || pk==='doorPaint') inchUV(geo);
   const m = new THREE.Mesh(geo, MAT[o.mat]);
   m.castShadow = o.mat!=='mesh'; m.receiveShadow = true;
   m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom), rawMat:MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};
@@ -420,15 +431,15 @@ function rig(ctx, pos, use, axis, open){
 /* Overlay door (outdoor coop): door spans x [0,dw], outer face z=0, frame face sits th behind it. */
 function frontHinge(ctx, R, h, th){
   hwBox(ctx,R.pivot,[0.3,7],[h-0.45,h+0.45],[-0.12,0],'steel','T-hinge strap');
-  hwBox(ctx,R.fixed,[-2.1,-0.3],[h-1.6,h+1.6],[th-0.12,th],'steel','T-hinge leaf');
+  hwBox(ctx,R.fixed,[-1.3,-0.2],[h-1.6,h+1.6],[th-0.12,th],'steel','T-hinge leaf');
   cyl(ctx,R.fixed,[-0.15,h,-0.15],3.2,'y');
   hw(ctx,'T-hinge, 4″ heavy duty',0.45,R.use);
 }
 function frontLatch(ctx, R, dw, hm, th){
   hwBox(ctx,R.pivot,[dw-4.5,dw+1.2],[hm-0.3,hm+0.3],[-0.5,-0.15],'steel','Gate latch bar');
   hwBox(ctx,R.pivot,[dw-4.6,dw-3.4],[hm-0.9,hm+0.9],[-0.15,0],'steel','Gate latch bar bracket');
-  hwBox(ctx,R.fixed,[dw+0.4,dw+2.2],[hm-1.3,hm+0.9],[-0.65,th],'steel','Gate latch keeper');
-  torus(ctx,R.fixed,[dw+1.3,hm-2.0,-0.8],0);
+  hwBox(ctx,R.fixed,[dw+0.3,dw+1.4],[hm-1.3,hm+0.9],[-0.65,th],'steel','Gate latch keeper');
+  torus(ctx,R.fixed,[dw+0.85,hm-2.0,-0.8],0);
   hw(ctx,'Gate latch, 4″ with padlock hole',0.4,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
 }
 /* Inset door (porch coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
@@ -574,6 +585,24 @@ function buildOutdoor(cfg, ctx){
   const sbom={k:'ply',th:tw,w:L,h:plane(0)+Dv-yUb,h2:plane(L)+Dv-yUb,nest:'side'};
   P({...sh,name:'Side wall plywood',axis:'x',poly:spoly,range:[-tw,0],bom:sbom});
   P({...sh,name:'Side wall plywood (window cut out)',axis:'x',poly:spoly,holes:[[[D+T,winB],[n0,winB],[n0,winT],[D+T,winT]]],range:[W,W+tw],bom:sbom});
+
+  /* 1x4 trim: corner boards, frieze under the eave vents, rakes and fascia */
+  const tr={mat:'wood',layer:'sheathing'}, tt=0.75, tw4=3.5;
+  const rakeTop=z=>plane(z)+Dv+0.5/cosA+0.1, rakeBot=z=>rakeTop(z)-tw4/cosA;
+  for(const [xs,nm] of [[[-tw,-tw+tw4],'left'],[[W+tw-tw4,W+tw],'right']]){
+    B({...tr,name:'Corner trim (1×4), front',x:xs,y:[yUb,yFP],z:[-tw-tt,-tw],bom:lum(yFP-yUb,'1x4')});
+    B({...tr,name:'Corner trim (1×4), back',x:xs,y:[yUb,yBP],z:[L+tw,L+tw+tt],bom:lum(yBP-yUb,'1x4')});
+  }
+  for(const xs of [[-tw-tt,-tw],[W+tw,W+tw+tt]]){
+    const zf=[-tw-tt,-tw-tt+tw4], zb=[L+tw+tt-tw4,L+tw+tt];
+    B({...tr,name:'Corner trim (1×4), side',x:xs,y:[yUb,rakeBot(zf[1])],z:zf,bom:lum(rakeBot(zf[1])-yUb,'1x4')});
+    B({...tr,name:'Corner trim (1×4), side',x:xs,y:[yUb,rakeBot(zb[1])],z:zb,bom:lum(rakeBot(zb[1])-yUb,'1x4')});
+    P({...tr,name:'Rake trim (1×4)',axis:'x',poly:[[zA,rakeTop(zA)],[zB,rakeTop(zB)],[zB,rakeBot(zB)],[zA,rakeBot(zA)]],range:xs,bom:lum((zB-zA)/cosA,'1x4')});
+  }
+  B({...tr,name:'Frieze board under vents (1×4)',x:[-tw+tw4,W+tw-tw4],y:[yFP-tw4,yFP],z:[-tw-tt,-tw],bom:lum(W+2*tw-2*tw4,'1x4')});
+  B({...tr,name:'Frieze board under vents (1×4)',x:[-tw+tw4,W+tw-tw4],y:[yBP-tw4,yBP],z:[L+tw,L+tw+tt],bom:lum(W+2*tw-2*tw4,'1x4')});
+  B({...tr,name:'Fascia (1×4)',x:[-tw-tt,W+tw+tt],y:[rakeTop(zA)-tw4,rakeTop(zA)],z:[zA-tt,zA],bom:lum(W+2*tw+2*tt,'1x4')});
+  B({...tr,name:'Fascia (1×4)',x:[-tw-tt,W+tw+tt],y:[rakeTop(zB)-tw4,rakeTop(zB)],z:[zB,zB+tt],bom:lum(W+2*tw+2*tt,'1x4')});
 
   /* Hardware cloth */
   ctx.mod='run';
@@ -833,7 +862,7 @@ const MODELS = {
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Plywood floors, wall sheathing and roof deck, every 6″ on edges and 12″ in the field.'],
       ['Brad nailer and brads','With glue, for the ramp cleats and holding plywood in place while you screw it. Not for framing.'],
       ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every stud and plate it crosses, closer along the floor frame and the eave vents.']],
-    uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger'},
+    uses:{'1x4':'Corner, rake and fascia trim','2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger'},
     cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'steel roof','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
     specs:g=>[['Overall footprint',fIn(g.overall[0])+' × '+fIn(g.overall[1])],['Highest point',"8′-0″ (front eave)"],
@@ -864,11 +893,11 @@ const MODELS = {
       ['Build the coop floor','Build a second platform the same way, cut the 12″ × 10″ ramp hatch in its plywood, and set it on the run. Bolt it through the top plates if you want the coop to lift off as a separate piece.'],
       ['Frame the coop walls','Frame the front with the door studs, header and cripple, then the back. Cut the side-wall top plates and stud tops to the 4-in-12 slope, and add the window sill and header in one side wall.'],
       ['Set the rafters','Cut the three rafters with plumb-cut ends and a shallow seat notch where each crosses a top plate, and fasten them at 24″ centers.'],
-      ['Sheathe the walls','Put on the side sheets first, then front and back, which lap their edges. Cut out the door and window openings. Staple hardware cloth over the eave vents and behind the window opening.'],
+      ['Sheathe the walls','Put on the side sheets first, then front and back, which lap their edges. Cut out the door and window openings. Staple hardware cloth over the eave vents and behind the window opening, then nail on the white 1×4 trim: corner boards, frieze boards under the vents, rakes and fascia.'],
       ['Put on the roof','Fasten the plywood deck, then the underlayment, then the roofing. Start the steel panels at the end away from the prevailing wind; for shingles, start with drip edge and a starter course.'],
       ['Make and hang the doors','Build the run door from 2×2 with a diagonal brace that rises from the bottom hinge corner, and staple hardware cloth to its back. Cut the coop door and window flap from plywood offcuts. Hang everything, then mount the latches and carry handles. Paint or seal the outside.'],
       ['Add the ramp','Glue and nail the cleats to the ramp board, add the hanger cleat, and hang it in the hatch.']],
-    stepRules:[[/^Ramp/,9],[/hinge|latch|carabiner|knuckle|Carry handle/i,8],[/^Run door (stile|rail|diagonal|hardware)/,8],[/^Coop door \(plywood|^Vent window flap/,8],[/^Run floor|^Leg$/,0],[/^Run (back|side) hardware cloth/,2],[/^Run /,1],[/^Coop floor/,3],[/^Rafter/,5],[/plywood|eave vent|Window hardware cloth/,6],[/^Coop |^Window |^Cripple/,4],[/oof|hingle|urlin|orrugated/,7]]
+    stepRules:[[/^Ramp/,9],[/hinge|latch|carabiner|knuckle|Carry handle/i,8],[/^Run door (stile|rail|diagonal|hardware)/,8],[/^Coop door \(plywood|^Vent window flap/,8],[/trim \(1×4\)|^Fascia|^Frieze/,6],[/^Run floor|^Leg$/,0],[/^Run (back|side) hardware cloth/,2],[/^Run /,1],[/^Coop floor/,3],[/^Rafter/,5],[/plywood|eave vent|Window hardware cloth/,6],[/^Coop |^Window |^Cripple/,4],[/oof|hingle|urlin|orrugated/,7]]
   }
 };
 
