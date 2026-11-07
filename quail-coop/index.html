@@ -1055,9 +1055,8 @@ $('#shop').addEventListener('input',e=>{ const t=e.target; if(!t.dataset||!t.dat
   renderCostTotal(shopRows(current.an)); });
 $('#resetPrices').addEventListener('click',()=>{ myPrices={}; savePrices(); renderShop(current.an); });
 $('#copyShop').addEventListener('click',async e=>{
-  const rows=shopRows(current.an); let last=''; const lines=[M().title+': shopping list ('+M().cfgLabel(M().state)+')',"Lowe's Atlanta-Edgewood #1875, 1280 Caroline St NE"];
-  rows.forEach(([g,i,q,,k])=>{ if(g!==last){ lines.push('', g.toUpperCase()); last=g; } lines.push(`${q} × ${i} @ ${money(unitPrice(k))}${k in myPrices?'':' ('+srcTag(k)+')'} = ${money(q*unitPrice(k))}`); });
-  lines.push('', 'TOTAL before tax: '+money(costTotal(rows)));
+  const rows=shopRows(current.an); let last=''; const lines=[M().title+': shopping list ('+M().cfgLabel(M().state)+')'];
+  rows.forEach(([g,i,q])=>{ if(g!==last){ lines.push('', g.toUpperCase()); last=g; } lines.push(`${q} × ${i}`); });
   const txt=lines.join('\n'), b=e.currentTarget;
   let ok=false;
   try{ await navigator.clipboard.writeText(txt); ok=true; }catch(_){}
