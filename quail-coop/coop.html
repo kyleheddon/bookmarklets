@@ -190,6 +190,11 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 @media (max-width: 880px){
   html,body{height:auto}
   .models button{padding:9px 10px 8px}
+  .toggle{padding:6px 9px 6px 6px;gap:6px;font-size:12.5px}
+  .toggle .track{width:26px;height:16px}
+  .toggle .track::after{width:12px;height:12px}
+  .toggle input:checked + .track::after{transform:translateX(10px)}
+  .viewbar{left:calc(8px + env(safe-area-inset-left,0px));right:8px}
   .app{display:block;height:auto}
   .stage{height:70svh;min-height:440px}
   .panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
@@ -209,7 +214,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
     <div class="pick" id="pick" hidden><b id="pickName"></b><span id="pickInfo"></span><button type="button" id="pickClose" aria-label="Clear selection">×</button></div>
     <div class="viewbar">
       <div class="steppill" id="stepPill" hidden><button type="button" id="stepPrev" aria-label="Previous build step">‹</button><span id="stepName"></span><button type="button" id="stepNext" aria-label="Next build step">›</button><button type="button" id="stepExit" aria-label="Show the finished coop">✕</button></div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label><span id="layers" style="display:contents"></span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label><span id="layers" style="display:contents"></span><label class="toggle"><input type="checkbox" id="showPerson" checked><span class="track"></span>Person</label></div>
     </div>
   </section>
 
@@ -896,17 +901,18 @@ let grid=null;
 const holder=new THREE.Group(); scene.add(holder);
 /* Scale figure: a flat grey 5'9" adult with a smiley face. It turns to face the camera and is not part of the coop. */
 const person=(()=>{
-  const g=new THREE.Group(), body=new THREE.MeshBasicMaterial({color:lin('#8e959c'),side:THREE.DoubleSide}), ink=new THREE.MeshBasicMaterial({color:lin('#2b2f33')});
+  /* pictogram figure, 5'9" tall: round head, rounded shoulders, arms hanging just clear of the torso, two legs */
+  const g=new THREE.Group(), body=new THREE.MeshBasicMaterial({color:lin('#c6cacf'),side:THREE.DoubleSide}), ink=new THREE.MeshBasicMaterial({color:lin('#26292c'),side:THREE.DoubleSide});
   const add=(geo,mat,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.z=z||0; g.add(m); };
-  const rr=(x0,y0,x1,y1,r)=>{ const sh=new THREE.Shape(); sh.moveTo(x0+r,y0); sh.lineTo(x1-r,y0); sh.quadraticCurveTo(x1,y0,x1,y0+r); sh.lineTo(x1,y1-r); sh.quadraticCurveTo(x1,y1,x1-r,y1); sh.lineTo(x0+r,y1); sh.quadraticCurveTo(x0,y1,x0,y1-r); sh.lineTo(x0,y0+r); sh.quadraticCurveTo(x0,y0,x0+r,y0); return new THREE.ShapeGeometry(sh); };
-  add(rr(-8.5,32,8.5,58,3.5),body);                 // torso
-  add(rr(-7.5,0,-1,35,2),body); add(rr(1,0,7.5,35,2),body);   // legs
-  add(rr(-11.5,29,-8,57,1.7),body); add(rr(8,29,11.5,57,1.7),body); // arms
-  add(rr(-2,57,2,61,1),body);                       // neck
-  const head=new THREE.CircleGeometry(5,40); head.translate(0,64,0); add(head,body);
-  for(const ex of [-1.8,1.8]){ const e=new THREE.CircleGeometry(0.55,16); e.translate(ex,65.2,0); add(e,ink,0.05); }
-  const smile=new THREE.RingGeometry(2.4,3.0,24,1,Math.PI*1.12,Math.PI*0.76); smile.translate(0,64.6,0); add(smile,ink,0.05);
-  g.renderOrder=1; scene.add(g); return g;
+  const rr=(x0,y0,x1,y1,r)=>{ const sh=new THREE.Shape(); sh.moveTo(x0+r,y0); sh.lineTo(x1-r,y0); sh.absarc(x1-r,y0+r,r,-Math.PI/2,0); sh.lineTo(x1,y1-r); sh.absarc(x1-r,y1-r,r,0,Math.PI/2); sh.lineTo(x0+r,y1); sh.absarc(x0+r,y1-r,r,Math.PI/2,Math.PI); sh.lineTo(x0,y0+r); sh.absarc(x0+r,y0+r,r,Math.PI,Math.PI*1.5); return new THREE.ShapeGeometry(sh,12); };
+  add(rr(-11.6,44,11.6,54.6,5),body);                         /* shoulders */
+  add(rr(-11.6,26.5,-7.7,50,1.95),body); add(rr(7.7,26.5,11.6,50,1.95),body);   /* arms */
+  add(rr(-7,30,7,48,0.5),body);                               /* torso */
+  add(rr(-7,0,-0.5,34,3.2),body); add(rr(0.5,0,7,34,3.2),body);   /* legs */
+  const head=new THREE.CircleGeometry(6.5,48); head.translate(0,62.5,0); add(head,body);
+  for(const ex of [-2.2,2.2]){ const e=new THREE.CircleGeometry(0.7,20); e.translate(ex,64,0); add(e,ink,0.05); }
+  const smile=new THREE.RingGeometry(2.9,3.5,32,1,Math.PI*1.18,Math.PI*0.64); smile.translate(0,63.4,0); add(smile,ink,0.05);
+  scene.add(g); return g;
 })();
 
 function applyTheme(){
@@ -1150,6 +1156,7 @@ function renderCut(an){
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
+$('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; });
 window.addEventListener('hashchange',()=>setModel(location.hash.slice(1), false));
 
