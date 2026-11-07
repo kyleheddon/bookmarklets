@@ -2,7 +2,7 @@
 
 Interactive 3D build models of two quail coops for four birds, on two tabs:
 
-- **Porch coop** (`#porch`, the default tab): 4′ wide × 2′ deep on a light 2×2 frame, with ½″ plywood on the back, sides and top and mesh doors on the front (it sits under a porch roof). Two levels (6′ tall, with a sleeping box and ramp) or one level (3′-10″ tall).
+- **Porch coop** (`#porch`, the default tab): two levels, 4′ wide × 2′ deep × 6′ tall, light 2×2 frame wrapped in hardware cloth with no roof (it sits under a porch roof), and a ½″ plywood sleeping box.
 - **Outdoor coop** (`#outdoor`): two levels, 4′ × 4′, 8′ tall, shed roof, plywood roost box over a hardware-cloth run.
 
 Open `index.html` in a browser. You can drag to rotate the model and toggle layers on screen to show the framing. Each model has its own options:
