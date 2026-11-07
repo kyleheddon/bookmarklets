@@ -251,7 +251,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       </div>
       <div role="tabpanel" id="pane-shop" aria-labelledby="tab-shop">
         <div class="store"><b>Lowe's Atlanta-Edgewood, store #1875</b><span>1280 Caroline St NE, Atlanta, GA 30307 · <a href="https://www.lowes.com/store/GA-Atlanta/1875" target="_blank" rel="noopener">Store page ↗</a></span>
-          <span class="note"><span class="tag store">Edgewood</span> prices are confirmed at the Edgewood store. <span class="tag">Online, unconfirmed</span> prices are earlier lowes.com prices that still need checking. <span class="tag">est.</span> prices are estimates. To check one, open its link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div>
+          <span class="note"><span class="tag store">Edgewood</span> prices are confirmed at the Edgewood store. <span class="tag">Amazon</span> items are bought on Amazon instead. <span class="tag">Online, unconfirmed</span> prices are earlier lowes.com prices that still need checking. <span class="tag">est.</span> prices are estimates. To check one, open its link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div>
         <ul class="list" id="shop"></ul>
         <div class="total"><b id="costTotal">—</b><span id="costNote"></span></div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div><textarea id="copyFallback" class="copybox" rows="8" readonly hidden aria-label="Shopping list text to copy"></textarea></div>
@@ -1001,7 +1001,7 @@ const PRICE={
   'hw:T-hinge, 4″ heavy duty':[5.58,'https://www.lowes.com/pd/ReliaBilt-RB-4-IN-ZN-EXT-HD-T-HINGE/5001634685','store',1,'RELIABILT 4″ zinc T-hinge, on sale (regular $7.18). Heavy-duty rating not confirmed; it carries a light plywood door.'],
   'hw:Door hinge, 3½″ matte black':[11.98,LS('RELIABILT No-Squeak 3-1/2-in Matte Black Mortise Door Hinge 3-Pack'),'store',3,'RELIABILT No-Squeak mortise hinge, sold in 3-packs. The 1×2 door frames are only ¾″ thick, too thin for the leaf to go on the door edge, so screw it flat across the gap onto the post face and the door face as shown. No mortising needed.'],
   'hw:Gate latch, 4″ with padlock hole':[6.48,'https://www.lowes.com/pd/national-hardware-steel-painted-gate-latch/50414134','store',1,'National Hardware N184-861, black. Check the carabiner fits through its hole.'],
-  'hw:Locking carabiner':[3.78,LS('3 in locking carabiner'),'online',1,'3″. Model not chosen yet; make sure the gate actually locks.'],
+  'hw:Locking carabiner':[6.79,'https://a.co/d/0eqSNeen','amazon',6,'Amazon 6-pack. One pack covers all three latches with spares.'],
   'hw:Gate pull, 6½″ black steel (carry handle)':[5.48,'https://www.lowes.com/pd/National-Hardware-Steel-painted-Gate-Pull/50393182','online',1,'National Hardware gate pull. Not rated for lifting: bolt it through to the floor framing, never just the plywood or a rail end.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
@@ -1009,7 +1009,7 @@ const savePrices=()=>{ try{ localStorage.setItem('coopPrices',JSON.stringify(myP
 const unitPrice=k=> (k in myPrices) ? myPrices[k] : (PRICE[k]?PRICE[k][0]:0);
 const srcOf=k=>(PRICE[k]&&PRICE[k][2])||'';
 const isOnline=k=>srcOf(k)==='online';
-const srcTag=k=>({store:'Edgewood',online:'Online, unconfirmed'})[srcOf(k)]||'est.';
+const srcTag=k=>({store:'Edgewood',online:'Online, unconfirmed',amazon:'Amazon'})[srcOf(k)]||'est.';
 const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
@@ -1029,9 +1029,9 @@ function shopRows(an){
 function costTotal(rows){ return rows.reduce((a,r)=>a+r[2]*unitPrice(r[4]),0); }
 function renderCostTotal(rows){
   const fresh=rows.filter(r=>!(r[4] in myPrices));
-  const mine=rows.length-fresh.length, sto=fresh.filter(r=>srcOf(r[4])==='store').length, onl=fresh.filter(r=>isOnline(r[4])).length, est=fresh.length-sto-onl;
+  const mine=rows.length-fresh.length, sto=fresh.filter(r=>srcOf(r[4])==='store').length, amz=fresh.filter(r=>srcOf(r[4])==='amazon').length, onl=fresh.filter(r=>isOnline(r[4])).length, est=fresh.length-sto-amz-onl;
   $('#costTotal').textContent=money(costTotal(rows));
-  const parts=[]; if(sto) parts.push(sto+' confirmed at Edgewood'); if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' online, unconfirmed'); if(est) parts.push(est+' estimated');
+  const parts=[]; if(sto) parts.push(sto+' confirmed at Edgewood'); if(amz) parts.push(amz+' from Amazon'); if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' online, unconfirmed'); if(est) parts.push(est+' estimated');
   $('#costNote').textContent='Total before sales tax · '+parts.join(', ')+'.';
 }
 function renderShop(an){
