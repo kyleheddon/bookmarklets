@@ -796,7 +796,8 @@ const MODELS = {
       ['#8 deck screws, 3″','Frame joints, middle posts, floor joist and top rails. Predrill the 2×2. Coated deck screws are fine in the pressure-treated posts.','scr3'],
       ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls, roof deck, door stops.','scr158'],
       ['Brad nailer and brads','With glue, for the run-door brace and the box door frame.','brad'],
-      ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple']],
+      ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple'],
+      ['Roofing screws with neoprene washers, 2″','Through the steel ridges into the top rails. Make sure they are long enough to reach through the steel and the 7/16″ OSB into the rails.','roof']],
     uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Rails, lower back middle post, floor joist, braces','1x2':'Floor ledgers, divider cleats, door stops, door frames'},
     cfgLabel:s=>'steel roof over OSB',
     split:an=>'',
@@ -1063,7 +1064,7 @@ function shopRows(an){
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
     rows.push(['Hardware', pk>1 ? k+', '+pk+'-pack' : k, Math.ceil(v.qty/pk), pk>1 ? v.qty+' needed: '+uses : uses, 'hw:'+k]); }
-  for(const [id,item,d] of [['scr25','2½″ exterior deck screws, 1 lb box','Brace ends (toe-screwed), the run-door corners and the floor cleat.'],['scr58','#8 × ⅝″ Torx (star-drive) exterior screws, small box','For the hinges and latch on the ¾″ run-door frame; longer screws would poke through. Same star head as the deck screws (SPAX sells short sizes).'],['scr1','#8 × 1″ Torx (star-drive) exterior screws, small box','For the hinges and latch on the box door (½″ plywood plus its 1×2 frame). Same star head as the deck screws.'],['roof','#10 × 2″ roofing screws with neoprene washers','Through the steel ridges into the top rails.'],['glue','Exterior wood glue (such as Titebond III), 8 oz','For every frame joint, the ledgers, floor and door frames.']])
+  for(const [id,item,d] of [['scr25','2½″ exterior deck screws, 1 lb box','Brace ends (toe-screwed), the run-door corners and the floor cleat.'],['scr58','#8 × ⅝″ Torx (star-drive) exterior screws, small box','For the hinges and latch on the ¾″ run-door frame; longer screws would poke through. Same star head as the deck screws (SPAX sells short sizes).'],['scr1','#8 × 1″ Torx (star-drive) exterior screws, small box','For the hinges and latch on the box door (½″ plywood plus its 1×2 frame). Same star head as the deck screws.'],['glue','Exterior wood glue (such as Titebond III), 8 oz','For every frame joint, the ledgers, floor and door frames.']])
     if(an.fast[id]!==undefined) rows.push(['Fasteners',item,1,(an.fast[id]?'About '+an.fast[id]+' needed. ':'')+d,'x:'+id]);
   (m.have||[]).forEach(([item,d,fid],i)=>rows.push(['Already have',item,0,(fid&&an.fast[fid]?'About '+an.fast[fid]+' needed. ':'')+d,'have:'+i]));
   return rows;
