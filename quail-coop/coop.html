@@ -797,7 +797,7 @@ const MODELS = {
     lede1:'A lightweight one-level cage for a covered porch, about 3′-10″ tall. Plywood on the back, the sleeping-box end and the top blocks wind and weather, and hardware cloth on the run end lets in light and air. A divider makes the right half a sleeping box, and the front has two doors: a mesh door for the run and a plywood door for the sleeping box, each with a gate latch and a locking carabiner.',
     lede2:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ½″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
     build:buildPorch, get center(){ return this.state.levels==='1' ? 24 : 37; }, get radius(){ return this.state.levels==='1' ? 42 : 54; }, fasten:2, paintAll:'trim',
-    state:{floorPly:0.5, boxPly:0.5, levels:'2'},
+    state:{floorPly:0.5, boxPly:0.5, levels:'1'},
     layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
     options:[{key:'levels',label:'Levels',choices:[['1','One level','Use a tarp for wind'],['2','Two levels','Sleeping box upstairs']]}],
     compare:null,
