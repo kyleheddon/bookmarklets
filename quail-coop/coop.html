@@ -420,7 +420,7 @@ function handle(ctx, face, dir, yc, zc, use){
   hwBox(ctx,null,bx,[yc-0.28,yc+0.28],[zc-3,zc+3],'steel','Carry handle');
   hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc-3,zc-2.3],'steel','Carry handle');
   hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc+2.3,zc+3],'steel','Carry handle');
-  hw(ctx,'Gate pull, 6½″ black steel (carry handle)',0.35,use);
+  hw(ctx,'Pull handle, 6½″ black utility (carry handle)',0.3,use);
 }
 /* Removable cleated ramp that hangs from the edge of a floor hatch and descends toward +x. */
 function ramp(ctx, o){
@@ -1002,7 +1002,7 @@ const PRICE={
   'hw:Door hinge, 3½″ matte black':[11.98,LS('RELIABILT No-Squeak 3-1/2-in Matte Black Mortise Door Hinge 3-Pack'),'store',3,'RELIABILT No-Squeak mortise hinge, sold in 3-packs. The 1×2 door frames are only ¾″ thick, too thin for the leaf to go on the door edge, so screw it flat across the gap onto the post face and the door face as shown. No mortising needed.'],
   'hw:Gate latch, 4″ with padlock hole':[6.48,'https://www.lowes.com/pd/national-hardware-steel-painted-gate-latch/50414134','store',1,'National Hardware N184-861, black. Check the carabiner fits through its hole.'],
   'hw:Locking carabiner':[6.79,'https://a.co/d/0eqSNeen','amazon',6,'Amazon 6-pack. One pack covers all three latches with spares.'],
-  'hw:Gate pull, 6½″ black steel (carry handle)':[5.48,'https://www.lowes.com/pd/National-Hardware-Steel-painted-Gate-Pull/50393182','online',1,'National Hardware gate pull. Not rated for lifting: bolt it through to the floor framing, never just the plywood or a rail end.']
+  'hw:Pull handle, 6½″ black utility (carry handle)':[4.98,'https://www.lowes.com/pd/ReliaBilt-ReliaBilt-6-1-2-in-Black-Utility-Pull-Handle-1-Pack/5002385973','store',1,'RELIABILT screen/storm door pull. Its included screws are too short for carrying weight: bolt it through into the floor framing with ¼″ bolts instead.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
 const savePrices=()=>{ try{ localStorage.setItem('coopPrices',JSON.stringify(myPrices)); }catch(_){} };
