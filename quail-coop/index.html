@@ -761,7 +761,8 @@ const MODELS = {
     have:[
       ['#8 deck screws, 3″','Rails and joists into the posts: drive through the post into the rail end, two per joint. Predrill so the 2×2 does not split.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Floors and sleeping-box plywood to the frame, 1×2 door-frame corners (predrill), and the ramp hanger cleat.'],
-      ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.']],
+      ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.'],
+      ['Poultry nails','Extra hold for the hardware cloth alongside the fence staples, especially where it wraps the top and the corners.']],
     uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
     cfgLabel:s=>fIn(s.floorPly)+' floors, '+fIn(s.boxPly)+' sleeping box',
     split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
@@ -809,7 +810,8 @@ const MODELS = {
     have:[
       ['#8 deck screws, 3″','All 2×4 framing: studs to plates, joists, rafters and braces. Coated deck screws are fine in the pressure-treated base.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Plywood floors, wall sheathing and roof deck, every 6″ on edges and 12″ in the field.'],
-      ['Brad nailer and brads','With glue, for the ramp cleats and holding plywood in place while you screw it. Not for framing.']],
+      ['Brad nailer and brads','With glue, for the ramp cleats and holding plywood in place while you screw it. Not for framing.'],
+      ['Poultry nails','Extra hold for the hardware cloth alongside the fence staples, especially along the floor frame and the eave vents.']],
     uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger'},
     cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'steel roof','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
