@@ -303,12 +303,13 @@ function shingleTex(){ const c=document.createElement('canvas'); c.width=288; c.
   const t=new THREE.CanvasTexture(c); t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; t.encoding=THREE.sRGBEncoding; return t; }
 const MAT = {
   wood: std('#cf9f62'), ply: std('#e0c294',.9), door: std('#5c8a7d',.7),
+  woodPT: std('#b3a464'), plyPT: std('#c4c18e',.9),   // pressure-treated: the same wood with a slight green cast
   alum: new THREE.MeshStandardMaterial({color:lin('#c6ccd2'), metalness:.7, roughness:.34, side:THREE.DoubleSide}),
   shingle: new THREE.MeshStandardMaterial({map:shingleTex(), roughness:.95, side:THREE.DoubleSide}),
   shingleEdge: std('#3a3e43',.9), steel: std('#41474d',.4,.8), carabiner: std('#e2552b',.35,.35),
   mesh: new THREE.MeshStandardMaterial({map:meshTex(), transparent:true, side:THREE.DoubleSide, depthWrite:false, metalness:.4, roughness:.5})
 };
-const EDGED = {wood:1, ply:1, door:1};
+const EDGED = {wood:1, ply:1, door:1, woodPT:1, plyPT:1};
 const EDGE_MAT = new THREE.LineBasicMaterial({color:0x4a3016, transparent:true, opacity:.38});
 
 /* ---------- part builders (ctx.dry = BOM only, no meshes) ---------- */
@@ -321,6 +322,7 @@ function describe(b){
 }
 function rec(ctx,o){ if(o.bom) ctx.bom.push(Object.assign({name:o.name, layer:o.layer, mod:ctx.mod}, o.bom)); }
 function addMesh(ctx, geo, o){
+  if(o.bom && o.bom.pt && MAT[o.mat+'PT']) o = Object.assign({}, o, {mat:o.mat+'PT'});
   const m = new THREE.Mesh(geo, MAT[o.mat]);
   m.castShadow = o.mat!=='mesh'; m.receiveShadow = true;
   m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom)};
@@ -796,7 +798,7 @@ const MODELS = {
       {key:'wallPly',label:'Wall plywood',num:true,choices:[[0.5,'½″','Stiffer'],[0.375,'⅜″','Lighter']]},
       {key:'roof',label:'Roof',choices:[['alum-ply','Aluminum','over ½″ plywood deck'],['alum-purlin','Aluminum','on 1×4 purlins, no deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
     compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Alum + deck'],['alum-purlin','Alum + purlins'],['shingle','Shingles']],
-      note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried SPF lumber; pressure-treated or wet lumber can run 30–50% heavier.'},
+      note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base (shown with a green tint) is figured about 40% heavier, since it is sold wet.'},
     uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'},
     cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'aluminum over deck','alum-purlin':'aluminum on purlins','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
