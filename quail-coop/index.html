@@ -175,6 +175,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 .notes b{font-weight:700}
 .copy{align-self:flex-start;border:1px solid var(--line);background:var(--panel);border-radius:8px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer;margin-top:12px}
 .copy:hover{border-color:var(--accent)}
+.copybox{width:100%;margin-top:10px;font:12px/1.4 var(--font-mono);color:var(--fg);background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:8px}
 .foot{font-size:12px;color:var(--muted)}
 .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:14px}
 
@@ -256,7 +257,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
           <span class="note"><span class="tag">Lowe's online</span> prices come from your Lowe's list and are lowes.com prices, not checked against the Edgewood shelf. <span class="tag">est.</span> prices are estimates. To check one, open its link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div>
         <ul class="list" id="shop"></ul>
         <div class="total"><b id="costTotal">—</b><span id="costNote"></span></div>
-        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div></div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div><textarea id="copyFallback" class="copybox" rows="8" readonly hidden aria-label="Shopping list text to copy"></textarea></div>
       <div role="tabpanel" id="pane-steps" aria-labelledby="tab-steps" hidden><p class="note" style="margin:0 0 6px">Build in this order. Tap <b>Show in 3D</b> to see the coop as it stands at the end of each step.</p><ol class="steps" id="steps"></ol></div>
       <div role="tabpanel" id="pane-cut" aria-labelledby="tab-cut" hidden><div class="tablewrap"><table class="cut" id="cut"></table></div></div>
       <div role="tabpanel" id="pane-notes" aria-labelledby="tab-notes" hidden><div class="notes" id="notes"></div></div>
@@ -969,7 +970,7 @@ function renderPanel(){
   for(const [rv,rl] of c.rows){ h+=`<tr><th>${rl}</th>`; for(const [cv,cl] of c.cols){ const on=String(rv)===String(m.state[c.row])&&String(cv)===String(m.state[c.col]); const w=grid[rv+'|'+cv];
     h+=`<td><button type="button" data-r="${rv}" data-c="${cv}" aria-pressed="${on}" class="${w===min?'best':''}" aria-label="${rl}, ${cl}: ${fLb(w)} pounds">${fLb(w)}</button></td>`; } h+='</tr>'; }
   $('#cmp').innerHTML=h+'</tbody>';
-  renderShop(an); renderCut(an); renderSteps();
+  renderShop(an); renderCut(an); renderSteps(); resetCopy();
   const lightest = m.lightest ? dryWeight(m, m.lightest) : 0;
   $('#notes').innerHTML=m.notes(g,an,lightest).map(([a,b])=>`<p><b>${a}.</b> ${b}</p>`).join('');
 }
@@ -1048,9 +1049,14 @@ $('#copyShop').addEventListener('click',async e=>{
   rows.forEach(([g,i,q,,k])=>{ if(g!==last){ lines.push('', g.toUpperCase()); last=g; } lines.push(`${q} × ${i} @ ${money(unitPrice(k))}${k in myPrices?'':' ('+srcTag(k)+')'} = ${money(q*unitPrice(k))}`); });
   lines.push('', 'TOTAL before tax: '+money(costTotal(rows)));
   const txt=lines.join('\n'), b=e.currentTarget;
-  try{ await navigator.clipboard.writeText(txt); b.textContent='Copied'; }catch(_){ const ta=document.createElement('textarea'); ta.value=txt; b.after(ta); ta.select(); b.textContent='Select and copy the text below'; }
-  setTimeout(()=>{ b.textContent='Copy shopping list'; },2200);
+  let ok=false;
+  try{ await navigator.clipboard.writeText(txt); ok=true; }catch(_){}
+  const ta=$('#copyFallback'); ta.value=txt;
+  if(!ok){ ta.hidden=false; ta.focus(); ta.select(); try{ ok=document.execCommand('copy'); }catch(_){ ok=false; } }
+  if(ok){ ta.hidden=true; b.textContent='Copied '+M().tab.toLowerCase()+' list'; } else b.textContent='Select and copy the text below';
+  clearTimeout(b._t); b._t=setTimeout(()=>{ b.textContent='Copy shopping list'; },2400);
 });
+function resetCopy(){ const ta=$('#copyFallback'); if(ta){ ta.hidden=true; ta.value=''; } const b=$('#copyShop'); clearTimeout(b._t); b.textContent='Copy shopping list'; }
 /* Build steps */
 function renderSteps(){
   const st=M().steps;
