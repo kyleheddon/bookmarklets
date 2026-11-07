@@ -229,7 +229,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <dl class="specs" id="specs"></dl>
     </section>
 
-    <section class="opt" aria-label="Build options">
+    <section class="opt" id="optSection" aria-label="Build options">
       <h2>Options</h2>
       <div id="opts" class="opt"></div>
     </section>
@@ -242,7 +242,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <div class="stack" id="wStack" aria-hidden="true"></div>
       <ul class="legend" id="wLegend"></ul>
       <p class="split" id="wSplit"></p>
-      <div>
+      <div id="cmpWrap">
         <table class="cmp" id="cmp"></table>
         <p class="note" style="margin-top:6px" id="cmpNote"></p>
       </div>
@@ -749,22 +749,19 @@ const MODELS = {
   porch:{
     tab:'Porch coop', dims:'4′ × 2′ × 6′ · no roof',
     eyebrow:'Build plan · 4 quail · covered porch', title:'Four-Quail Porch Coop',
-    lede:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ⅜″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
+    lede:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ½″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
     build:buildPorch, center:37, radius:46, fasten:2,
-    state:{floorPly:0.375, boxPly:0.375},
+    state:{floorPly:0.5, boxPly:0.5},
     layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
-    options:[
-      {key:'floorPly',label:'Floor plywood',num:true,choices:[[0.375,'⅜″','Lighter'],[0.5,'½″','Stiffer underfoot']]},
-      {key:'boxPly',label:'Sleeping box plywood',num:true,choices:[[0.375,'⅜″','Lightest unsanded'],[0.5,'½″','Sturdier']]}],
-    compare:{row:'floorPly',col:'boxPly',rows:[[0.375,'⅜″ floors'],[0.5,'½″ floors']],cols:[[0.375,'⅜″ box'],[0.5,'½″ box']],
-      note:'Weight by floor and sleeping-box plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried lumber.'},
+    options:[],
+    compare:null,
     have:[
       ['#8 deck screws, 3″','Rails and joists into the posts: drive through the post into the rail end, two per joint. Predrill so the 2×2 does not split.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Floors and sleeping-box plywood to the frame, 1×2 door-frame corners (predrill), and the ramp hanger cleat.'],
       ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.'],
       ['Poultry nails','Extra hold for the hardware cloth alongside the fence staples, especially where it wraps the top and the corners.']],
     uses:{'2x2':'Posts, rails, floor joists, braces','1x2':'Door frames, ramp cleats, box door stiffeners'},
-    cfgLabel:s=>fIn(s.floorPly)+' floors, '+fIn(s.boxPly)+' sleeping box',
+    cfgLabel:s=>'½″ plywood throughout',
     split:an=>'Light enough for one person to slide or tip into place, and two people can carry it easily by the side handles. Take the ramp out first.',
     specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
       ['Lower floor height',fIn(g.yLF)+' off ground'],['Lower clear height',fIn(g.lowerClear)],
@@ -803,10 +800,9 @@ const MODELS = {
     layers:[['framing','Framing'],['floors','Floors'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors & window'],['ramp','Ramp'],['hardware','Latches & hinges']],
     options:[
       {key:'lumber',label:'Framing lumber',choices:[['2x4','2×4','As planned'],['2x3','2×3','Lighter, same layout']]},
-      {key:'wallPly',label:'Wall plywood',num:true,choices:[[0.5,'½″','Stiffer'],[0.375,'⅜″','Lighter']]},
       {key:'roof',label:'Roof',choices:[['alum-ply','Steel panels','over ½″ plywood deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
     compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Steel'],['shingle','Shingles']],
-      note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base (shown with a green tint) is figured about 40% heavier, since it is sold wet.'},
+      note:'Weight by lumber and roof. Tap a cell to switch the model to that combination. Untreated lumber is figured as kiln-dried; the pressure-treated base (shown with a green tint) is figured about 40% heavier, since it is sold wet.'},
     have:[
       ['#8 deck screws, 3″','All 2×4 framing: studs to plates, joists, rafters and braces. Coated deck screws are fine in the pressure-treated base.'],
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Plywood floors, wall sheathing and roof deck, every 6″ on edges and 12″ in the field.'],
@@ -832,10 +828,10 @@ const MODELS = {
       ['Wind and air','The coop walls are solid plywood. Air comes in through hardware-cloth eave vents between the rafters at the front and back. The side vent window has a hinged plywood flap that latches shut in winter and props open in summer.'],
       ['Predators','Use ½″ galvanized hardware cloth, not chicken wire. The cloth wraps down over the run floor framing so there is no gap at the floor. Raccoons can open plain latches, so every latch takes a locking carabiner through its padlock hole.'],
       ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Corrugated galvanized steel is about 0.65 lb/sq ft against about 2.4 for 3-tab shingles. Both go over a ½″ plywood deck, which keeps the steel from dripping condensation into the coop, quiets rain, and leaves no gaps under the panels for mice to get into the coop.'],
-      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and the steel roof brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
+      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing with the steel roof brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
       ['Not shown','Fasteners you still need: roofing screws with neoprene washers (or roofing nails for shingles), ⅜″ carriage bolts for the legs, and ¼″ bolts for the carry handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
-    lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-ply'},
+    lightest:{lumber:'2x3',wallPly:0.5,roof:'alum-ply'},
     steps:[
       ['Build the run floor platform','Screw the two rim joists to three joists on 24″ centers and check the diagonals match. Add the four legs inside the corners, then glue and screw down the plywood floor.'],
       ['Frame the run walls','Frame each wall flat on the floor. The back and sides get studs and two diagonal braces each; the front is just the plates and the two flat door posts. Stand the back up first, then the sides and the front, and screw the corners together.'],
@@ -950,7 +946,7 @@ function setModel(k, push){
   renderModelTabs(); renderHeader(); renderLayers(); renderOptions();
   if(changed){ buildStep=-1; rebuild(); goView('iso', !push); }
 }
-function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare.note; }
+function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare?m.compare.note:''; $('#cmpWrap').hidden=!m.compare; $('#optSection').hidden=!m.options.length; }
 function renderLayers(){
   const el=$('#layers'), m=M(), ls=m.layerState; el.innerHTML='<span class="lbl">Layers</span>';
   m.layers.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(ls[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
@@ -979,11 +975,13 @@ function renderPanel(){
   $('#wLegend').innerHTML=ws.map(([k,v])=>`<li><i style="background:var(${cols[k]})"></i>${k}<span>${fLb(v)} lb</span></li>`).join('');
   $('#wSplit').innerHTML=m.split(an);
   const c=m.compare, grid={}; let min=Infinity;
+  if(c){
   for(const [rv] of c.rows) for(const [cv] of c.cols){ const w=dryWeight(m, Object.assign({}, m.state, {[c.row]:rv, [c.col]:cv})); grid[rv+'|'+cv]=w; min=Math.min(min,w); }
   let h='<thead><tr><th></th>'+c.cols.map(x=>`<th>${x[1]}</th>`).join('')+'</tr></thead><tbody>';
   for(const [rv,rl] of c.rows){ h+=`<tr><th>${rl}</th>`; for(const [cv,cl] of c.cols){ const on=String(rv)===String(m.state[c.row])&&String(cv)===String(m.state[c.col]); const w=grid[rv+'|'+cv];
     h+=`<td><button type="button" data-r="${rv}" data-c="${cv}" aria-pressed="${on}" class="${w===min?'best':''}" aria-label="${rl}, ${cl}: ${fLb(w)} pounds">${fLb(w)}</button></td>`; } h+='</tr>'; }
   $('#cmp').innerHTML=h+'</tbody>';
+  }
   renderShop(an); renderCut(an); renderSteps(); resetCopy();
   const lightest = m.lightest ? dryWeight(m, m.lightest) : 0;
   $('#notes').innerHTML=m.notes(g,an,lightest).map(([a,b])=>`<p><b>${a}.</b> ${b}</p>`).join('');
