@@ -209,12 +209,11 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
   <nav class="models" role="tablist" aria-label="Coop design" id="models"></nav>
   <section class="stage" id="stage" aria-label="3D model of the coop. Drag to rotate, scroll or pinch to zoom.">
     <div class="load" id="load">Loading model…</div>
-    <div class="layers" id="layers"></div>
     <div class="hint">Drag to rotate · right-drag or two fingers to pan · scroll to zoom · tap a part to identify it</div>
     <div class="pick" id="pick" hidden><b id="pickName"></b><span id="pickInfo"></span><button type="button" id="pickClose" aria-label="Clear selection">×</button></div>
     <div class="viewbar">
       <div class="steppill" id="stepPill" hidden><button type="button" id="stepPrev" aria-label="Previous build step">‹</button><span id="stepName"></span><button type="button" id="stepNext" aria-label="Next build step">›</button><button type="button" id="stepExit" aria-label="Show the finished coop">✕</button></div>
-      <label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label><span id="layers" style="display:contents"></span></div>
     </div>
   </section>
 
