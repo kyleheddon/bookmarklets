@@ -233,8 +233,8 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <div class="eyebrow" id="eyebrow"></div>
       <h1 id="title"></h1>
       <div class="kpis">
-        <button type="button" class="kpi" id="kpiCost"><span class="k">Materials cost</span><span class="v" id="kCost">—</span><span class="s" id="kCostSub">before tax</span></button>
-        <button type="button" class="kpi" id="kpiWeight"><span class="k">Weight, empty</span><span class="v" id="kWeight">—</span><span class="s" id="kWeightSub"></span></button>
+        <button type="button" class="kpi" id="kpiCost"><span class="k">Estimated cost</span><span class="v" id="kCost">—</span></button>
+        <button type="button" class="kpi" id="kpiWeight"><span class="k">Estimated weight</span><span class="v" id="kWeight">—</span></button>
       </div>
       <p class="lede" id="lede"></p>
     </header>
@@ -1000,7 +1000,7 @@ function renderPanel(){
   const cols={Lumber:'--bar-1',Plywood:'--bar-2','Hardware cloth':'--bar-3',Roofing:'--bar-4','Hardware & fasteners':'--bar-5'};
   const ws=Object.entries(an.w).filter(([,v])=>v>0.05);
   $('#wTotal').innerHTML=fLb(an.total)+'<small>lb</small>'; $('#wPer').textContent=fLb(an.total/2)+' lb';
-  $('#kWeight').innerHTML=fLb(an.total)+'<small>lb</small>'; $('#kWeightSub').textContent='≈ '+fLb(an.total/2)+' lb each for two people';
+  $('#kWeight').innerHTML=fLb(an.total)+'<small>lb</small>';
   $('#wStack').innerHTML=ws.map(([k,v])=>`<i style="flex:${v};background:var(${cols[k]})" title="${k}"></i>`).join('');
   $('#wLegend').innerHTML=ws.map(([k,v])=>`<li><i style="background:var(${cols[k]})"></i>${k}<span>${fLb(v)} lb</span></li>`).join('');
   $('#wSplit').innerHTML=m.split(an);
@@ -1078,7 +1078,7 @@ function renderCostTotal(rows){
   const fresh=rows.filter(r=>!(r[4] in myPrices));
   const mine=rows.length-fresh.length, sto=fresh.filter(r=>srcOf(r[4])==='store').length, amz=fresh.filter(r=>srcOf(r[4])==='amazon').length, onl=fresh.filter(r=>isOnline(r[4])).length, est=fresh.length-sto-amz-onl;
   $('#costTotal').textContent=money(costTotal(rows));
-  $('#kCost').textContent=money(costTotal(rows)); $('#kCostSub').textContent= (est||onl) ? 'before tax · '+(est+onl)+' price'+(est+onl>1?'s':'')+' not confirmed' : 'before tax · all prices confirmed';
+  $('#kCost').textContent=money(costTotal(rows));
   const parts=[]; if(sto) parts.push(sto+' confirmed at Edgewood'); if(amz) parts.push(amz+' from Amazon'); if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' online, unconfirmed'); if(est) parts.push(est+' estimated');
   $('#costNote').textContent='Total before sales tax · '+parts.join(', ')+'.';
 }
