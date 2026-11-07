@@ -485,7 +485,8 @@ function buildShed(cfg, ctx){
     B({...fr,name:'Front corner post (pressure-treated, doubles as leg)',x:xs,y:[0,yTF],z:[0,T],bom:ptl(yTF)});
     B({...fr,name:'Back corner post (pressure-treated, doubles as leg)',x:xs,y:[0,yTB],z:[L-T,L],bom:ptl(yTB)});
   }
-  for(const [a,b] of [[yS+T,f1],[f1+T,f2]]) B({...fr,name:'Back middle post',x:[m0,m1],y:[a,b],z:[L-T,L],bom:lum(b-a)});
+  B({...fr,name:'Back middle post, lower (pressure-treated)',x:[m0,m1],y:[yS+T,f1],z:[L-T,L],bom:ptl(f1-yS-T)});   /* leg zone, near the ground */
+  B({...fr,name:'Back middle post, upper',x:[m0,m1],y:[f1+T,f2],z:[L-T,L],bom:lum(f2-f1-T)});
   B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,yTF-T],z:[0,T],bom:lum(yTF-T-f1-T,'2x4')});
 
   /* Rails */
@@ -854,7 +855,7 @@ const MODELS = {
       ['Clear height',fIn(g.clearFront)+' front, '+fIn(g.clearBack)+' back'],['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+', about '+fIn(g.box[2])+' tall'],['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft ('+((g.runArea+g.boxArea)/4).toFixed(1)+' per bird)']],
     steps:[
-      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a 45″ pressure-treated bottom stretcher 3″ above the ground, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, as the middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Back: two 45½″ pressure-treated corner posts, the same pressure-treated stretcher and floor rail, a top rail flush with the post tops, and a middle post in two pieces, 13½″ and 24½″. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
+      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a 45″ pressure-treated bottom stretcher 3″ above the ground, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, as the middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Back: two 45½″ pressure-treated corner posts, the same pressure-treated stretcher and floor rail, a top rail flush with the post tops, and a middle post in two pieces: a 13½″ pressure-treated piece between the stretcher and the floor rail, and a 24½″ untreated piece above. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
       ['Join the frames','Stand the frames up and join them with 21″ side rails: pressure-treated at 3″, untreated at 18″. Screw the 21″ floor joist between the front and back floor rails with its top 7/16″ below the rail tops. Then fit the three sloped top rails, one on each side and one in the middle, from the front top rail down to the back top rail; cut both ends at 15° so they sit flat against the top rails.'],
       ['Add the diagonal braces','Fit pressure-treated braces in the back and both sides of the leg zone, below the floor, and an untreated one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: mark each off the frame. The plywood back and box end lock the rest square.'],
       ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, 7/16″ below the rail tops and level with the joist; the front and back ledgers go in two pieces, one each side of the joist. Drop in the 45″ × 21″ OSB floor and glue and screw it down. It finishes flush with the rails.'],
@@ -877,7 +878,7 @@ const MODELS = {
       ['How it goes together','It is the porch coop\'s one-level design with a roof. The front frame is 6″ taller than the back, and three sloped top rails carry a 7/16″ OSB roof deck that sheds rain to the back. The pressure-treated corner posts double as legs.'],
       ['Roof','Corrugated steel over the OSB deck, at about '+g.pitch12.toFixed(1)+' in 12 ('+Math.round(g.pitch)+'°), which suits corrugated steel. There is no felt or foam closure: the solid OSB deck keeps rodents and drips out, and the coop is small enough that any condensation under the steel just dries. Paint the deck\'s top face and edges so dampness under the steel does not swell it.'],
       ['OSB','OSB swells if it stays wet. The roof deck is covered and the floor is under the roof, but paint or seal every cut edge, and use a removable liner on the floor so wet bedding does not sit on it.'],
-      ['Legs','The four corner posts (the legs), the bottom stretchers 3″ off the ground and the leg-zone braces are pressure-treated, since they get splashback and stay damp. Everything above the floor is untreated. Set the legs on pavers or patio blocks so they stay dry.'],
+      ['Legs','The four corner posts (the legs), the bottom stretchers 3″ off the ground, the leg-zone braces and the lower back middle post are pressure-treated, since they get splashback and stay damp. Everything above the floor is untreated. Set the legs on pavers or patio blocks so they stay dry.'],
       ['Wind and cold','Plywood closes the back and the sleeping-box end, the roof covers the top, and the sleeping box gives the birds a draft-free corner. The run end and run door are mesh. Set the coop with the run end away from the prevailing wind, and on cold days hang a tarp over the run end and front.'],
       ['Racking','The plywood back and box end lock the cage square. The leg zone gets diagonal braces on the back and both sides, and the mesh run end gets one more above the floor.'],
       ['Predators','Raccoons, cats, rats, opossums and snakes. Plywood and the roof close the back, the box end and the top; ½″ hardware cloth covers the run end and the run door. Both doors sit flush with ⅛″ gaps and close with a gate latch and a locking carabiner.'],
@@ -1093,7 +1094,7 @@ const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
   for(const k of an.lumKeys){ const g=an.lum[k];
-    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?'Corner posts (the legs), bottom stretchers and leg-zone braces':(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
+    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?'Corner posts (the legs), bottom stretchers, leg-zone braces and the lower back middle post':(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
   for(const k of an.plyKeys){ const p=an.ply[k]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
     rows.push(['Plywood & OSB', p.osb ? '7/16″ OSB sheathing, 4 × 8 ft' : fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
   rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
