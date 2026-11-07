@@ -278,7 +278,7 @@ if(!window.THREE || !THREE.OrbitControls){ $('#load').textContent = 'The 3D libr
 const LUM = {'2x4':[1.5,3.5],'2x3':[1.5,2.5],'2x2':[1.5,1.5],'1x4':[0.75,3.5],'1x2':[0.75,1.5]};
 const LUM_LABEL = {'2x4':'2×4','2x3':'2×3','2x2':'2×2','1x4':'1×4','1x2':'1×2'};
 const STOCK = 96, KERF = 0.125;
-const DENS_LUM = 34/1728, DENS_PLY = 32/1728; // lb per cubic inch
+const DENS_LUM = 34/1728, DENS_PLY = 32/1728, PT_FACTOR = 1.4; // lb per cubic inch; new pressure-treated stock is wet and ~40% heavier
 const W_MESH = 0.18, W_ALUM = 0.40, W_SHINGLE = 2.4, W_UNDER = 0.04, W_DRIP = 0.08;
 
 /* ---------- formatting ---------- */
@@ -319,8 +319,8 @@ const EDGE_MAT = new THREE.LineBasicMaterial({color:0x4a3016, transparent:true, 
 /* ---------- part builders (ctx.dry = BOM only, no meshes) ---------- */
 function describe(b){
   if(!b) return '';
-  if(b.k==='lum') return LUM_LABEL[b.size]+' · cut to '+fIn(b.len);
-  if(b.k==='ply') return fIn(b.th)+' plywood · '+fIn(b.w)+' × '+fIn(b.h2?Math.max(b.h,b.h2):b.h);
+  if(b.k==='lum') return LUM_LABEL[b.size]+(b.pt?' pressure-treated':'')+' · cut to '+fIn(b.len);
+  if(b.k==='ply') return fIn(b.th)+(b.pt?' pressure-treated':'')+' plywood · '+fIn(b.w)+' × '+fIn(b.h2?Math.max(b.h,b.h2):b.h);
   if(b.k==='mesh') return '½″ hardware cloth · '+fIn(b.w)+' × '+fIn(b.h);
   return '';
 }
@@ -450,10 +450,11 @@ function buildOutdoor(cfg, ctx){
 
   ctx.mod='run';
   /* Run floor platform + legs */
-  for(const zs of [[0,T],[L-T,L]]) B({...fr,name:'Run floor rim joist',x:[0,W],y:[yLb,yLt],z:zs,bom:lum(W)});
-  for(const xs of [[0,T],[m0,m1],[W-T,W]]) B({...fr,name:'Run floor joist',x:xs,y:[yLb,yLt],z:[T,L-T],bom:lum(L-2*T)});
-  for(const xs of [[T,T+D],[W-T-D,W-T]]) for(const zs of [[T,2*T],[L-2*T,L-T]]) B({...fr,name:'Leg',x:xs,y:[0,yLt],z:zs,bom:lum(yLt)});
-  B({mat:'ply',layer:'floors',name:'Run floor',x:[0,W],y:[yLt,yLF],z:[0,L],bom:{k:'ply',th:tf,w:W,h:L}});
+  const ptl=len=>Object.assign(lum(len),{pt:true});
+  for(const zs of [[0,T],[L-T,L]]) B({...fr,name:'Run floor rim joist',x:[0,W],y:[yLb,yLt],z:zs,bom:ptl(W)});
+  for(const xs of [[0,T],[m0,m1],[W-T,W]]) B({...fr,name:'Run floor joist',x:xs,y:[yLb,yLt],z:[T,L-T],bom:ptl(L-2*T)});
+  for(const xs of [[T,T+D],[W-T-D,W-T]]) for(const zs of [[T,2*T],[L-2*T,L-T]]) B({...fr,name:'Leg',x:xs,y:[0,yLt],z:zs,bom:ptl(yLt)});
+  B({mat:'ply',layer:'floors',name:'Run floor',x:[0,W],y:[yLt,yLF],z:[0,L],bom:{k:'ply',th:tf,w:W,h:L,pt:true}});
 
   /* Run walls (hardware cloth over framing) */
   const sb=yLF+T, st=yUb-T;
@@ -720,9 +721,9 @@ function analyze(bom, fasten){
   out.mod={run:0,coop:0}; const add=(cat,b,v)=>{ out.w[cat]+=v; out.mod[b.mod||'coop']+=v; };
   const nests={};
   for(const b of bom){
-    if(b.k==='lum'){ (out.lum[b.size]=out.lum[b.size]||[]).push(b); const [t,d]=LUM[b.size]; add('Lumber',b,t*d*b.len*DENS_LUM); }
-    else if(b.k==='ply'){ const key=b.th; (out.ply[key]=out.ply[key]||{pieces:[],list:[]}); out.ply[key].list.push(b);
-      const area = b.h2 ? b.w*(b.h+b.h2)/2 : b.w*b.h; add('Plywood',b,area*b.th*DENS_PLY);
+    if(b.k==='lum'){ const key=b.size+(b.pt?'pt':''); const g=(out.lum[key]=out.lum[key]||Object.assign([],{size:b.size,pt:!!b.pt})); g.push(b); const [t,d]=LUM[b.size]; add('Lumber',b,t*d*b.len*DENS_LUM*(b.pt?PT_FACTOR:1)); }
+    else if(b.k==='ply'){ const key=b.th+(b.pt?'pt':''); (out.ply[key]=out.ply[key]||{pieces:[],list:[],th:b.th,pt:!!b.pt}); out.ply[key].list.push(b); b.key=key;
+      const area = b.h2 ? b.w*(b.h+b.h2)/2 : b.w*b.h; add('Plywood',b,area*b.th*DENS_PLY*(b.pt?PT_FACTOR:1));
       if(b.nest){ const nk=b.nest+key; if(nests[nk]){ out.ply[key].pieces.push({w:b.w,h:b.h+nests[nk].h2+0.25,name:'2 × '+b.name.replace(/ \(.*\)/,'')+' (nested)'}); delete nests[nk]; } else nests[nk]=b; }
       else out.ply[key].pieces.push({w:b.w,h:b.h,name:b.name}); }
     else if(b.k==='mesh'){ out.mesh.push(b); add('Hardware cloth',b,b.w*b.h/144*W_MESH); }
@@ -730,9 +731,12 @@ function analyze(bom, fasten){
     else { out.roof[b.k]=b;
       if(b.k==='alum') add('Roofing',b,b.area*W_ALUM); if(b.k==='shingle') add('Roofing',b,b.area*W_SHINGLE*1.15); if(b.k==='underlay') add('Roofing',b,b.area*W_UNDER); if(b.k==='drip') add('Roofing',b,b.len/12*W_DRIP); }
   }
-  for(const nk in nests){ const b=nests[nk]; out.ply[b.th].pieces.push({w:b.w,h:Math.max(b.h,b.h2),name:b.name}); }
+  for(const nk in nests){ const b=nests[nk]; out.ply[b.key].pieces.push({w:b.w,h:Math.max(b.h,b.h2),name:b.name}); }
   for(const k in out.ply) out.ply[k].sheets=packSheets(out.ply[k].pieces);
   for(const k in out.lum) out.lum[k].boards=packBoards(out.lum[k].map(b=>Math.ceil(b.len*16)/16));
+  const LORD=['2x4','2x3','2x2','1x4','1x2'];
+  out.lumKeys=Object.keys(out.lum).sort((a,b)=>(out.lum[b].pt-out.lum[a].pt)||(LORD.indexOf(out.lum[a].size)-LORD.indexOf(out.lum[b].size)));
+  out.plyKeys=Object.keys(out.ply).sort((a,b)=>(out.ply[b].pt-out.ply[a].pt)||(out.ply[b].th-out.ply[a].th));
   let ml=0; for(const m of out.mesh){ const lo=Math.min(m.w,m.h), hi=Math.max(m.w,m.h); ml += hi<=36 ? lo : hi; }
   out.meshLen=ml; out.meshRoll = ml<=120?10:ml<=300?25:50;
   out.total=Object.values(out.w).reduce((a,b)=>a+b,0);
@@ -798,7 +802,7 @@ const MODELS = {
       {key:'roof',label:'Roof',choices:[['alum-ply','Aluminum','over ½″ plywood deck'],['alum-purlin','Aluminum','on 1×4 purlins, no deck'],['shingle','Asphalt shingles','over ½″ plywood deck']]}],
     compare:{row:'lumber',col:'roof',rows:[['2x4','2×4'],['2x3','2×3']],cols:[['alum-ply','Alum + deck'],['alum-purlin','Alum + purlins'],['shingle','Shingles']],
       note:'Weight by lumber and roof, with the current wall plywood. Tap a cell to switch the model to that combination. Figures assume kiln-dried SPF lumber; pressure-treated or wet lumber can run 30–50% heavier.'},
-    uses:{'2x4':'Framing, legs, rafters','2x3':'Framing, legs, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'},
+    uses:{'2x4':'Walls, coop floor, rafters','2x3':'Walls, coop floor, rafters','2x2':'Run door frame','1x2':'Ramp cleats and hanger','1x4':'Roof purlins'},
     cfgLabel:s=>LUM_LABEL[s.lumber]+' framing, '+fIn(s.wallPly)+' walls, '+({'alum-ply':'aluminum over deck','alum-purlin':'aluminum on purlins','shingle':'shingles'})[s.roof],
     split:an=>'Bolt the coop floor to the run instead of nailing it and the coop comes apart into two lifts: the run with the ramp is about <b>'+fLb(an.mod.run)+' lb</b>, and the coop box with the roof is about <b>'+fLb(an.mod.coop)+' lb</b>.',
     specs:g=>[['Overall footprint',fIn(g.overall[0])+' × '+fIn(g.overall[1])],['Highest point',"8′-0″ (front eave)"],
@@ -818,7 +822,7 @@ const MODELS = {
       ['Wind and air','The coop walls are solid plywood. Air comes in through hardware-cloth eave vents between the rafters at the front and back. The side vent window has a hinged plywood flap that latches shut in winter and props open in summer.'],
       ['Predators','Use ½″ galvanized hardware cloth, not chicken wire. The cloth wraps down over the run floor framing so there is no gap at the floor. Raccoons can open plain latches, so every latch takes a locking carabiner through its padlock hole.'],
       ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Aluminum is about 0.4 lb/sq ft against about 2.4 for 3-tab shingles. Putting aluminum on 1×4 purlins also drops the plywood deck. The trade-off is that a bare metal roof is louder in rain and can drip condensation in a cold coop. The deck prevents that.'],
-      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and aluminum on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. Use pressure-treated lumber only for the legs and run floor frame; it is much heavier when new.'],
+      ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and aluminum on purlins brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
       ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
     lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-purlin'},
@@ -982,10 +986,13 @@ const LS=q=>'https://www.lowes.com/search?searchTerm='+encodeURIComponent(q);
 const PRICE={
   'lum:2x4':[4.28,'https://www.lowes.com/pd/2-in-x-4-in-x-96-in-Hemlock-Fir-Kiln-dried-Stud/5003830039'],
   'lum:2x3':[3.68,LS('2 in x 3 in x 8 ft stud')],
-  'lum:2x2':[3.68,'https://www.lowes.com/pd/Spruce-Pine-Fir-Furring-Strip-Common-2-in-x-2-in-x-8-ft-Actual-1-5-in-x-1-5-in-x-8-ft/50236013','online',1,'Your Lowe\'s list prices the pressure-treated pine 2×2.'],
-  'lum:1x2':[2.88,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Whitewood-Furring-Strip/1000427899','online',1,'Your Lowe\'s list prices the pressure-treated pine 1×2.'],
+  'lum:2x4pt':[5.48,LS('2 in x 4 in x 8 ft pressure treated lumber'),'',1,'Ground-contact rated.'],
+  'lum:2x3pt':[5.48,LS('2 in x 4 in x 8 ft pressure treated lumber'),'',1,'Pressure-treated 2×3 is rarely stocked; buy pressure-treated 2×4 and rip it to 2½″.'],
+  'lum:2x2':[2.98,'https://www.lowes.com/pd/Spruce-Pine-Fir-Furring-Strip-Common-2-in-x-2-in-x-8-ft-Actual-1-5-in-x-1-5-in-x-8-ft/50236013','',1,'Untreated spruce-pine-fir. Your Lowe\'s list had the pressure-treated version at $3.68.'],
+  'lum:1x2':[1.78,'https://www.lowes.com/pd/1-in-x-2-in-x-8-ft-Whitewood-Furring-Strip/1000427899','',1,'Untreated whitewood. Your Lowe\'s list had the pressure-treated version at $2.88.'],
   'lum:1x4':[3.18,LS('1 in x 4 in x 8 ft furring strip')],
   'ply:0.5':[33.98,LS('1/2 in x 4 ft x 8 ft plywood sheathing')],
+  'ply:0.5pt':[44.98,'https://www.lowes.com/pd/Severe-Weather-1-2-in-x-4-ft-x-8-ft-Pressure-Treated-Cdx-Hemlock-Fir-Plywood-Sheathing/5002421377'],
   'ply:0.375':[22.13,LS('3/8 in x 4 ft x 8 ft plywood sheathing'),'online'],
   'ply:0.25':[30.08,LS('1/4 in x 4 ft x 8 ft sanded plywood'),'online'],
   'mesh:10':[27.98,LS('hardware cloth 1/2 in 36 in x 10 ft')],
@@ -1011,9 +1018,10 @@ const srcTag=k=>isOnline(k)?'Lowe\'s online':'est.';
 const money=v=>'$'+v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',');
 function shopRows(an){
   const rows=[], m=M();
-  for(const sz of ['2x4','2x3','2x2','1x4','1x2']) if(an.lum[sz]) rows.push(['Lumber', LUM_LABEL[sz]+' × 8 ft', an.lum[sz].boards.length, (m.uses[sz]||'')+' · '+an.lum[sz].length+' pieces','lum:'+sz]);
-  for(const th of Object.keys(an.ply).sort((a,b)=>b-a)){ const p=an.ply[th]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
-    rows.push(['Plywood', fIn(+th)+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+(+th)]); }
+  for(const k of an.lumKeys){ const g=an.lum[k];
+    rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?'Legs and run floor joists':(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
+  for(const k of an.plyKeys){ const p=an.ply[k]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
+    rows.push(['Plywood', fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
   rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
   const r=an.roof;
   if(r.alum){ rows.push(['Roofing','Corrugated aluminum panel, 26″ × 8 ft',r.alum.panels,'Cut each to '+fIn(r.alum.len)+'; overlap one corrugation. If Edgewood stocks only galvanized steel panels, they work the same and weigh a little more.','alum']); rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves','closure']); }
@@ -1072,11 +1080,11 @@ $('#stepNext').addEventListener('click',()=>setStep(Math.min(M().steps.length-1,
 $('#stepExit').addEventListener('click',()=>setStep(-1));
 function renderCut(an){
   let h='<thead><tr><th>Part</th><th>Qty</th><th>Size</th></tr></thead><tbody>';
-  for(const sz of ['2x4','2x3','2x2','1x4','1x2']){ if(!an.lum[sz]) continue; h+=`<tr class="sec"><td colspan="3">${LUM_LABEL[sz]} lumber</td></tr>`;
-    const grp={}; an.lum[sz].forEach(b=>{ const k=b.name+'|'+Math.round(b.len*8); (grp[k]=grp[k]||{n:b.name,len:b.len,q:0}).q++; });
+  for(const k of an.lumKeys){ const g0=an.lum[k]; h+=`<tr class="sec"><td colspan="3">${LUM_LABEL[g0.size]} ${g0.pt?'pressure-treated':'untreated'}</td></tr>`;
+    const grp={}; g0.forEach(b=>{ const k=b.name+'|'+Math.round(b.len*8); (grp[k]=grp[k]||{n:b.name,len:b.len,q:0}).q++; });
     Object.values(grp).sort((a,b)=>b.len-a.len).forEach(r=>{ h+=`<tr><td>${r.n}</td><td class="m">${r.q}</td><td class="m">${fIn(r.len)}</td></tr>`; }); }
-  for(const th of Object.keys(an.ply).sort((a,b)=>b-a)){ h+=`<tr class="sec"><td colspan="3">${fIn(+th)} plywood · ${an.ply[th].sheets.length} sheet${an.ply[th].sheets.length>1?'s':''}</td></tr>`;
-    an.ply[th].list.forEach(b=>{ const sz= b.h2 ? fIn(b.w)+' × '+fIn(b.h)+' tapering to '+fIn(b.h2) : fIn(b.w)+' × '+fIn(b.h); h+=`<tr><td>${b.name}</td><td class="m">1</td><td class="m">${sz}</td></tr>`; }); }
+  for(const k of an.plyKeys){ const p0=an.ply[k]; h+=`<tr class="sec"><td colspan="3">${fIn(p0.th)} ${p0.pt?'pressure-treated':'untreated'} plywood · ${p0.sheets.length} sheet${p0.sheets.length>1?'s':''}</td></tr>`;
+    p0.list.forEach(b=>{ const sz= b.h2 ? fIn(b.w)+' × '+fIn(b.h)+' tapering to '+fIn(b.h2) : fIn(b.w)+' × '+fIn(b.h); h+=`<tr><td>${b.name}</td><td class="m">1</td><td class="m">${sz}</td></tr>`; }); }
   h+=`<tr class="sec"><td colspan="3">Hardware cloth</td></tr>`;
   const mg={}; an.mesh.forEach(b=>{ const k=b.name+'|'+Math.round(b.w*8)+'|'+Math.round(b.h*8); (mg[k]=mg[k]||{n:b.name,w:b.w,h:b.h,q:0}).q++; });
   Object.values(mg).forEach(r=>{ h+=`<tr><td>${r.n}</td><td class="m">${r.q}</td><td class="m">${fIn(r.w)} × ${fIn(r.h)}</td></tr>`; });
