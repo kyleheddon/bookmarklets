@@ -220,7 +220,6 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
 
   <aside class="panel">
     <header>
-      <div class="eyebrow" id="eyebrow"></div>
       <h1 id="title"></h1>
       <div class="kpis">
         <button type="button" class="kpi" id="kpiCost"><span class="k">Estimated cost</span><span class="v" id="kCost">—</span></button>
@@ -968,7 +967,7 @@ function setModel(k, push){
   renderModelTabs(); renderHeader(); renderLayers(); renderOptions();
   if(changed){ buildStep=-1; rebuild(); goView('iso', !push); }
 }
-function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare?m.compare.note:''; $('#cmpWrap').hidden=!m.compare; $('#optSection').hidden=!m.options.length; }
+function renderHeader(){ const m=M(); $('#title').textContent=m.title; $('#lede').textContent=m.lede; $('#cmpNote').textContent=m.compare?m.compare.note:''; $('#cmpWrap').hidden=!m.compare; $('#optSection').hidden=!m.options.length; }
 function renderLayers(){
   const el=$('#layers'), m=M(), ls=m.layerState, all=m.layers.map(l=>l[0]);
   const on = all.every(k=>ls[k]===(k==='framing'));
