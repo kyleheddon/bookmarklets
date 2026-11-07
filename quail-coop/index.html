@@ -264,7 +264,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <div role="tabpanel" id="pane-cut" aria-labelledby="tab-cut" hidden><div class="tablewrap"><table class="cut" id="cut"></table></div></div>
       <div role="tabpanel" id="pane-notes" aria-labelledby="tab-notes" hidden><div class="notes" id="notes"></div></div>
     </section>
-    <p class="foot">Fasteners (screws, staples, bolts, roofing screws) are left out of the model, the lists and the cost. Lumber counts are 8 ft boards packed with a ⅛″ saw kerf; plywood counts are 4 × 8 sheets.</p>
+    <p class="foot">Fasteners are left out of the 3D model. The lists and cost include only the fasteners chosen so far (fence staples); screws, bolts and roofing screws are extra. Lumber counts are 8 ft boards packed with a ⅛″ saw kerf; plywood counts are 4 × 8 sheets.</p>
   </aside>
 </div>
 
@@ -771,7 +771,7 @@ const MODELS = {
       ['Join the frames','Stand the frames up facing each other and connect them with 21″ side rails at all four heights. Add the middle joists under both floors and across the top.'],
       ['Add the diagonal braces','Fit braces on the back and both sides of the leg zone and the lower level, and on the open upper side. Mark each one directly off the frame rather than trusting the cut list; once they are in, the frame is locked square.'],
       ['Put in the floors','Notch the two floor sheets around the posts, cut the 9″ × 8″ ramp hatch in the upper one, and glue and screw both down to the rails and joists.'],
-      ['Wrap it in hardware cloth','Cover the back, the sides and the top of the run, pulled tight and fastened every 4″. Do it before the sleeping box so you can still reach every rail from inside.'],
+      ['Wrap it in hardware cloth','Cover the back, the sides and the top of the run, pulled tight and fence-stapled every 2–3″. Do it before the sleeping box so you can still reach every rail from inside.'],
       ['Build the sleeping box','Fit the divider with its pop hole first, then the back, the side and the lid.'],
       ['Make and hang the doors','Measure the real openings and build each door ⅛″ smaller all round: 1×2 frames with braces and hardware cloth for the two run doors, plywood with two stiffeners for the box door. Hang them, then mount the latches and the carry handles.'],
       ['Add the ramp and set it in place','Glue and nail the cleats to the ramp, add the hanger cleat, and hang it in the hatch. Carry the coop to the porch and strap the back top rail to the house wall.']],
@@ -779,14 +779,14 @@ const MODELS = {
     notes:(g,an)=>[
       ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
       ['Why it is light','There is no roof and no wall sheathing except the sleeping box, so the 2×2 frame only carries hardware cloth, two floors and a small plywood box. All the plywood comes from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets. The whole cage is about '+fLb(an.total)+' lb, roughly a quarter of the outdoor coop.'],
-      ['Racking','A tall, narrow cage on 2×2s will rack unless it is braced. Diagonal braces run on the back and both sides of the leg zone and the lower level, and on the left side of the upper run. The sleeping-box plywood stiffens the upper right. Fasten the hardware cloth tight with washer-head screws every 4″ and it helps too.'],
+      ['Racking','A tall, narrow cage on 2×2s will rack unless it is braced. Diagonal braces run on the back and both sides of the leg zone and the lower level, and on the left side of the upper run. The sleeping-box plywood stiffens the upper right. Fasten the hardware cloth tight with fence staples every 2–3″ and it helps too.'],
       ['Tipping','At 6′ tall and 2′ deep it can tip if a dog jumps on it or a door is leaned on. Strap the back top rail to the house wall with a short furniture anti-tip strap screwed into a stud.'],
       ['Sleeping box','It fills the right half of the upper level. The divider has a 7″ × 8″ pop hole at the back and stops 2″ below the top rail, so stale air can leave through the run side. In winter, clip a sheet of clear corrugated plastic or a tarp over the top and windward side of the run to cut drafts and blown-in rain or snow.'],
       ['Predators','On a porch the main threats are raccoons, cats, rats, opossums and snakes. ½″ hardware cloth covers every open face including the top. ¼″ cloth also stops mice and is about the same weight, if you prefer it. The three doors sit flush in their openings with ⅛″ gaps. Each closes with a gate latch and a locking carabiner, because raccoons can work plain latches.'],
       ['Flighty birds','Quail flush straight up when startled. Each level has about '+fIn(Math.min(g.lowerClear,g.upperClear))+' of headroom, which is high enough for them to hit the top hard. Staple soft bird netting or shade cloth a few inches under the top mesh of the upper run to cushion them.'],
       ['Ramp','The rise is '+fIn(g.rise)+', so the 7″-wide ramp runs at about '+Math.round(g.rampDeg)+'° with '+g.cleats+' cleats. It hangs from a cleat at the 9″ × 8″ hatch and lifts out for cleaning. Teach the birds the route by placing them in the sleeping box at dusk for the first few nights.'],
       ['Cleaning','The lower door spans almost the whole front. The two upper doors open the run half and the sleeping box separately. To keep shavings off the porch, slide a cut-down boot tray or a scrap of vinyl flooring onto each floor as a removable liner.'],
-      ['Not shown','Fasteners: screws, washer-head screws or staples for the hardware cloth, and glue. Also not shown: the anti-tip wall strap, bird netting, feeders, waterers, a heat lamp (if you add one, guard it and keep it clear of the plywood), and bedding.']]
+      ['Not shown','Fasteners other than the fence staples: screws and glue. Also not shown: the anti-tip wall strap, bird netting, feeders, waterers, a heat lamp (if you add one, guard it and keep it clear of the plywood), and bedding.']]
   },
   outdoor:{
     tab:'Outdoor coop', dims:'4′ × 4′ × 8′ · shed roof',
@@ -823,7 +823,7 @@ const MODELS = {
       ['Roof choice','A 4 in 12 pitch works for both roof types: corrugated metal wants 3 in 12 or more, and shingles want 4 in 12 with standard underlayment. Corrugated galvanized steel is about 0.65 lb/sq ft against about 2.4 for 3-tab shingles. Both go over a ½″ plywood deck, which keeps the steel from dripping condensation into the coop, quiets rain, and leaves no gaps under the panels for mice to get into the coop.'],
       ['Carrying','As configured the coop weighs about '+fLb(an.total)+' lb, or about '+fLb(an.total/2)+' lb per person. Four 6″ pull handles are bolted into the coop floor joists at about waist height, so each carrier can take one side. Lift the ramp out first. If you bolt the coop floor frame to the run top plates (four ⅜″ carriage bolts per side) instead of nailing it, the coop lifts off as a separate piece of about '+fLb(an.mod.coop)+' lb, leaving the run at about '+fLb(an.mod.run)+' lb. 2×3 framing, ⅜″ walls and the steel roof brings it to about '+fLb(lightest)+' lb, the lightest option shown. The legs, run floor joists and run floor plywood are pressure-treated, since they sit closest to the ground; new pressure-treated wood is wet and about 40% heavier, which the weight above includes. Everything else is untreated.'],
       ['Ground contact','Set the legs on pavers or patio blocks so the run floor stays dry. The 12″ legs leave room to lift with your hands under the frame.'],
-      ['Not shown','Fasteners: exterior screws, crown staples or washer screws for the hardware cloth, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
+      ['Not shown','Fasteners other than the fence staples: exterior screws, roofing screws with neoprene washers or roofing nails, and carriage bolts for the legs and handles. Also not shown: exterior paint or sealer, feeders, waterers and bedding.']],
     lightest:{lumber:'2x3',wallPly:0.375,roof:'alum-ply'},
     steps:[
       ['Build the run floor platform','Screw the two rim joists to three joists on 24″ centers and check the diagonals match. Add the four legs inside the corners, then glue and screw down the plywood floor.'],
@@ -1007,6 +1007,7 @@ const PRICE={
   'hw:Door hinge, 3½″ matte black':[11.98,LS('RELIABILT No-Squeak 3-1/2-in Matte Black Mortise Door Hinge 3-Pack'),'store',3,'RELIABILT No-Squeak mortise hinge, sold in 3-packs. The 1×2 door frames are only ¾″ thick, too thin for the leaf to go on the door edge, so screw it flat across the gap onto the post face and the door face as shown. No mortising needed.'],
   'hw:Gate latch, 4″ with padlock hole':[6.48,'https://www.lowes.com/pd/national-hardware-steel-painted-gate-latch/50414134','store',1,'National Hardware N184-861, black. Check the carabiner fits through its hole.'],
   'hw:Locking carabiner':[6.79,'https://a.co/d/0eqSNeen','amazon',6,'Amazon 6-pack. One pack covers all three latches with spares.'],
+  'x:staples':[8.98,'https://www.lowes.com/pd/Fas-n-Tite-3-4-in-Leg-x-3-16-in-Round-Crown-14-Gauge-Fence-Staples-1-lb/1000435467','store',1,'Fas-n-Tite round-crown fence staples, about 1 lb. Hammer them in; no staple gun needed.'],
   'hw:Pull handle, 6½″ black utility (carry handle)':[4.98,'https://www.lowes.com/pd/ReliaBilt-ReliaBilt-6-1-2-in-Black-Utility-Pull-Handle-1-Pack/5002385973','store',1,'RELIABILT screen/storm door pull. Its included screws are too short for carrying weight: bolt it through into the floor framing with ¼″ bolts instead.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
@@ -1029,6 +1030,7 @@ function shopRows(an){
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
     rows.push(['Hardware', pk>1 ? k+', '+pk+'-pack' : k, Math.ceil(v.qty/pk), pk>1 ? v.qty+' needed: '+uses : uses, 'hw:'+k]); }
+  rows.push(['Fasteners','Fence staples, ¾″ leg, 14 ga, box of 475',1,'For the hardware cloth: one every 2–3″ along each edge and into every rail and stud it crosses','x:staples']);
   return rows;
 }
 function costTotal(rows){ return rows.reduce((a,r)=>a+r[2]*unitPrice(r[4]),0); }
