@@ -905,13 +905,13 @@ const person=(()=>{
   const g=new THREE.Group(), body=new THREE.MeshBasicMaterial({color:lin('#c6cacf'),side:THREE.DoubleSide}), ink=new THREE.MeshBasicMaterial({color:lin('#26292c'),side:THREE.DoubleSide});
   const add=(geo,mat,z)=>{ const m=new THREE.Mesh(geo,mat); m.position.z=z||0; g.add(m); };
   const rr=(x0,y0,x1,y1,r)=>{ const sh=new THREE.Shape(); sh.moveTo(x0+r,y0); sh.lineTo(x1-r,y0); sh.absarc(x1-r,y0+r,r,-Math.PI/2,0); sh.lineTo(x1,y1-r); sh.absarc(x1-r,y1-r,r,0,Math.PI/2); sh.lineTo(x0+r,y1); sh.absarc(x0+r,y1-r,r,Math.PI/2,Math.PI); sh.lineTo(x0,y0+r); sh.absarc(x0+r,y0+r,r,Math.PI,Math.PI*1.5); return new THREE.ShapeGeometry(sh,12); };
-  add(rr(-8.8,45,8.8,54.6,3.6),body);                         /* shoulders */
-  add(rr(-8.8,27,-6,50.5,1.4),body); add(rr(6,27,8.8,50.5,1.4),body);   /* arms */
-  add(rr(-5.3,30,5.3,48,0.5),body);                           /* torso */
-  add(rr(-5.3,0,-0.4,34,2.45),body); add(rr(0.4,0,5.3,34,2.45),body);   /* legs */
-  const head=new THREE.CircleGeometry(5.9,48); head.translate(0,62.9,0); add(head,body);
-  for(const ex of [-2,2]){ const e=new THREE.CircleGeometry(0.62,20); e.translate(ex,64.3,0); add(e,ink,0.05); }
-  const smile=new THREE.RingGeometry(2.6,3.15,32,1,Math.PI*1.18,Math.PI*0.64); smile.translate(0,63.8,0); add(smile,ink,0.05);
+  add(rr(-8.8,48.5,8.8,58.6,3.6),body);                       /* shoulders */
+  add(rr(-8.8,29,-6,54.5,1.4),body); add(rr(6,29,8.8,54.5,1.4),body);   /* arms */
+  add(rr(-5.3,32,5.3,51,0.5),body);                           /* torso */
+  add(rr(-5.3,0,-0.4,36.5,2.45),body); add(rr(0.4,0,5.3,36.5,2.45),body);   /* legs */
+  const head=new THREE.CircleGeometry(4.7,48); head.translate(0,64.3,0); add(head,body);
+  for(const ex of [-1.6,1.6]){ const e=new THREE.CircleGeometry(0.5,20); e.translate(ex,65.4,0); add(e,ink,0.05); }
+  const smile=new THREE.RingGeometry(2.05,2.5,32,1,Math.PI*1.18,Math.PI*0.64); smile.translate(0,64.9,0); add(smile,ink,0.05);
   g.visible=false; scene.add(g); return g;   /* hidden until the Person switch is turned on */
 })();
 
