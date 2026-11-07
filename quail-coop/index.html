@@ -1066,7 +1066,7 @@ function renderCostTotal(rows){
   const fresh=rows.filter(r=>!(r[4] in myPrices));
   const mine=rows.length-fresh.length, sto=fresh.filter(r=>srcOf(r[4])==='store').length, amz=fresh.filter(r=>srcOf(r[4])==='amazon').length, onl=fresh.filter(r=>isOnline(r[4])).length, est=fresh.length-sto-amz-onl;
   $('#costTotal').textContent=money(costTotal(rows));
-  $('#kCost').textContent=money(costTotal(rows));
+  $('#kCost').textContent='$'+(Math.round(costTotal(rows)/5)*5).toLocaleString();
   const parts=[]; if(sto) parts.push(sto+' confirmed at Edgewood'); if(amz) parts.push(amz+' from Amazon'); if(mine) parts.push(mine+' your price'+(mine>1?'s':'')); if(onl) parts.push(onl+' online, unconfirmed'); if(est) parts.push(est+' estimated');
   $('#costNote').textContent='Total before sales tax · '+parts.join(', ')+'.';
 }
