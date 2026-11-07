@@ -799,7 +799,7 @@ const MODELS = {
     build:buildPorch, get center(){ return this.state.levels==='1' ? 24 : 37; }, get radius(){ return this.state.levels==='1' ? 42 : 54; }, fasten:2, paintAll:'trim',
     state:{floorPly:0.5, boxPly:0.5, levels:'2'},
     layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
-    options:[{key:'levels',label:'Levels',choices:[['2','Two levels','Sleeping box upstairs'],['1','One level','Use a tarp for wind']]}],
+    options:[{key:'levels',label:'Levels',choices:[['1','One level','Use a tarp for wind'],['2','Two levels','Sleeping box upstairs']]}],
     compare:null,
     have:[
       ['#8 deck screws, 3″','Rails and joists into the posts: drive through the post into the rail end, two per joint. Predrill so the 2×2 does not split.'],
