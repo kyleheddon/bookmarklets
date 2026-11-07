@@ -90,6 +90,7 @@ button{font:inherit;color:inherit}
 h1{font:700 40px/0.95 var(--font-display);letter-spacing:.005em;margin:6px 0 8px;text-wrap:balance;text-transform:uppercase}
 .lede{margin:0;color:var(--muted);max-width:60ch}
 .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+header .opt{margin:0 0 16px}
 .kpi{display:flex;flex-direction:column;gap:4px;text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:12px 14px;cursor:pointer;min-width:0}
 .kpi:hover{border-color:var(--accent)}
 .kpi:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
@@ -224,6 +225,10 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
         <button type="button" class="kpi" id="kpiCost"><span class="k">Estimated cost</span><span class="v" id="kCost">—</span></button>
         <button type="button" class="kpi" id="kpiWeight"><span class="k">Estimated weight</span><span class="v" id="kWeight">—</span></button>
       </div>
+      <section class="opt" id="optSection" aria-label="Build options">
+        <h2>Options</h2>
+        <div id="opts" class="opt"></div>
+      </section>
       <p class="lede" id="lede"></p>
     </header>
 
@@ -232,10 +237,6 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       <dl class="specs" id="specs"></dl>
     </section>
 
-    <section class="opt" id="optSection" aria-label="Build options">
-      <h2>Options</h2>
-      <div id="opts" class="opt"></div>
-    </section>
 
     <section class="weight" id="weightCard" aria-label="Weight estimate">
       <div>
