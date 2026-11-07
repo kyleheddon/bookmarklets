@@ -442,8 +442,9 @@ function insetHinge(ctx, R, h, s){
   hw(ctx,'Door hinge, 3½″ matte black',0.25,R.use);
 }
 function insetLatch(ctx, R, dw, hm, s){
-  hwBox(ctx,R.pivot,[s*(dw-4),s*(dw+1.05)],[hm-0.28,hm+0.28],[-0.45,-0.12],'steel','Gate latch bar');
-  hwBox(ctx,R.pivot,[s*(dw-4.1),s*(dw-3)],[hm-0.8,hm+0.8],[-0.12,0],'steel','Gate latch bar bracket');
+  /* the bar's pivot bracket screws to the door's edge stile, so it always lands on wood, never on hardware cloth */
+  hwBox(ctx,R.pivot,[s*(dw-1.35),s*(dw+1.05)],[hm-0.28,hm+0.28],[-0.45,-0.12],'steel','Gate latch bar');
+  hwBox(ctx,R.pivot,[s*(dw-1.4),s*(dw-0.2)],[hm-0.8,hm+0.8],[-0.12,0],'steel','Gate latch bar bracket (on the door stile)');
   hwBox(ctx,R.fixed,[s*(dw+0.25),s*(dw+1.4)],[hm-1.2,hm+0.8],[-0.6,0],'steel','Gate latch keeper');
   torus(ctx,R.fixed,[s*(dw+0.8),hm-1.9,-0.7],0);
   hw(ctx,'Gate latch, 4″ with padlock hole',0.4,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
@@ -563,6 +564,12 @@ function buildShed(cfg, ctx){
   box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
   for(const ys of [[1,2.5],[udh-2.5,udh-1]]) box(ctx,{mat:'wood',layer:'doors',name:'Box door stiffener (1×2, inside face)',x:[-bdw+0.75,-0.75],y:ys,z:[tb,tb+0.75],parent:BR.pivot,bom:lum(bdw-1.5,'1x2')});
   for(const h of [3,udh-3]) insetHinge(ctx,BR,h,-1); insetLatch(ctx,BR,bdw,udh*0.35,-1);
+  /* door stops: 1x2 strips inside the opening, on the middle post and under the top rail, for each door to close against */
+  { const ds={mat:'wood',layer:'framing'}, zr=[ft,ft+1.5], zb=[tb,tb+1.5], sy0=yLF, sy1=top;
+    B({...ds,name:'Door stop (1×2), run door side of middle post',x:[pm0-0.75,pm0],y:[sy0,sy1-0.75],z:zr,bom:lum(sy1-0.75-sy0,'1x2')});
+    B({...ds,name:'Door stop (1×2), box door side of middle post',x:[pm1,pm1+0.75],y:[sy0,sy1-0.75],z:zb,bom:lum(sy1-0.75-sy0,'1x2')});
+    B({...ds,name:'Door stop (1×2), under top rail, run door',x:[T,pm0],y:[sy1-0.75,sy1],z:zr,bom:lum(pm0-T,'1x2')});
+    B({...ds,name:'Door stop (1×2), under top rail, box door',x:[pm1,W-T],y:[sy1-0.75,sy1],z:zb,bom:lum(W-T-pm1,'1x2')}); }
 
 
   ctx.g={W,L,tb,tf,yLF,yTF,yTB,f1,udw,udh,bdw,roofTop,deck:[W+2*tb,Lr],
@@ -672,6 +679,12 @@ function buildPorch(cfg, ctx){
     box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
     for(const ys of [[1,2.5],[udh-2.5,udh-1]]) box(ctx,{mat:'wood',layer:'doors',name:'Box door stiffener (1×2, inside face)',x:[-bdw+0.75,-0.75],y:ys,z:[tb,tb+0.75],parent:BR.pivot,bom:lum(bdw-1.5,'1x2')});
     for(const h of [3,udh-3]) insetHinge(ctx,BR,h,-1); insetLatch(ctx,BR,bdw,udh*0.35,-1);
+    /* door stops: 1x2 strips inside the opening, on the middle post and under the top rail, for each door to close against */
+    { const ds={mat:'wood',layer:'framing'}, zr=[ft,ft+1.5], zb=[tb,tb+1.5], sy0=yb, sy1=top;
+      B({...ds,name:'Door stop (1×2), run door side of middle post',x:[pm0-0.75,pm0],y:[sy0,sy1-0.75],z:zr,bom:lum(sy1-0.75-sy0,'1x2')});
+      B({...ds,name:'Door stop (1×2), box door side of middle post',x:[pm1,pm1+0.75],y:[sy0,sy1-0.75],z:zb,bom:lum(sy1-0.75-sy0,'1x2')});
+      B({...ds,name:'Door stop (1×2), under top rail, run door',x:[T,pm0],y:[sy1-0.75,sy1],z:zr,bom:lum(pm0-T,'1x2')});
+      B({...ds,name:'Door stop (1×2), under top rail, box door',x:[pm1,W-T],y:[sy1-0.75,sy1],z:zb,bom:lum(W-T-pm1,'1x2')}); }
   };
   if(one){
     splitDoors(yLF, f2, 'Run door');
@@ -752,7 +765,7 @@ const MODELS = {
       ['Deck screws, 1⅝″ (slightly thinner than #8)','Floors and sleeping-box plywood to the frame, 1×2 door-frame corners (predrill), and the ramp hanger cleat.'],
       ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.'],
       ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every rail it crosses, closer where it wraps the top and the corners.']],
-    get uses(){ return {'2x4':'Front middle post, which the latches screw into','2x2':'Posts, rails, floor joists, braces','1x2': this.state.levels==='1' ? 'Floor ledgers and door frame' : 'Floor ledgers, door frames, ramp cleats, box door stiffeners'}; },
+    get uses(){ return {'2x4':'Front middle post, which the latches screw into','2x2':'Posts, rails, floor joists, braces','1x2': this.state.levels==='1' ? 'Floor ledgers, door frame and door stops' : 'Floor ledgers, door frames, ramp cleats, box door stiffeners'}; },
     cfgLabel:s=>(s.levels==='1'?'one level':'two levels')+', ½″ plywood throughout',
     split:an=>'Two people can carry it by lifting under the floor rails.',
     specs:g=> g.single ? [['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
@@ -772,10 +785,10 @@ const MODELS = {
       ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, level with the top of the middle joist (½″ below the rail tops). The front and back ledgers go in two pieces, one each side of the joist. Cut the floor to 45″ × 21″, drop it in and glue and screw it to the ledgers and joist. It finishes flush with the rails, so no plywood edge shows outside.'],
       ['Fit the sleeping box divider','Screw the divider between the front and back middle posts, with its 7″ × 8″ pop hole at the bottom, toward the back. It stops 2″ below the top rail so stale air can leave through the run side.'],
       ['Close in the walls and top','Screw ½″ plywood to the back and the sleeping-box end, from the bottom of the floor rail to the top of the top rail; the end sheet laps the back edge. Staple hardware cloth over the run end, pulled tight, every 2–3″. Then screw the plywood top down onto the top rails and cross rail.'],
-      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post.'],
+      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post: screw each latch\'s pivot bracket to the door\'s edge stile and its catch to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
       ['Set it in place','Carry the coop to the porch with the open front facing away from the wind. On cold days, hang a tarp over the front.']],
     stepRules1:[[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/\(plywood\)|^Run side hardware cloth/,5],[/^Sleeping box divider/,4],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
-    cutNotes1:[[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^End wall/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the back and the box end'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
+    cutNotes1:[[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^End wall/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the back and the box end'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
     get steps(){ return this.state.levels==='1' ? this.steps1 : this.steps2; },
     get stepRules(){ return this.state.levels==='1' ? this.stepRules1 : this.stepRules2; },
     get cutNotes(){ return this.state.levels==='1' ? this.cutNotes1 : this.cutNotes2; },
@@ -822,7 +835,7 @@ const MODELS = {
     layers:[['framing','Framing'],['floors','Floor'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors'],['hardware','Latches & hinges']],
     options:[],
     compare:null,
-    uses:{'2x4':'Front middle post, which the latches screw into','2x2':'Rails, back middle post, floor joist, braces','1x2':'Floor ledgers and door frame'},
+    uses:{'2x4':'Front middle post, which the latches screw into','2x2':'Rails, back middle post, floor joist, braces','1x2':'Floor ledgers, door frame and door stops'},
     cfgLabel:s=>'steel roof over OSB',
     split:an=>'',
     specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep; roof '+fIn(g.deck[0])+' × 30″'],['Height',fFt(g.roofTop)+' at the front'],
@@ -837,10 +850,10 @@ const MODELS = {
       ['Fit the sleeping box divider','Screw the divider between the front and back middle posts with its 7″ × 8″ pop hole at the bottom, toward the back. Its top follows the roof slope and stops 2″ below the middle top rail so stale air can leave through the run side.'],
       ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. The end sheet is cut to the roof slope and laps the back sheet\'s edge. Staple hardware cloth over the run end, also cut to the slope, every 2–3″.'],
       ['Put on the roof','Screw down the 7/16″ OSB roof deck so it overhangs 3″ at the front and back, and paint the top face and all the edges. Cut one 8 ft steel panel into two pieces and screw them down side by side with neoprene-washer roofing screws, overlapping one corrugation.'],
-      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post.'],
+      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post: screw each latch\'s pivot bracket to the door\'s edge stile and its catch to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
       ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind. Paint or seal the outside, including the OSB edges.']],
     stepRules:[[/hinge|latch|carabiner|knuckle|Carry handle/i,7],[/door/i,7],[/^Roof|roofing/i,6],[/brace/,2],[/\(plywood\)|^Run end hardware cloth/,5],[/^Sleeping box divider/,4],[/^Floor \(|ledger/,3],[/\(sides\)|joist|sloped/,1],[/./,0]],
-    cutNotes:[[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
+    cutNotes:[[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
       [/^End wall/,'Top edge cut to the roof slope; laps the back edge of the back wall'],[/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops']],
     have:[
