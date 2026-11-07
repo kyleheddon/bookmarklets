@@ -32,6 +32,7 @@
   --scene-bg:#19201d; --ground:#222b27; --grid:#34413b;
   --bar-5:#b7c0c8; color-scheme:dark;
 }
+[hidden]{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45}
 *{box-sizing:border-box}
@@ -400,11 +401,12 @@ function frontLatch(ctx, R, dw, hm, th){
   hw(ctx,'Gate latch, 4″ with padlock hole',0.4,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
 }
 /* Inset door (porch coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
+/* 3-1/2" butt hinge screwed flat across the gap: one leaf on the door face, one on the post face, knuckle over the gap. */
 function insetHinge(ctx, R, h, s){
-  hwBox(ctx,R.pivot,[s*0.3,s*5.5],[h-0.4,h+0.4],[-0.1,0],'steel','Strap hinge');
-  hwBox(ctx,R.fixed,[-s*0.15,-s*1.35],[h-1.3,h+1.3],[-0.1,0],'steel','Strap hinge leaf');
-  cyl(ctx,R.fixed,[0,h,-0.2],2.6,'y');
-  hw(ctx,'Strap hinge, 3″ light duty',0.2,R.use);
+  hwBox(ctx,R.pivot,[s*0.05,s*1.45],[h-1.75,h+1.75],[-0.08,0],'steel','Butt hinge leaf (door)');
+  hwBox(ctx,R.fixed,[-s*0.15,-s*1.5],[h-1.75,h+1.75],[-0.08,0],'steel','Butt hinge leaf (post)');
+  cyl(ctx,R.fixed,[-s*0.05,h,-0.22],3.5,'y');
+  hw(ctx,'Door hinge, 3½″ matte black',0.25,R.use);
 }
 function insetLatch(ctx, R, dw, hm, s){
   hwBox(ctx,R.pivot,[s*(dw-4),s*(dw+1.05)],[hm-0.28,hm+0.28],[-0.45,-0.12],'steel','Gate latch bar');
@@ -418,7 +420,7 @@ function handle(ctx, face, dir, yc, zc, use){
   hwBox(ctx,null,bx,[yc-0.28,yc+0.28],[zc-3,zc+3],'steel','Carry handle');
   hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc-3,zc-2.3],'steel','Carry handle');
   hwBox(ctx,null,px,[yc-0.5,yc+0.5],[zc+2.3,zc+3],'steel','Carry handle');
-  hw(ctx,'Steel pull handle, 6″ (carry handle)',0.35,use);
+  hw(ctx,'Gate pull, 6½″ black steel (carry handle)',0.35,use);
 }
 /* Removable cleated ramp that hangs from the edge of a floor hatch and descends toward +x. */
 function ramp(ctx, o){
@@ -998,15 +1000,15 @@ const PRICE={
   'mesh:25':[79.97,'https://www.lowes.com/pd/GARDEN-CRAFT-25-ft-x-3-ft-Gray-Steel-Welded-Wire-Garden-Hardware-Cloth-Rolled-Fencing/5001503005','store',1,'Garden Craft. ½″ mesh and 19 gauge not confirmed; check the label.'],
   'mesh:50':[94.98,LS('hardware cloth 1/2 in 36 in x 50 ft')],
   'alum':[19.98,LS('Union Corrugating Oval galvanized steel corrugated panel 8 ft'),'store',1,'Union Corrugating Oval galvanized steel, 2.16 ft (about 26″) wide. Search link; the exact product page is not confirmed.'],
-  'closure':[4.48,LS('corrugated metal roof foam closure strip'),'',1,'Match the profile to the Union Corrugating panel.'],
+  'closure':[4.48,LS('Union Corrugating oval foam closure strips'),'',1,'Not chosen yet. Match the Union Corrugating oval profile.'],
   'underlay':[34.97,'https://www.lowes.com/pd/RELIABILT-15w-Asphalt-saturated-roofing-felt/5016180073','store',1,'RELIABILT #15, 36″ × 144 ft. Check the label allows use under metal roofing; some #15 felts do not.'],
-  'shingle':[42.50,LS('3-tab asphalt shingles bundle'),'online',1,'Brand not chosen yet; confirm product and price.'],
+  'shingle':[38.98,LS('GAF Royal Sovereign Charcoal 3-tab shingles'),'store',1,'GAF Royal Sovereign Charcoal, algae-resistant, 33.3 sq ft per bundle.'],
   'drip':[7.18,'https://www.lowes.com/pd/Amerimax-Drip-Edge-50-Pack-2-56-in-x-10-ft-Brown-Aluminum-Drip-Edge/5014648661','store',1,'Amerimax C4.5, 2.56″ × 10 ft, mill-finish aluminum.'],
-  'hw:T-hinge, 4″ heavy duty':[4.98,'https://www.lowes.com/pd/ReliaBilt-RB-4-IN-ZN-EXT-HD-T-HINGE/5001634685','online',1,'RELIABILT 4″ extra-heavy-duty. Check whether it is sold singly or in pairs.'],
-  'hw:Strap hinge, 3″ light duty':[4.78,LS('3 in strap hinge 2-pack'),'online',2,'Three 2-packs make six hinges. Specific product not chosen yet.'],
+  'hw:T-hinge, 4″ heavy duty':[5.58,'https://www.lowes.com/pd/ReliaBilt-RB-4-IN-ZN-EXT-HD-T-HINGE/5001634685','store',1,'RELIABILT 4″ zinc T-hinge, on sale (regular $7.18). Heavy-duty rating not confirmed; it carries a light plywood door.'],
+  'hw:Door hinge, 3½″ matte black':[11.98,LS('RELIABILT No-Squeak 3-1/2-in Matte Black Mortise Door Hinge 3-Pack'),'store',3,'RELIABILT No-Squeak mortise hinge, sold in 3-packs. The 1×2 door frames are only ¾″ thick, too thin for the leaf to go on the door edge, so screw it flat across the gap onto the post face and the door face as shown. No mortising needed.'],
   'hw:Gate latch, 4″ with padlock hole':[6.48,'https://www.lowes.com/pd/national-hardware-steel-painted-gate-latch/50414134','store',1,'National Hardware N184-861, black. Check the carabiner fits through its hole.'],
   'hw:Locking carabiner':[3.78,LS('3 in locking carabiner'),'online',1,'3″. Model not chosen yet; make sure the gate actually locks.'],
-  'hw:Steel pull handle, 6″ (carry handle)':[5.48,LS('6.5 in steel gate pull handle'),'online',1,'A 6½″ steel gate pull handle works. Model not chosen yet.']
+  'hw:Gate pull, 6½″ black steel (carry handle)':[5.48,'https://www.lowes.com/pd/National-Hardware-Steel-painted-Gate-Pull/50393182','online',1,'National Hardware gate pull. Not rated for lifting: bolt it through to the floor framing, never just the plywood or a rail end.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
 const savePrices=()=>{ try{ localStorage.setItem('coopPrices',JSON.stringify(myPrices)); }catch(_){} };
