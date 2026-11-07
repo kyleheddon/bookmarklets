@@ -208,13 +208,6 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
     <div class="hint">Drag to rotate · right-drag or two fingers to pan · scroll to zoom · tap a part to identify it</div>
     <div class="pick" id="pick" hidden><b id="pickName"></b><span id="pickInfo"></span><button type="button" id="pickClose" aria-label="Clear selection">×</button></div>
     <div class="viewbar">
-      <div class="seg" role="group" aria-label="Camera view" id="views">
-        <button type="button" data-v="iso" aria-pressed="true">3D</button>
-        <button type="button" data-v="front" aria-pressed="false">Front</button>
-        <button type="button" data-v="side" aria-pressed="false">Side</button>
-        <button type="button" data-v="back" aria-pressed="false">Back</button>
-        <button type="button" data-v="top" aria-pressed="false">Top</button>
-      </div>
       <div class="steppill" id="stepPill" hidden><button type="button" id="stepPrev" aria-label="Previous build step">‹</button><span id="stepName"></span><button type="button" id="stepNext" aria-label="Next build step">›</button><button type="button" id="stepExit" aria-label="Show the finished coop">✕</button></div>
       <label class="toggle"><input type="checkbox" id="openDoors"><span class="track"></span>Open doors</label>
     </div>
@@ -925,7 +918,6 @@ let tween=null;
 function fitDist(){ const asp=camera.aspect, vf=camera.fov*Math.PI/180, hf=2*Math.atan(Math.tan(vf/2)*asp); return M().radius/Math.sin(Math.min(vf,hf)/2)*1.02; }
 function goView(name, instant){
   const d=new THREE.Vector3(...VIEWS[name]).normalize(); const to=d.multiplyScalar(fitDist()).add(TGT());
-  document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed', b.dataset.v===name));
   if(instant||reduceMotion){ camera.position.copy(to); controls.target.copy(TGT()); tween=null; dirty=true; return; }
   tween={from:camera.position.clone(), to, tf:controls.target.clone(), t0:performance.now()};
 }
@@ -962,7 +954,7 @@ $('#kpiWeight').addEventListener('click',()=>{ $('#weightCard').scrollIntoView({
 
 /* ---------- UI ---------- */
 function renderModelTabs(){
-  $('#models').innerHTML=Object.entries(MODELS).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b><span>${m.dims}</span></button>`).join('');
+  $('#models').innerHTML=Object.entries(MODELS).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b></button>`).join('');
 }
 $('#models').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setModel(b.dataset.m, true); });
 function setModel(k, push){
@@ -1128,9 +1120,8 @@ function renderCut(an){
 }
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
-$('#views').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) goView(b.dataset.v); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
-controls.addEventListener('start',()=>{ tween=null; document.querySelectorAll('#views button').forEach(b=>b.setAttribute('aria-pressed','false')); });
+controls.addEventListener('start',()=>{ tween=null; });
 window.addEventListener('hashchange',()=>setModel(location.hash.slice(1), false));
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
