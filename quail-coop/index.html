@@ -162,7 +162,8 @@ h2{font:700 20px/1.1 var(--font-display);text-transform:uppercase;letter-spacing
 .linkbtn{border:0;background:transparent;color:var(--accent);padding:0;font-size:12.5px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:0;counter-reset:st}
 .steps li{display:grid;grid-template-columns:32px minmax(0,1fr);gap:4px 10px;padding:12px 0;border-bottom:1px dashed var(--line);counter-increment:st}
-.steps li::before{content:counter(st);grid-row:1 / span 3;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--fg);display:grid;place-items:center;font:700 15px/1 var(--font-display)}
+.steps p.fx{color:var(--fg);font-size:12.5px}
+.steps li::before{content:counter(st);grid-row:1 / span 4;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--fg);display:grid;place-items:center;font:700 15px/1 var(--font-display)}
 .steps li.on::before{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .steps b{font-size:14.5px}
 .steps p{margin:0;font-size:13.5px;color:var(--muted);max-width:60ch}
@@ -326,7 +327,8 @@ const MAT = {
   shingle: new THREE.MeshStandardMaterial({map:shingleTex(), roughness:.95, side:THREE.DoubleSide}),
   shingleEdge: std('#3a3e43',.9), steel: std('#41474d',.4,.8), carabiner: std('#e2552b',.35,.35),
   mesh: new THREE.MeshStandardMaterial({map:meshTex(), transparent:true, side:THREE.DoubleSide, depthWrite:false, metalness:.4, roughness:.5}),
-  osb: std('#c9a467',.95)
+  osb: std('#c9a467',.95),
+  fast: std('#3b3f44',.4,.7), fastNow: new THREE.MeshStandardMaterial({color:lin('#ffb000'),emissive:lin('#a85c00'),emissiveIntensity:.6,roughness:.35,metalness:.3})
 };
 const EDGED = {wood:1, ply:1, door:1, woodPT:1, plyPT:1, osb:1};
 const PAINT_EDGE = new THREE.LineBasicMaterial({color:0x3a4250, transparent:true, opacity:.28});
@@ -340,7 +342,7 @@ function describe(b){
   if(b.k==='mesh') return '½″ hardware cloth · '+fIn(b.w)+' × '+fIn(b.h);
   return '';
 }
-function rec(ctx,o){ if(o.bom) ctx.bom.push(Object.assign({name:o.name, layer:o.layer, mod:ctx.mod}, o.bom)); }
+function rec(ctx,o){ if(o.bom) ctx.bom.push(Object.assign({name:o.name, layer:o.layer, mod:ctx.mod, step:o.st||ctx.st}, o.bom)); }
 const paintOn=true;   /* the coops always show in the house colors */
 function addMesh(ctx, geo, o){
   if(o.bom && o.bom.pt && MAT[o.mat+'PT']) o = Object.assign({}, o, {mat:o.mat+'PT'});
@@ -351,8 +353,8 @@ function addMesh(ctx, geo, o){
   else if(/^wood/.test(o.mat) && (o.layer==='framing' || o.layer==='doors' || o.layer==='sheathing')) pk='trim';
   if(pk && ctx.paintAll) pk=ctx.paintAll;
   const m = new THREE.Mesh(geo, MAT[o.mat]);
-  m.castShadow = o.mat!=='mesh'; m.receiveShadow = true;
-  m.userData = {layer:o.layer, name:o.name, info:o.desc || describe(o.bom), rawMat: o.mat==='door' ? ((o.bom&&o.bom.k==='ply') ? MAT.ply : MAT.wood) : MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};   /* unpainted doors show as bare wood */
+  m.castShadow = o.mat!=='mesh' && o.mat!=='fast'; m.receiveShadow = true;
+  m.userData = {layer:o.layer, stepKey:o.st||ctx.st, name:o.name, info:o.desc || describe(o.bom), rawMat: o.mat==='door' ? ((o.bom&&o.bom.k==='ply') ? MAT.ply : MAT.wood) : MAT[o.mat], paintMat:pk?MAT[pk]:MAT[o.mat]};   /* unpainted doors show as bare wood */
   if(paintOn) m.material=m.userData.paintMat;
   if(EDGED[o.mat] && !o.noEdges){ const e = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), (paintOn&&pk)?PAINT_EDGE:EDGE_MAT); e.raycast = ()=>{}; e.userData.painted=!!pk; m.add(e); }
   (o.parent || ctx.root).add(m); ctx.parts.push(m); return m;
@@ -379,7 +381,7 @@ function prism(ctx,o){
 }
 function meshPoly(ctx,o){
   const zs=o.poly.map(q=>q[0]), ys=o.poly.map(q=>q[1]); const w=Math.max(...zs)-Math.min(...zs), h=Math.max(...ys)-Math.min(...ys);
-  rec(ctx,{name:o.name,layer:'mesh',bom:{k:'mesh',w,h}}); if(ctx.dry) return;
+  rec(ctx,{name:o.name,layer:'mesh',st:o.st,bom:{k:'mesh',w,h}}); if(ctx.dry) return;
   const sh=new THREE.Shape(); o.poly.forEach((q,i)=> i ? sh.lineTo(q[0],q[1]) : sh.moveTo(q[0],q[1]));
   const g=new THREE.ShapeGeometry(sh); g.rotateY(-Math.PI/2); g.translate(o.at,0,0);
   return addMesh(ctx,g,{mat:'mesh',layer:'mesh',name:o.name,bom:{k:'mesh',w,h}});
@@ -404,6 +406,29 @@ function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer, pt){
   prism(ctx,{axis, poly, range, mat:mat||'wood', layer:layer||'framing', name, parent, bom:Object.assign({k:'lum', size, len}, pt?{pt:true}:{})});
 }
 function hw(ctx, item, wt, use){ ctx.bom.push({k:'hw', item, wt, use, mod:ctx.mod}); }
+/* ---------- fasteners: every screw is counted per build step, and its head is drawn in the step views ---------- */
+const FAST={
+  scr3:['3″ deck screw','3″ deck screws','3″ #8 deck screw'],
+  scr158:['1⅝″ deck screw','1⅝″ deck screws','1⅝″ deck screw'],
+  scr58:['#8 × ⅝″ wood screw','#8 × ⅝″ wood screws','#8 × ⅝″ wood screw, for hardware on the ¾″ run-door frame'],
+  scr1:['#8 × 1″ wood screw','#8 × 1″ wood screws','#8 × 1″ wood screw, for hardware on the 1¼″ box door'],
+  sup:['screw supplied with the hinge or latch','screws supplied with the hinges and latches','Supplied with the hinge or latch'],
+  roof:['2″ roofing screw','2″ roofing screws with neoprene washers','2″ roofing screw with neoprene washer, through a ridge'],
+  staple:['fence staple','fence staples',''], brad:['brad','brads',''], glue:['wood glue','exterior wood glue','']};
+const FAST_DIRS={x:[1,0,0],'-x':[-1,0,0],y:[0,1,0],'-y':[0,-1,0],z:[0,0,1],'-z':[0,0,-1]};
+function fast(ctx,item,p,d,parent){
+  ctx.bom.push({k:'fast',item,n:1,step:ctx.st,mod:ctx.mod});
+  if(ctx.dry||!p) return;
+  const n=new THREE.Vector3(...(Array.isArray(d)?d:FAST_DIRS[d])).normalize();
+  const g=new THREE.CylinderGeometry(0.24,0.24,0.09,12);
+  g.applyMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0),n)));
+  g.translate(p[0]+n.x*0.045,p[1]+n.y*0.045,p[2]+n.z*0.045);
+  addMesh(ctx,g,{mat:'fast',layer:'fast',name:FAST[item][2]||FAST[item][0],desc:'Fastener',noEdges:true,parent});
+}
+function fastN(ctx,item,n){ ctx.bom.push({k:'fast',item,n:n||0,step:ctx.st,mod:ctx.mod}); }
+/* evenly spaced points from a to b, about `sp` apart, kept `inset` in from each end */
+function along(a,b,sp,inset){ inset = inset==null ? 1 : inset; const L0=b-a-2*inset, n=Math.max(1,Math.round(L0/sp)); return Array.from({length:n+1},(_,i)=>a+inset+L0*i/n); }
+function braceEnds(r,up){ const [u0,u1,v0,v1]=r; const A=up?[u0,v0]:[u0,v1], B=up?[u1,v1]:[u1,v0]; const l=Math.hypot(B[0]-A[0],B[1]-A[1]); return {A,B,d:[(B[0]-A[0])/l,(B[1]-A[1])/l],len:l}; }
 function hwBox(ctx, parent, x,y,z, mat, name){ box(ctx,{x:rng(...x),y,z,mat:mat||'steel',layer:'hardware',name:name||'Hardware',parent,desc:'Hardware',noEdges:true}); }
 function torus(ctx, parent, pos, rotY){
   if(ctx.dry) return; const g=new THREE.TorusGeometry(0.85,0.13,8,24); g.scale(0.75,1.2,1); if(rotY) g.rotateY(rotY); g.translate(pos[0],pos[1],pos[2]);
@@ -434,17 +459,22 @@ function frontLatch(ctx, R, dw, hm, th){
 }
 /* Inset door (porch coop): door sits flush in its opening, spanning x from 0 to s*dw; hinge leaf and latch keeper go on the post faces beside it. */
 /* 3-1/2" butt hinge screwed flat across the gap: one leaf on the door face, one on the post face, knuckle over the gap. */
-function insetHinge(ctx, R, h, s){
+function insetHinge(ctx, R, h, s, doorScrew){
   hwBox(ctx,R.pivot,[s*0.05,s*1.45],[h-1.75,h+1.75],[-0.08,0],'steel','Butt hinge leaf (door)');
   hwBox(ctx,R.fixed,[-s*0.15,-s*1.5],[h-1.75,h+1.75],[-0.08,0],'steel','Butt hinge leaf (post)');
   cyl(ctx,R.fixed,[-s*0.05,h,-0.22],3.5,'y');
+  for(const dy of [-1.2,0,1.2]){ fast(ctx,doorScrew||'scr58',[s*0.75,h+dy,-0.08],'-z',R.pivot); fast(ctx,'sup',[-s*0.8,h+dy,-0.08],'-z',R.fixed); }
   hw(ctx,'Door hinge, 3½″ matte black',0.25,R.use);
 }
-function insetLatch(ctx, R, dw, hm, s){
+function insetLatch(ctx, R, dw, hm, s, doorScrew){
   /* National Hardware 4" gate latch at its real size: 4.19" bar (with the guide) on the door, 2.37" catch on the post */
   hwBox(ctx,R.pivot,[s*(dw-3.3),s*(dw+0.9)],[hm-0.275,hm+0.275],[-0.45,-0.15],'steel','Gate latch bar');
   hwBox(ctx,R.pivot,[s*(dw-1.95),s*(dw-0.13)],[hm-0.875,hm+0.875],[-0.35,0],'steel','Gate latch guide (on the door)');
   hwBox(ctx,R.fixed,[s*(dw+0.2),s*(dw+2.57)],[hm-1.0,hm+1.03],[-0.9,0],'steel','Gate latch catch (on the post)');
+  const ds=doorScrew||'scr58';
+  for(const x of [dw-3.05,dw-2.55]) fast(ctx,ds,[s*x,hm,-0.45],'-z',R.pivot);
+  for(const x of [dw-1.7,dw-0.4]) for(const dy of [-0.56,0.56]) fast(ctx,ds,[s*x,hm+dy,-0.35],'-z',R.pivot);
+  for(const x of [dw+0.6,dw+2.1]) for(const dy of [-0.6,0.6]) fast(ctx,'sup',[s*x,hm+dy,-0.9],'-z',R.fixed);
   hw(ctx,'Gate latch, 4″ with padlock hole',0.4,R.use); hw(ctx,'Locking carabiner',0.1,R.use);
 }
 function handle(ctx, face, dir, yc, zc, use){
@@ -466,254 +496,199 @@ function ramp(ctx, o){
   return {deg:a*180/Math.PI, len, cleats:nc, rise};
 }
 
-/* ---------- outdoor coop: the one-level porch design with a shed roof, 4' wide x 2' deep ---------- */
-function buildShed(cfg, ctx){
-  const T=1.5, W=48, L=24, tb=0.5, tf=0.4375, F='2x2', g8=0.125, ft=0.75;
-  const m0=(W-T)/2, m1=(W+T)/2, pm0=W/2-1.75, pm1=W/2+1.75;   /* 2x4 latch post laid flat */
-  const yS=3, f1=18, f2=44, rise=6;
-  const yLF=f1+T, yTF=f2+rise+T, yTB=f2+T;     /* floor top; tops of the front (high) and back (low) top rails */
+/* ---------- both coops: one level, 4' wide x 2' deep, sleeping box on the right half.
+   Porch: flat plywood top, untreated. Outdoor: 6" higher front, OSB roof deck with steel, pressure-treated legs. ---------- */
+function buildCoop(cfg, ctx){
+  const out=!!cfg.outdoor;
+  const T=1.5, W=48, L=24, tb=0.5, tf=out?0.4375:0.5, F='2x2', g8=0.125, ft=0.75;
+  const m0=(W-T)/2, m1=(W+T)/2, pm0=W/2-1.75, pm1=W/2+1.75, cxm=W/2;   /* 2x2 middle members; 2x4 posts laid flat */
+  const yS=3, f1=18, f2=44, rise=out?6:0;
+  const yLF=f1+T, yTF=f2+rise+T, yTB=f2+T;                             /* floor top; tops of the front and back top rails */
   const slope=rise/(L-T), cosA=1/Math.hypot(1,slope), sinA=slope*cosA, Tv=T/cosA;
-  const plane=z=>yTF-slope*(z-T);              /* underside of the roof deck: front rail's inner edge to back rail's outer edge */
-  const wallTop=z=>yTF-rise*z/L;               /* top edge of the end walls, front post top to back post top */
-  const lum=(len,size)=>({k:'lum',size:size||F,len}), ptl=len=>Object.assign(lum(len),{pt:true});
+  const plane=z=>yTF-slope*(z-T), wallTop=z=>yTF-rise*z/L;
+  const lum=(len,size)=>({k:'lum',size:size||F,len}), ptl=(len,size)=>Object.assign(lum(len,size), out?{pt:true}:{});
+  const PT=out?' (pressure-treated)':'';
   const fr={mat:'wood',layer:'framing'};
-  const B=o=>box(ctx,o), P=o=>prism(ctx,o);
+  const B=o=>box(ctx,o), P=o=>prism(ctx,o), sc=(it,p,d,par)=>fast(ctx,it,p,d,par);
+  const top=yTF-T, ft0=f1+T-tf, dx0=cxm-tb/2;                          /* door-opening top; ledger tops; run-side face of the divider */
   ctx.mod='coop';
 
-  /* Corner posts are pressure-treated and double as legs; the front ones are taller for the roof slope */
+  /* ---- 1. front and back frames ---- */
+  ctx.st='frames';
   for(const xs of [[0,T],[W-T,W]]){
-    B({...fr,name:'Front corner post (pressure-treated, doubles as leg)',x:xs,y:[0,yTF],z:[0,T],bom:ptl(yTF)});
-    B({...fr,name:'Back corner post (pressure-treated, doubles as leg)',x:xs,y:[0,yTB],z:[L-T,L],bom:ptl(yTB)});
+    B({...fr,name:'Front corner post'+(out?' (pressure-treated, doubles as leg)':' (doubles as leg)'),x:xs,y:[0,yTF],z:[0,T],bom:ptl(yTF)});
+    B({...fr,name:'Back corner post'+(out?' (pressure-treated, doubles as leg)':' (doubles as leg)'),x:xs,y:[0,yTB],z:[L-T,L],bom:ptl(yTB)});
   }
-  B({...fr,name:'Back middle post, lower (pressure-treated)',x:[m0,m1],y:[yS+T,f1],z:[L-T,L],bom:ptl(f1-yS-T)});   /* leg zone, near the ground */
-  B({...fr,name:'Back middle post, upper',x:[m0,m1],y:[f1+T,f2],z:[L-T,L],bom:lum(f2-f1-T)});
-  B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,yTF-T],z:[0,T],bom:lum(yTF-T-f1-T,'2x4')});
+  const fbRails=[[yS,0,'Bottom stretcher (front)',true],[yS,L-T,'Bottom stretcher (back)',true],[f1,0,'Floor rail (front)',false],[f1,L-T,'Floor rail (back)',false],
+    [yTF-T,0,out?'Top rail, front (high side)':'Top rail (front)',false],[yTB-T,L-T,out?'Top rail, back (low side)':'Top rail (back)',false]];
+  for(const [y0,z0,nm,isPt] of fbRails){
+    B({...fr,name:nm,x:[T,W-T],y:[y0,y0+T],z:[z0,z0+T],bom:(isPt?ptl:lum)(W-2*T)});
+    sc('scr3',[0,y0+1.0,z0+0.75],'-x'); sc('scr3',[W,y0+1.0,z0+0.75],'x');      /* through the post into the rail end, high */
+  }
+  B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,top],z:[0,T],bom:lum(top-f1-T,'2x4')});
+  for(const x of [pm0+0.9,pm1-0.9]){ sc('scr3',[x,yTF,0.75],'y'); sc('scr3',[x,f1,0.75],'-y'); }
+  B({...fr,name:'Back middle post, lower'+PT,x:[m0,m1],y:[yS+T,f1],z:[L-T,L],bom:ptl(f1-yS-T)});
+  sc('scr3',[cxm-0.4,f1+T,L-0.75],'y'); sc('scr3',[cxm,yS,L-0.75],'-y');
+  B({...fr,name:'Back middle post, upper (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,yTB-T],z:[L-T,L],bom:lum(yTB-T-f1-T,'2x4')});
+  for(const x of [pm0+0.9,pm1-0.9]) sc('scr3',[x,yTB,L-0.75],'y');
+  for(const x of [pm0+0.5,pm1-0.5]) sc('scr3',[x,f1,L-0.75],'-y');
+  fastN(ctx,'glue');
 
-  /* Rails */
-  for(const [y0,nm] of [[yS,'Bottom stretcher'],[f1,'Floor rail']]){
-    const L1 = y0===yS ? ptl : lum;   /* the bottom stretchers sit 3" off the ground: pressure-treated */
-    for(const zs of [[0,T],[L-T,L]]) B({...fr,name:nm+' (front and back)',x:[T,W-T],y:[y0,y0+T],z:zs,bom:L1(W-2*T)});
-    for(const xs of [[0,T],[W-T,W]]) B({...fr,name:nm+' (sides)',x:xs,y:[y0,y0+T],z:[T,L-T],bom:L1(L-2*T)});
-  }
-  B({...fr,name:'Floor joist',x:[m0,m1],y:[f1-tf,f1+T-tf],z:[T,L-T],bom:lum(L-2*T)});
-  B({...fr,name:'Top rail, front (high side)',x:[T,W-T],y:[yTF-T,yTF],z:[0,T],bom:lum(W-2*T)});
-  B({...fr,name:'Top rail, back (low side)',x:[T,W-T],y:[yTB-T,yTB],z:[L-T,L],bom:lum(W-2*T)});
+  /* ---- 2. join the frames ---- */
+  ctx.st='join';
+  for(const [y0,nm,isPt] of [[yS,'Bottom stretcher (sides)',true],[f1,'Floor rail (sides)',false]])
+    for(const xs of [[0,T],[W-T,W]]){ B({...fr,name:nm,x:xs,y:[y0,y0+T],z:[T,L-T],bom:(isPt?ptl:lum)(L-2*T)});
+      const xc=(xs[0]+xs[1])/2; sc('scr3',[xc,y0+0.5,0],'-z'); sc('scr3',[xc,y0+0.5,L],'z'); }     /* low, so they miss the front/back rail screws */
   const sl=(z0,z1)=>[[z0,plane(z0)],[z1,plane(z1)],[z1,plane(z1)-Tv],[z0,plane(z0)-Tv]];
-  for(const xs of [[0,T],[W-T,W]]) P({...fr,name:'Top side rail (sloped)',axis:'x',poly:sl(T,L-T),range:xs,bom:lum((L-2*T)/cosA)});
-  P({...fr,name:'Top middle rail (sloped)',axis:'x',poly:sl(T,L-T),range:[m0,m1],bom:lum((L-2*T)/cosA)});
+  for(const xs of [[0,T],[W-T,W]]){ P({...fr,name:out?'Top side rail (sloped)':'Top rail (sides)',axis:'x',poly:sl(T,L-T),range:xs,bom:lum((L-2*T)/cosA)});
+    const xc=(xs[0]+xs[1])/2; sc('scr3',[xc,plane(T)-Tv+0.5,0],'-z'); sc('scr3',[xc,plane(L-T)-Tv+0.5,L],'z'); }
+  P({...fr,name:out?'Top middle rail (sloped)':'Top cross rail',axis:'x',poly:sl(T,L-T),range:[m0,m1],bom:lum((L-2*T)/cosA)});
+  sc('scr3',[cxm,yTF-0.75,0],'-z'); sc('scr3',[cxm,yTB-0.75,L],'z');
+  B({...fr,name:'Floor joist',x:[m0,m1],y:[f1-tf,f1+T-tf],z:[T,L-T],bom:lum(L-2*T)});
+  sc('scr3',[cxm+0.4,f1+0.5,0],'-z'); sc('scr3',[cxm+0.4,f1+0.5,L],'z');
+  fastN(ctx,'glue');
 
-  /* Braces: leg zone, plus the mesh run end */
-  /* leg-zone braces reach down to the stretchers near the ground: pressure-treated */
-  brace(ctx,'z',[T,m0,yS+T,f1],true,[L-T,L],'Back diagonal brace (leg zone)',T,F,null,null,null,true);
-  brace(ctx,'z',[m1,W-T,yS+T,f1],false,[L-T,L],'Back diagonal brace (leg zone)',T,F,null,null,null,true);
-  brace(ctx,'x',[T,L-T,yS+T,f1],true,[0,T],'Side diagonal brace (leg zone)',T,F,null,null,null,true);
-  brace(ctx,'x',[T,L-T,yS+T,f1],false,[W-T,W],'Side diagonal brace (leg zone)',T,F,null,null,null,true);
-  brace(ctx,'x',[T,L-T,f1+T,f2],true,[0,T],'Side diagonal brace, run end',T,F);
+  /* ---- 3. diagonal braces, toe-screwed at each end ---- */
+  ctx.st='braces';
+  const bracePT = out;
+  const braceAt=(axis,r,up,range,face,dir,name,isPt)=>{
+    brace(ctx,axis,r,up,range,name,T,F,null,null,null,isPt);
+    const e=braceEnds(r,up), q=[[e.A[0]+e.d[0]*2.2,e.A[1]+e.d[1]*2.2],[e.B[0]-e.d[0]*2.2,e.B[1]-e.d[1]*2.2]];
+    for(const [u,v] of q) sc('scr3', axis==='z' ? [u,v,face] : [face,v,u], dir);
+  };
+  braceAt('z',[T,m0,yS+T,f1],true,[L-T,L],L,'z','Back diagonal brace (leg zone)',bracePT);
+  braceAt('z',[m1,W-T,yS+T,f1],false,[L-T,L],L,'z','Back diagonal brace (leg zone)',bracePT);
+  braceAt('x',[T,L-T,yS+T,f1],true,[0,T],0,'-x','Side diagonal brace (leg zone)',bracePT);
+  braceAt('x',[T,L-T,yS+T,f1],false,[W-T,W],W,'x','Side diagonal brace (leg zone)',bracePT);
+  braceAt('x',[T,L-T,f1+T,f2],true,[0,T],0,'-x','Side diagonal brace, run end',false);
+  fastN(ctx,'glue');
 
-  /* OSB floor inset on 1x2 ledgers */
-  const ft0=f1+T-tf, lg=0.75, lh=1.5;
-  for(const zs of [[T,T+lg],[L-T-lg,L-T]]) for(const xs of [[T,m0],[m1,W-T]]) B({...fr,name:'Floor ledger (1×2)',x:xs,y:[ft0-lh,ft0],z:zs,bom:lum(m0-T,'1x2')});
-  for(const xs of [[T,T+lg],[W-T-lg,W-T]]) B({...fr,name:'Floor ledger (1×2)',x:xs,y:[ft0-lh,ft0],z:[T+lg,L-T-lg],bom:lum(L-2*T-2*lg,'1x2')});
-  P({mat:'osb',layer:'floors',name:'Floor (OSB, sits on ledgers inside the frame)',axis:'y',poly:[[T,T],[W-T,T],[W-T,L-T],[T,L-T]],range:[ft0,yLF],bom:{k:'ply',th:tf,w:W-2*T,h:L-2*T,osb:true}});
+  /* ---- 4. floor ledgers ---- */
+  ctx.st='ledgers';
+  const lg=0.75, lh=1.5;
+  for(const [zs,face,dir] of [[[T,T+lg],T+lg,'z'],[[L-T-lg,L-T],L-T-lg,'-z']]) for(const xs of [[T,m0],[m1,W-T]]){
+    B({...fr,name:'Floor ledger (1×2)',x:xs,y:[ft0-lh,ft0],z:zs,bom:lum(m0-T,'1x2')});
+    for(const x of along(xs[0],xs[1],6,1.5)) sc('scr158',[x,ft0-0.75,face],dir); }
+  for(const [xs,face,dir] of [[[T,T+lg],T+lg,'x'],[[W-T-lg,W-T],W-T-lg,'-x']]){
+    B({...fr,name:'Floor ledger (1×2)',x:xs,y:[ft0-lh,ft0],z:[T+lg,L-T-lg],bom:lum(L-2*T-2*lg,'1x2')});
+    for(const z of along(T+lg,L-T-lg,6,1.5)) sc('scr158',[face,ft0-0.75,z],dir); }
+  fastN(ctx,'glue');
 
-  /* Sleeping box divider on the right half; its top follows the roof */
-  const wp={mat:'ply',layer:'sheathing'}, pop=[L-T-8.5,L-T-1.5], dtop=z=>plane(z)-Tv-2;
-  P({...wp,name:'Sleeping box divider (pop hole, 2″ air gap at top)',axis:'x',poly:[[T,yLF],[L-T,yLF],[L-T,dtop(L-T)],[T,dtop(T)]],holes:[[[pop[0],yLF],[pop[1],yLF],[pop[1],yLF+8],[pop[0],yLF+8]]],range:[W/2-tb/2,W/2+tb/2],bom:{k:'ply',th:tb,w:L-2*T,h:dtop(T)-yLF,h2:dtop(L-T)-yLF}});
-  { /* divider centered on the middle posts, screwed to 1x2 cleats on the run side: one on each post and one on the floor */
-    const dx0=W/2-tb/2, cx=[dx0-0.75,dx0], cl={mat:'wood',layer:'framing'};
-    B({...cl,name:'Divider cleat (1×2), on front post',x:cx,y:[yLF,dtop(T)-1],z:[T,T+1.5],bom:lum(dtop(T)-1-yLF,'1x2')});
-    B({...cl,name:'Divider cleat (1×2), on back post',x:cx,y:[yLF,dtop(L-T)-1],z:[L-T-1.5,L-T],bom:lum(dtop(L-T)-1-yLF,'1x2')});
-    B({...cl,name:'Divider cleat (1×2), on floor',x:cx,y:[yLF,yLF+1.5],z:[T+1.5,pop[0]-0.5],bom:lum(pop[0]-0.5-T-1.5,'1x2')}); }
+  /* ---- 5. floor ---- */
+  ctx.st='floor';
+  P({mat:out?'osb':'ply',layer:'floors',name:out?'Floor (OSB)':'Floor',axis:'y',poly:[[T,T],[W-T,T],[W-T,L-T],[T,L-T]],range:[ft0,yLF],bom:Object.assign({k:'ply',th:tf,w:W-2*T,h:L-2*T},out?{osb:true}:{})});
+  for(const x of along(T,W-T,6,1.5)){ sc('scr158',[x,yLF,T+0.4],'y'); sc('scr158',[x,yLF,L-T-0.4],'y'); }
+  for(const z of along(T+lg,L-T-lg,6,1.5)){ sc('scr158',[T+0.4,yLF,z],'y'); sc('scr158',[W-T-0.4,yLF,z],'y'); sc('scr158',[cxm+0.4,yLF,z],'y'); }
+  fastN(ctx,'glue');
 
-  /* Walls: plywood back and sleeping-box end, hardware cloth on the run end */
-  B({...wp,name:'Back wall (plywood)',x:[0,W],y:[f1,plane(L+tb)],z:[L,L+tb],bom:{k:'ply',th:tb,w:W,h:plane(L+tb)-f1}});
-  P({...wp,name:'End wall, sleeping-box end (plywood)',axis:'x',poly:[[0,f1],[L+tb,f1],[L+tb,wallTop(L+tb)],[0,wallTop(0)]],range:[W,W+tb],bom:{k:'ply',th:tb,w:L+tb,h:wallTop(0)-f1,h2:wallTop(L+tb)-f1}});
-  meshPoly(ctx,{name:'Run end hardware cloth',at:-0.05,poly:[[0,f1],[L,f1],[L,wallTop(L)],[0,wallTop(0)]]});
+  /* ---- 6. divider cleats: 1x2 laid flat on the run side of the centre line ---- */
+  ctx.st='cleats';
+  const pop=[L-T-8.5,L-T-1.5], dtop=z=>plane(z)-Tv-2, cx=[dx0-1.5,dx0];
+  B({...fr,name:'Divider cleat (1×2), on front post',x:cx,y:[yLF,dtop(T)-1],z:[T,T+0.75],bom:lum(dtop(T)-1-yLF,'1x2')});
+  for(const y of along(yLF,dtop(T)-1,6,1.5)) sc('scr158',[dx0-0.75,y,T+0.75],'z');
+  B({...fr,name:'Divider cleat (1×2), on back post',x:cx,y:[yLF,dtop(L-T)-1],z:[L-T-0.75,L-T],bom:lum(dtop(L-T)-1-yLF,'1x2')});
+  for(const y of along(yLF,dtop(L-T)-1,6,1.5)) sc('scr158',[dx0-0.75,y,L-T-0.75],'-z');
+  B({...fr,name:'Divider cleat (1×2), on floor',x:cx,y:[yLF,yLF+0.75],z:[T+0.75,pop[0]-1],bom:lum(pop[0]-1-T-0.75,'1x2')});
+  for(const z of along(T+0.75,pop[0]-1,4,1.25)) sc('scr158',[m0+0.3,yLF+0.75,z],'y');   /* down through cleat and floor into the joist */
 
-  /* Roof: 7/16 OSB deck overhanging 3" front and back, felt, then steel or shingles */
-  const oh=3, zA=-oh, zB=L+oh, Lr=(zB-zA)/cosA, td=tf;
-  const SP=(u,v)=>[zA+u*cosA+v*sinA, plane(zA)-u*sinA+v*cosA];
-  P({mat:'osb',layer:'roofdeck',name:'Roof deck (OSB)',axis:'x',poly:[SP(0,0),SP(Lr,0),SP(Lr,td),SP(0,td)],range:[-tb,W+tb],bom:{k:'ply',th:td,w:W+2*tb,h:Lr,osb:true}});
-  const e1=new THREE.Vector3(1,0,0), e2=new THREE.Vector3(0,sinA,-cosA), e3=new THREE.Vector3(0,cosA,sinA);
-  let roofTop=0;
-  if(cfg.roof==='shingle'){
-    const Ws=W+2*tb+0.75, Ls=Lr+0.75;
-    ctx.bom.push({k:'shingle',name:'Asphalt shingles',area:Ws*Ls/144,mod:'coop'});
-    ctx.bom.push({k:'drip',name:'Drip edge',len:2*(Ws+Ls),mod:'coop'});
-    P({mat:'shingleEdge',layer:'roofing',name:'Shingle courses',desc:'3-tab shingles over felt',noEdges:true,axis:'x',poly:[SP(-0.375,td),SP(Lr+0.375,td),SP(Lr+0.375,td+0.28),SP(-0.375,td+0.28)],range:[-tb-0.375,W+tb+0.375]});
-    if(!ctx.dry){ const g=new THREE.PlaneGeometry(Ws,Ls); const uv=g.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*Ws/36, uv.getY(i)*Ls/10);
-      const [cz,cy]=SP(Lr/2, td+0.29); g.applyMatrix4(new THREE.Matrix4().makeBasis(e1,e2,e3).setPosition(W/2,cy,cz)); addMesh(ctx,g,{mat:'shingle',layer:'roofing',name:'Asphalt shingle roof',desc:'3-tab shingles, 5″ exposure'}); }
-    roofTop=SP(0,td+0.3)[1];
-  } else {
+  /* ---- 7. divider ---- */
+  ctx.st='divider';
+  const wp={mat:'ply',layer:'sheathing'};
+  P({...wp,name:'Sleeping box divider (pop hole, 2″ air gap at top)',axis:'x',poly:[[T,yLF],[L-T,yLF],[L-T,dtop(L-T)],[T,dtop(T)]],holes:[[[pop[0],yLF],[pop[1],yLF],[pop[1],yLF+8],[pop[0],yLF+8]]],range:[dx0,dx0+tb],bom:Object.assign({k:'ply',th:tb,w:L-2*T,h:dtop(T)-yLF},out?{h2:dtop(L-T)-yLF}:{})});
+  for(const y of along(yLF,dtop(T)-1,6,1.5)) sc('scr158',[dx0+tb,y,T+0.375],'x');
+  for(const y of along(yLF,dtop(L-T)-1,6,1.5)) sc('scr158',[dx0+tb,y,L-T-0.375],'x');
+  for(const z of along(T+0.75,pop[0]-1,4,1.25)) sc('scr158',[dx0+tb,yLF+0.375,z],'x');
+
+  /* ---- 8. walls (and the porch coop's top) ---- */
+  ctx.st='walls';
+  const backTop = out ? plane(L+tb) : yTB;
+  B({...wp,name:'Back wall (plywood)',x:[0,W],y:[f1,backTop],z:[L,L+tb],bom:{k:'ply',th:tb,w:W,h:backTop-f1}});
+  for(const x of [0.75,W-0.75,cxm]) for(const y of along(x===cxm?yLF:f1,x===cxm?yTB-T:backTop,6,1)) sc('scr158',[x,y,L+tb],'z');
+  for(const y of [f1+0.75,yTB-0.75]) for(const x of along(0,W,6,3.5)) if(Math.abs(x-cxm)>2) sc('scr158',[x,y,L+tb],'z');
+  if(out) P({...wp,name:'End wall, sleeping-box end (plywood)',axis:'x',poly:[[0,f1],[L+tb,f1],[L+tb,wallTop(L+tb)],[0,wallTop(0)]],range:[W,W+tb],bom:{k:'ply',th:tb,w:L+tb,h:wallTop(0)-f1,h2:wallTop(L+tb)-f1}});
+  else B({...wp,name:'End wall, sleeping-box end (plywood)',x:[W,W+tb],y:[f1,yTB],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:yTB-f1}});
+  for(const z of [0.75,L-0.75]) for(const y of along(f1,z<1?yTF:yTB,6,1)) sc('scr158',[W+tb,y,z],'x');
+  for(const z of along(T,L-T,6,2)){ sc('scr158',[W+tb,f1+0.75,z],'x'); sc('scr158',[W+tb,plane(z)-Tv/2,z],'x'); }
+  if(!out){
+    B({...wp,name:'Top (plywood)',x:[0,W+tb],y:[yTB,yTB+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W+tb,h:L+tb}});
+    for(const z of [0.75,L-0.75]) for(const x of along(0,W,6,1)) sc('scr158',[x,yTB+tb,z],'y');
+    for(const x of [0.75,cxm,W-0.75]) for(const z of along(T,L-T,6,2)) sc('scr158',[x,yTB+tb,z],'y');
+  }
+
+  /* ---- 9-10. outdoor roof: OSB deck, then steel ---- */
+  let roofTop=yTB+tb, Lr=0;
+  if(out){
+    ctx.st='roofdeck';
+    const oh=3, zA=-oh, zB=L+oh, td=tf; Lr=(zB-zA)/cosA;
+    const SP=(u,v)=>[zA+u*cosA+v*sinA, plane(zA)-u*sinA+v*cosA], uAt=z=>(z-zA)/cosA, nrm=[0,cosA,sinA];
+    P({mat:'osb',layer:'roofdeck',name:'Roof deck (OSB)',axis:'x',poly:[SP(0,0),SP(Lr,0),SP(Lr,td),SP(0,td)],range:[-tb,W+tb],bom:{k:'ply',th:td,w:W+2*tb,h:Lr,osb:true}});
+    const onDeck=(x,z,v)=>{ const [zz,yy]=SP(uAt(z),v); return [x,yy,zz]; };
+    for(const z of [0.75,L-0.75]) for(const x of along(0,W,6,1)) sc('scr158',onDeck(x,z,td),nrm);
+    for(const x of [0.75,cxm,W-0.75]) for(const z of along(T,L-T,6,2)) sc('scr158',onDeck(x,z,td),nrm);
+    ctx.st='roofing';
+    const e1=new THREE.Vector3(1,0,0), e2=new THREE.Vector3(0,sinA,-cosA), e3=new THREE.Vector3(0,cosA,sinA);
     const Wr=W+2*tb+1, Lp=Lr+2, amp=0.3, n=Math.ceil((Wr-2)/24), per=Math.max(1,Math.floor(96/Lp));
     ctx.bom.push({k:'alum',name:'Corrugated steel panel',panels:Math.ceil(n/per),pieces:n,len:Lp,area:Wr*Lp/144,mod:'coop'});
     if(!ctx.dry){ const g=new THREE.PlaneGeometry(Wr,Lp,Math.ceil(Wr/2.67*10),1); const q=g.attributes.position;
       for(let i=0;i<q.count;i++) q.setZ(i, amp*Math.sin(2*Math.PI*(q.getX(i)+Wr/2)/2.67)); g.computeVertexNormals();
       const [cz,cy]=SP(Lr/2, td+amp); g.applyMatrix4(new THREE.Matrix4().makeBasis(e1,e2,e3).setPosition(W/2,cy,cz));
       addMesh(ctx,g,{mat:'alum',layer:'roofing',name:'Corrugated galvanized steel roofing',desc:n+' pieces, 26″ wide × '+fIn(Lp),noEdges:true}); }
+    /* roofing screws through every other ridge over the front and back top rails, and one into each sloped rail mid-roof */
+    const crest=k=>-Wr/2+2.67*(k+0.25)+W/2;
+    for(const z of [0.75,L-0.75]) for(let k=0; crest(k)<W+tb; k+=2) if(crest(k)>-tb) sc('roof',onDeck(crest(k),z,td+2*amp),nrm);
+    for(const x of [0.75,cxm,W-0.75]) sc('roof',onDeck(x,L/2,td+2*amp),nrm);
     roofTop=SP(-1,td+2*amp)[1];
   }
 
-  /* Two front doors: mesh run door hinged on the left post, plywood sleeping-box door hinged on the right; both latch to the middle post */
-  const doorFrame=(R,dw,dh,name)=>{
-    const dm={mat:'door',layer:'doors',parent:R.pivot};
-    for(const xs of [[0,1.5],[dw-1.5,dw]]) box(ctx,{...dm,name:name+' stile (1×2)',x:xs,y:[0,dh],z:[0,ft],bom:lum(dh,'1x2')});
-    for(const ys of [[0,1.5],[dh-1.5,dh]]) box(ctx,{...dm,name:name+' rail (1×2)',x:[1.5,dw-1.5],y:ys,z:[0,ft],bom:lum(dw-3,'1x2')});
-    brace(ctx,'z',[1.5,dw-1.5,1.5,dh-1.5],true,[0,ft],name+' diagonal brace (1×2)',1.5,'1x2',R.pivot,'door','doors');
-    meshPanel(ctx,{name:name+' hardware cloth',axis:'z',at:ft+0.03,u:[0.1,dw-0.1],v:[0.1,dh-0.1],parent:R.pivot});
-  };
-  const top=yTF-T, udw=pm0-g8-(T+g8), udh=top-g8-(yLF+g8), bdw=(W-T-g8)-(pm1+g8);
+  /* ---- 11. hardware cloth on the run end ---- */
+  ctx.st='mesh';
+  if(out) meshPoly(ctx,{name:'Run end hardware cloth',at:-0.05,poly:[[0,f1],[L,f1],[L,wallTop(L)],[0,wallTop(0)]]});
+  else meshPanel(ctx,{name:'Run end hardware cloth',axis:'x',at:-0.05,u:[0,L],v:[f1,yTB]});
+  fastN(ctx,'staple', Math.ceil(2*(L+(wallTop(0)-f1))/2.5) + Math.ceil(braceEnds([T,L-T,f1+T,f2],true).len/3));
+
+  /* ---- 12. door stops ---- */
+  ctx.st='stops';
+  const udw=pm0-g8-(T+g8), udh=top-g8-(yLF+g8), bdw=(W-T-g8)-(pm1+g8);
+  { const ds={mat:'wood',layer:'framing'}, zr=[ft,ft+1.5], zb=[tb,tb+1.5];
+    B({...ds,name:'Door stop (1×2), run door, on middle post',x:[pm0-0.75,pm0],y:[yLF,top-0.75],z:zr,bom:lum(top-0.75-yLF,'1x2')});
+    for(const y of along(yLF,top-0.75,8,1.5)) sc('scr158',[pm0-0.75,y,1.1],'-x');
+    B({...ds,name:'Door stop (1×2), run door, under top rail',x:[T,pm0-0.75],y:[top-0.75,top],z:zr,bom:lum(pm0-0.75-T,'1x2')});
+    for(const x of along(T,pm0-0.75,8,1.5)) sc('scr158',[x,top-0.75,1.1],'-y');
+    /* the box door has 1x2 rails across its top and bottom, so its stop runs between them */
+    const by0=yLF+g8+1.75, by1=yLF+g8+udh-1.75;
+    B({...ds,name:'Door stop (1×2), box door, on middle post',x:[pm1,pm1+0.75],y:[by0,by1],z:zb,bom:lum(by1-by0,'1x2')});
+    for(const y of along(by0,by1,8,1.5)) sc('scr158',[pm1+0.75,y,1.0],'x'); }
+
+  /* ---- 13. build the doors ---- */
+  ctx.st='doors';
   const UR=rig(ctx,[T+g8,yLF+g8,0],'Run door','y',1.8);
-  doorFrame(UR,udw,udh,'Run door');
-  for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1); insetLatch(ctx,UR,udw,udh-0.75,1);   /* along the door's top rail */
+  { const dm={mat:'door',layer:'doors',parent:UR.pivot}, dw=udw, dh=udh;
+    for(const xs of [[0,1.5],[dw-1.5,dw]]) box(ctx,{...dm,name:'Run door stile (1×2)',x:xs,y:[0,dh],z:[0,ft],bom:lum(dh,'1x2')});
+    for(const ys of [[0,1.5],[dh-1.5,dh]]) box(ctx,{...dm,name:'Run door rail (1×2)',x:[1.5,dw-1.5],y:ys,z:[0,ft],bom:lum(dw-3,'1x2')});
+    for(const y of [0.75,dh-0.75]){ sc('scr3',[0,y,ft/2],'-x',UR.pivot); sc('scr3',[dw,y,ft/2],'x',UR.pivot); }
+    brace(ctx,'z',[1.5,dw-1.5,1.5,dh-1.5],true,[0,ft],'Run door diagonal brace (1×2)',1.5,'1x2',UR.pivot,'door','doors');
+    fastN(ctx,'brad',4);
+    meshPanel(ctx,{name:'Run door hardware cloth',axis:'z',at:ft+0.03,u:[0.1,dw-0.1],v:[0.1,dh-0.1],parent:UR.pivot});
+    fastN(ctx,'staple', Math.ceil(2*(dw+dh)/2.5)+Math.ceil(Math.hypot(dw,dh)/3)); }
   const BR=rig(ctx,[W-T-g8,yLF+g8,0],'Sleeping box door','y',-1.8);
-  box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
-  for(const ys of [[1,2.5],[udh-2.5,udh-1]]) box(ctx,{mat:'wood',layer:'doors',name:'Box door stiffener (1×2, inside face)',x:[-bdw+0.75,-0.75],y:ys,z:[tb,tb+0.75],parent:BR.pivot,bom:lum(bdw-1.5,'1x2')});
-  for(const h of [3,udh-3]) insetHinge(ctx,BR,h,-1); insetLatch(ctx,BR,bdw,udh*0.35,-1);
-  /* door stops: 1x2 strips inside the opening, on the middle post and under the top rail, for each door to close against */
-  { const ds={mat:'wood',layer:'framing'}, zr=[ft,ft+1.5], zb=[tb,tb+1.5], sy0=yLF, sy1=top;
-    B({...ds,name:'Door stop (1×2), run door side of middle post',x:[pm0-0.75,pm0],y:[sy0,sy1-0.75],z:zr,bom:lum(sy1-0.75-sy0,'1x2')});
-    B({...ds,name:'Door stop (1×2), box door side of middle post',x:[pm1,pm1+0.75],y:[sy0,sy1-0.75],z:zb,bom:lum(sy1-0.75-sy0,'1x2')});
-    B({...ds,name:'Door stop (1×2), under top rail, run door',x:[T,pm0],y:[sy1-0.75,sy1],z:zr,bom:lum(pm0-T,'1x2')});
-    B({...ds,name:'Door stop (1×2), under top rail, box door',x:[pm1,W-T],y:[sy1-0.75,sy1],z:zb,bom:lum(W-T-pm1,'1x2')}); }
+  { const bw=bdw, dh=udh, bm={mat:'wood',layer:'doors',parent:BR.pivot};
+    box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door (plywood)',x:[-bw,0],y:[0,dh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bw,h:dh}});
+    box(ctx,{...bm,name:'Box door stile (1×2, inside face, hinge side)',x:[-1.5,0],y:[0,dh],z:[tb,tb+0.75],bom:lum(dh,'1x2')});
+    for(const ys of [[0,1.5],[dh-1.5,dh]]) box(ctx,{...bm,name:'Box door rail (1×2, inside face)',x:[-bw,-1.5],y:ys,z:[tb,tb+0.75],bom:lum(bw-1.5,'1x2')});
+    fastN(ctx,'brad', Math.ceil((dh+2*(bw-1.5))/5)); }
+  fastN(ctx,'glue');
 
+  /* ---- 14. hang the doors ---- */
+  ctx.st='hang';
+  for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1,'scr58');
+  insetLatch(ctx,UR,udw,udh-0.75,1,'scr58');            /* along the run door's top rail */
+  for(const h of [3,udh-3]) insetHinge(ctx,BR,h,-1,'scr1');
+  insetLatch(ctx,BR,bdw,0.95,-1,'scr1');                 /* along the box door's bottom rail */
 
-  ctx.g={W,L,tb,tf,yLF,yTF,yTB,f1,udw,udh,bdw,roofTop,deck:[W+2*tb,Lr],
-    clearFront:top-yLF, clearBack:yTB-T-yLF, pitch:Math.atan(slope)*180/Math.PI, pitch12:12*slope,
-    box:[W-T-m1-tb, L-2*T, dtop(L/2)-yLF], runArea:(m0-T)*(L-2*T)/144, boxArea:(W-T-m1-tb)*(L-2*T)/144};
-  return ctx.g;
-}
-
-/* ---------- porch coop: 4' wide x 2' deep x 6' tall, light 2x2 frame ---------- */
-function buildPorch(cfg, ctx){
-  const one = cfg.levels==='1';   /* one level: the upper floor rail becomes the top of the cage */
-  const T=1.5, W=48, L=24, tf=+cfg.floorPly, tb=+cfg.boxPly, F='2x2';
-  const m0=(W-T)/2, m1=(W+T)/2, mx=W/2, pm0=W/2-1.75, pm1=W/2+1.75;   /* 2x4 latch post laid flat */
-  const yS=3, f1=18, f2=44, H = one ? f2+T : 72, yTop=H-T;
-  const yLF=f1+T, yUF=f2+T;   // floors sit inside the frame, flush with the rail tops
-  const lum=(len,size)=>({k:'lum',size:size||F,len});
-  const fr={mat:'wood',layer:'framing'};
-  const B=o=>box(ctx,o), P=o=>prism(ctx,o);
-  ctx.mod='coop';
-
-  /* Posts run full height and double as legs */
-  for(const xs of [[0,T],[W-T,W]]) for(const zs of [[0,T],[L-T,L]]) B({...fr,name:'Corner post (full height, doubles as leg)',x:xs,y:[0,H],z:zs,bom:lum(H)});
-  for(const [a,b] of (one ? [[yS+T,f1],[f1+T,f2]] : [[yS+T,f1],[f1+T,f2],[f2+T,yTop]])) B({...fr,name:'Back middle post',x:[m0,m1],y:[a,b],z:[L-T,L],bom:lum(b-a)});
-  if(!one) B({...fr,name:'Front middle post (upper level only)',x:[m0,m1],y:[f2+T,yTop],z:[0,T],bom:lum(yTop-f2-T)});
-  else B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[f1+T,f2],z:[0,T],bom:lum(f2-f1-T,'2x4')});
-
-  /* Rails: a bottom stretcher, two floor frames and a top frame */
-  const railSets = one ? [[yS,'Bottom stretcher',null],[f1,'Lower floor rail','Lower floor joist'],[yTop,'Top rail','Top cross rail']]
-                       : [[yS,'Bottom stretcher',null],[f1,'Lower floor rail','Lower floor joist'],[f2,'Upper floor rail','Upper floor joist'],[yTop,'Top rail','Top cross rail']];
-  for(const [y0,nm,mid] of railSets){
-    for(const zs of [[0,T],[L-T,L]]) B({...fr,name:nm+' (front and back)',x:[T,W-T],y:[y0,y0+T],z:zs,bom:lum(W-2*T)});
-    for(const xs of [[0,T],[W-T,W]]) B({...fr,name:nm+' (sides)',x:xs,y:[y0,y0+T],z:[T,L-T],bom:lum(L-2*T)});
-    if(mid && y0===yTop) B({...fr,name:mid,x:[m0,m1],y:[y0,y0+T],z:[T,L-T],bom:lum(L-2*T)});
-    else if(mid) B({...fr,name:mid,x:[m0,m1],y:[y0+T-tf-T,y0+T-tf],z:[T,L-T],bom:lum(L-2*T)});
-  }
-
-  /* Diagonal braces: hardware cloth does not stop racking */
-  for(const [a,b] of (one ? [[yS+T,f1]] : [[yS+T,f1],[f1+T,f2]])){
-    brace(ctx,'z',[T,m0,a,b],true,[L-T,L],'Back diagonal brace',T,F);
-    brace(ctx,'z',[m1,W-T,a,b],false,[L-T,L],'Back diagonal brace',T,F);
-    brace(ctx,'x',[T,L-T,a,b],true,[0,T],'Side diagonal brace',T,F);
-    brace(ctx,'x',[T,L-T,a,b],false,[W-T,W],'Side diagonal brace',T,F);
-  }
-  if(one) brace(ctx,'x',[T,L-T,f1+T,f2],true,[0,T],'Side diagonal brace, run end',T,F);   /* the mesh end needs its own brace */
-  if(!one) brace(ctx,'x',[T,L-T,f2+T,yTop],true,[0,T],'Side diagonal brace',T,F);
-
-  /* Floors sit inside the frame on 1x2 ledgers, so no plywood edge shows outside */
-  const hatch=[3.5,12.5,12,20], lg=0.75, lh=1.5;
-  for(const [fy,lvl] of (one ? [[f1,'Lower']] : [[f1,'Lower'],[f2,'Upper']])){
-    const top=fy+T-tf;   // ledger tops sit one plywood thickness below the rail tops
-    for(const zs of [[T,T+lg],[L-T-lg,L-T]]) for(const xs of [[T,m0],[m1,W-T]]) B({...fr,name:lvl+' floor ledger (1×2)',x:xs,y:[top-lh,top],z:zs,bom:lum(m0-T,'1x2')});
-    for(const xs of [[T,T+lg],[W-T-lg,W-T]]) B({...fr,name:lvl+' floor ledger (1×2)',x:xs,y:[top-lh,top],z:[T+lg,L-T-lg],bom:lum(L-2*T-2*lg,'1x2')});
-  }
-  const fpoly=[[T,T],[W-T,T],[W-T,L-T],[T,L-T]];
-  P({mat:'ply',layer:'floors',name:'Lower floor (sits on ledgers inside the frame)',axis:'y',poly:fpoly,range:[f1+T-tf,yLF],bom:{k:'ply',th:tf,w:W-2*T,h:L-2*T}});
-  if(!one) P({mat:'ply',layer:'floors',name:'Upper floor (on ledgers, ramp hatch cut out)',axis:'y',poly:fpoly,holes:[[[hatch[0],hatch[2]],[hatch[1],hatch[2]],[hatch[1],hatch[3]],[hatch[0],hatch[3]]]],range:[f2+T-tf,yUF],bom:{k:'ply',th:tf,w:W-2*T,h:L-2*T}});
-
-  if(!one){
-  /* Sleeping box: 3/8" unsanded plywood on the right half of the upper level */
-  const sb={mat:'ply',layer:'sheathing'};
-  B({...sb,name:'Sleeping box back',x:[mx,W],y:[f2,H],z:[L,L+tb],bom:{k:'ply',th:tb,w:W-mx,h:H-f2}});
-  B({...sb,name:'Sleeping box side',x:[W,W+tb],y:[f2,H],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:H-f2}});
-  B({...sb,name:'Sleeping box lid',x:[mx,W+tb],y:[H,H+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W-mx+tb,h:L+tb}});
-  const pop=[L-T-8.5,L-T-1.5], dvTop=yTop-2;
-  P({...sb,name:'Sleeping box divider (pop hole, 2″ air gap at top)',axis:'x',poly:[[T,yUF],[L-T,yUF],[L-T,dvTop],[T,dvTop]],holes:[[[pop[0],yUF],[pop[1],yUF],[pop[1],yUF+8],[pop[0],yUF+8]]],range:[m1,m1+tb],bom:{k:'ply',th:tb,w:L-2*T,h:dvTop-yUF}});
-  }
-
-  /* Hardware cloth on every open face, including the top */
-  if(one){
-    const wp={mat:'ply',layer:'sheathing'};
-    const pop1=[L-T-8.5,L-T-1.5], dv1=f2-2;
-    P({...wp,name:'Sleeping box divider (pop hole, 2″ air gap at top)',axis:'x',poly:[[T,yLF],[L-T,yLF],[L-T,dv1],[T,dv1]],holes:[[[pop1[0],yLF],[pop1[1],yLF],[pop1[1],yLF+8],[pop1[0],yLF+8]]],range:[W/2-tb/2,W/2+tb/2],bom:{k:'ply',th:tb,w:L-2*T,h:dv1-yLF}});
-    { /* divider centered on the middle posts, screwed to 1x2 cleats on the run side: one on each post and one on the floor */
-      const dx0=W/2-tb/2, cx=[dx0-0.75,dx0], cl={mat:'wood',layer:'framing'};
-      B({...cl,name:'Divider cleat (1×2), on front post',x:cx,y:[yLF,dv1-1],z:[T,T+1.5],bom:lum(dv1-1-yLF,'1x2')});
-      B({...cl,name:'Divider cleat (1×2), on back post',x:cx,y:[yLF,dv1-1],z:[L-T-1.5,L-T],bom:lum(dv1-1-yLF,'1x2')});
-      B({...cl,name:'Divider cleat (1×2), on floor',x:cx,y:[yLF,yLF+1.5],z:[T+1.5,pop1[0]-0.5],bom:lum(pop1[0]-0.5-T-1.5,'1x2')}); }
-    B({...wp,name:'Back wall (plywood)',x:[0,W],y:[f1,H],z:[L,L+tb],bom:{k:'ply',th:tb,w:W,h:H-f1}});
-    meshPanel(ctx,{name:'Run side hardware cloth',axis:'x',at:-0.05,u:[0,L],v:[f1,H]});   /* the run end gets mesh for light and air */
-    B({...wp,name:'End wall, sleeping-box end (plywood)',x:[W,W+tb],y:[f1,H],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:H-f1}});
-    B({...wp,name:'Top (plywood)',x:[0,W+tb],y:[H,H+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W+tb,h:L+tb}});
-  } else {
-    meshPanel(ctx,{name:'Back hardware cloth, lower level',axis:'z',at:L+0.05,u:[0,W],v:[f1,f2]});
-    meshPanel(ctx,{name:'Back hardware cloth, upper run',axis:'z',at:L+0.05,u:[0,mx],v:[f2,H]});
-    meshPanel(ctx,{name:'Side hardware cloth, lower level',axis:'x',at:-0.05,u:[0,L],v:[f1,f2]});
-    meshPanel(ctx,{name:'Side hardware cloth, upper run',axis:'x',at:-0.05,u:[0,L],v:[f2,H]});
-    meshPanel(ctx,{name:'Side hardware cloth, lower level',axis:'x',at:W+0.05,u:[0,L],v:[f1,f2]});
-    meshPanel(ctx,{name:'Top hardware cloth, upper run',axis:'y',at:H+0.05,u:[0,mx],v:[0,L]});
-  }
-
-  /* Doors: set flush in their openings, 1/8" gap all round */
-  const g8=0.125, ft=0.75;
-  const doorFrame=(R,dw,dh,name,mids)=>{
-    const dm={mat:'door',layer:'doors',parent:R.pivot};
-    for(const xs of [[0,1.5],[dw-1.5,dw]]) box(ctx,{...dm,name:name+' stile (1×2)',x:xs,y:[0,dh],z:[0,ft],bom:lum(dh,'1x2')});
-    for(const ys of [[0,1.5],[dh-1.5,dh]]) box(ctx,{...dm,name:name+' rail (1×2)',x:[1.5,dw-1.5],y:ys,z:[0,ft],bom:lum(dw-3,'1x2')});
-    const bays = mids ? [[1.5,dw/2-0.75],[dw/2+0.75,dw-1.5]] : [[1.5,dw-1.5]];
-    if(mids) box(ctx,{...dm,name:name+' middle stile (1×2)',x:[dw/2-0.75,dw/2+0.75],y:[1.5,dh-1.5],z:[0,ft],bom:lum(dh-3,'1x2')});
-    bays.forEach(([a,b],i)=>brace(ctx,'z',[a,b,1.5,dh-1.5],i===0,[0,ft],name+' diagonal brace (1×2)',1.5,'1x2',R.pivot,'door','doors'));
-    meshPanel(ctx,{name:name+' hardware cloth',axis:'z',at:ft+0.03,u:[0.1,dw-0.1],v:[0.1,dh-0.1],parent:R.pivot});
-  };
-  let udw=0, udh=0, bdw=0, ldw=0, ldh=0;
-  /* Split front: a mesh run door hinged on the left corner post and a plywood sleeping-box door hinged on the right,
-     both latching to the front middle post. yb = bottom of the opening, top = underside of the rail above. */
-  const splitDoors=(yb,top,runName)=>{
-    udw=pm0-g8-(T+g8); udh=top-g8-(yb+g8);
-    const UR=rig(ctx,[T+g8,yb+g8,0],runName,'y',1.8);
-    doorFrame(UR,udw,udh,runName,false);
-    for(const h of [3,udh-3]) insetHinge(ctx,UR,h,1); insetLatch(ctx,UR,udw,udh-0.75,1);   /* along the door's top rail */
-    bdw=(W-T-g8)-(pm1+g8);
-    const BR=rig(ctx,[W-T-g8,yb+g8,0],'Sleeping box door','y',-1.8);
-    box(ctx,{mat:'door',layer:'doors',name:'Sleeping box door',x:[-bdw,0],y:[0,udh],z:[0,tb],parent:BR.pivot,bom:{k:'ply',th:tb,w:bdw,h:udh}});
-    for(const ys of [[1,2.5],[udh-2.5,udh-1]]) box(ctx,{mat:'wood',layer:'doors',name:'Box door stiffener (1×2, inside face)',x:[-bdw+0.75,-0.75],y:ys,z:[tb,tb+0.75],parent:BR.pivot,bom:lum(bdw-1.5,'1x2')});
-    for(const h of [3,udh-3]) insetHinge(ctx,BR,h,-1); insetLatch(ctx,BR,bdw,udh*0.35,-1);
-    /* door stops: 1x2 strips inside the opening, on the middle post and under the top rail, for each door to close against */
-    { const ds={mat:'wood',layer:'framing'}, zr=[ft,ft+1.5], zb=[tb,tb+1.5], sy0=yb, sy1=top;
-      B({...ds,name:'Door stop (1×2), run door side of middle post',x:[pm0-0.75,pm0],y:[sy0,sy1-0.75],z:zr,bom:lum(sy1-0.75-sy0,'1x2')});
-      B({...ds,name:'Door stop (1×2), box door side of middle post',x:[pm1,pm1+0.75],y:[sy0,sy1-0.75],z:zb,bom:lum(sy1-0.75-sy0,'1x2')});
-      B({...ds,name:'Door stop (1×2), under top rail, run door',x:[T,pm0],y:[sy1-0.75,sy1],z:zr,bom:lum(pm0-T,'1x2')});
-      B({...ds,name:'Door stop (1×2), under top rail, box door',x:[pm1,W-T],y:[sy1-0.75,sy1],z:zb,bom:lum(W-T-pm1,'1x2')}); }
-  };
-  if(one){
-    splitDoors(yLF, f2, 'Run door');
-  } else {
-    // lower level: one wide door, hinged on the left corner post
-    ldw=W-2*T-2*g8; ldh=f2-g8-(yLF+g8);
-    const LR=rig(ctx,[T+g8,yLF+g8,0],'Lower door','y',1.75);
-    doorFrame(LR,ldw,ldh,'Lower door',true);
-    for(const h of [3,ldh-3]) insetHinge(ctx,LR,h,1); insetLatch(ctx,LR,ldw,ldh/2,1);
-    splitDoors(yUF, yTop, 'Upper run door');
-  }
-
-
-  const rp = one ? {rise:0,deg:0,len:0,cleats:0} : ramp(ctx,{x0:hatch[0], yTop:yUF, yBot:yLF, xEnd:37, z0:hatch[2]+0.5, w:7, t:tf});
-
-  ctx.g={single:one,W,L,H,tb,tf,yLF,yUF,f2,yTop,lowerClear:f2-yLF,upperClear:yTop-yUF,ldw,ldh,udw,udh,bdw,
-    box: one ? [W-T-m1-tb, L-2*T, f2-yLF] : [W-T-m1-tb, L-2*T, yTop-yUF], rise:rp.rise, rampDeg:rp.deg, rampLen:rp.len, cleats:rp.cleats,
-    lowerArea:(W-2*T)*(L-2*T)/144, runArea:(m0-T)*(L-2*T)/144, boxArea:(W-T-m1-tb)*(L-2*T)/144};
+  ctx.st='paint';
+  ctx.g={single:!out,W,L,tb,tf,H:yTB,yLF,yTF,yTB,f1,udw,udh,bdw,roofTop,deck:[W+2*tb,Lr],
+    lowerClear:f2-yLF, clearFront:top-yLF, clearBack:yTB-T-yLF, pitch:Math.atan(slope)*180/Math.PI, pitch12:12*slope,
+    box:[W-T-dx0-tb, L-2*T, dtop(L/2)-yLF], runArea:(dx0-T)*(L-2*T)/144, boxArea:(W-T-dx0-tb)*(L-2*T)/144};
   return ctx.g;
 }
 
@@ -732,7 +707,7 @@ function packSheets(pieces){
   return sheets;
 }
 function analyze(bom, fasten){
-  const out={lum:{}, ply:{}, mesh:[], hw:{}, roof:{}, w:{Lumber:0,'Plywood & OSB':0,'Hardware cloth':0,Roofing:0,'Hardware & fasteners':fasten}};
+  const out={lum:{}, ply:{}, mesh:[], hw:{}, roof:{}, fast:{}, w:{Lumber:0,'Plywood & OSB':0,'Hardware cloth':0,Roofing:0,'Hardware & fasteners':fasten}};
   out.mod={run:0,coop:0}; const add=(cat,b,v)=>{ out.w[cat]+=v; out.mod[b.mod||'coop']+=v; };
   const nests={};
   for(const b of bom){
@@ -743,6 +718,7 @@ function analyze(bom, fasten){
       else out.ply[key].pieces.push({w:b.w,h:b.h,name:b.name}); }
     else if(b.k==='mesh'){ out.mesh.push(b); add('Hardware cloth',b,b.w*b.h/144*W_MESH); }
     else if(b.k==='hw'){ const e=(out.hw[b.item]=out.hw[b.item]||{qty:0,uses:{}}); e.qty++; if(b.use) e.uses[b.use]=(e.uses[b.use]||0)+1; add('Hardware & fasteners',b,b.wt); }
+    else if(b.k==='fast'){ out.fast[b.item]=(out.fast[b.item]||0)+(b.n||0); }
     else { out.roof[b.k]=b;
       if(b.k==='alum') add('Roofing',b,b.area*W_ALUM); if(b.k==='shingle') add('Roofing',b,b.area*W_SHINGLE*1.15); if(b.k==='underlay') add('Roofing',b,b.area*W_UNDER); if(b.k==='drip') add('Roofing',b,b.len/12*W_DRIP); }
   }
@@ -762,92 +738,65 @@ function analyze(bom, fasten){
 /* ---------- the two designs ---------- */
 const MODELS = {
   porch:{
-    tab:'Porch coop', dims:'4′ × 2′ × 6′ · no roof',
-    eyebrow:'Build plan · 4 quail · covered porch', title:'Four-Quail Porch Coop',
-    lede1:'A lightweight one-level cage for a covered porch, about 3′-10″ tall. Plywood on the back, the sleeping-box end and the top blocks wind and weather, and hardware cloth on the run end lets in light and air. A divider makes the right half a sleeping box, and the front has two doors: a mesh door for the run and a plywood door for the sleeping box, each with a gate latch and a locking carabiner.',
-    lede2:'A lightweight two-level cage for a covered porch. The porch roof keeps the rain off, so the cage has none. A 2×2 frame wrapped in hardware cloth on every side and the top keeps out raccoons, cats and rats. A ½″ plywood sleeping box fills half of the upper level. Three flush doors close with gate latches and locking carabiners.',
-    build:buildPorch, get center(){ return this.state.levels==='1' ? 24 : 37; }, get radius(){ return this.state.levels==='1' ? 42 : 54; }, fasten:2, paintAll:'trim',
-    state:{floorPly:0.5, boxPly:0.5, levels:'1'},   /* two levels was dropped: the quail would not use the upper level */
-    layers:[['framing','Framing'],['floors','Floors'],['sheathing','Sleeping box'],['mesh','Hardware cloth'],['doors','Doors'],['ramp','Ramp'],['hardware','Latches & hinges']],
-    options:[],
-    compare:null,
+    tab:'Porch coop', title:'Four-Quail Porch Coop',
+    lede:'A one-level cage for a covered porch, about 3′-10″ tall. Plywood on the back, the sleeping-box end and the top blocks wind and weather, and hardware cloth on the run end lets in light and air. The front has a mesh run door and a plywood sleeping-box door, each with a gate latch and a locking carabiner.',
+    build:(cfg,ctx)=>buildCoop(Object.assign({},cfg,{outdoor:false}),ctx), center:24, radius:42, fasten:2, paintAll:'trim',
+    state:{},
+    layers:[['framing','Framing'],['floors','Floor'],['sheathing','Walls & top'],['mesh','Hardware cloth'],['doors','Doors'],['hardware','Latches & hinges']],
+    options:[], compare:null,
     have:[
-      ['#8 deck screws, 3″','Rails and joists into the posts: drive through the post into the rail end, two per joint. Predrill so the 2×2 does not split.'],
-      ['Deck screws, 1⅝″ (slightly thinner than #8)','Floors and sleeping-box plywood to the frame, 1×2 door-frame corners (predrill), and the ramp hanger cleat.'],
-      ['Brad nailer and brads','With glue, for the ramp cleats, the box door stiffeners and to hold plywood in place while you screw it. Brads alone are not strong enough for the frame joints.'],
-      ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every rail it crosses, closer where it wraps the top and the corners.']],
-    get uses(){ return {'2x4':'Front middle post, which the latches screw into','2x2':'Posts, rails, floor joists, braces','1x2': this.state.levels==='1' ? 'Floor ledgers, door frame and door stops' : 'Floor ledgers, door frames, ramp cleats, box door stiffeners'}; },
-    cfgLabel:s=>(s.levels==='1'?'one level':'two levels')+', ½″ plywood throughout',
+      ['#8 deck screws, 3″','Frame joints, floor joist, cross rail, brace ends and the run-door corners. Predrill the 2×2 and 1×2.','scr3'],
+      ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls and top, door stops.','scr158'],
+      ['Brad nailer and brads','With glue, for the run-door brace and the box door frame.','brad'],
+      ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple']],
+    uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Posts, rails, floor joist, braces','1x2':'Floor ledgers, divider cleats, door stops, door frames'},
+    cfgLabel:s=>'one level, ½″ plywood',
     split:an=>'Two people can carry it by lifting under the floor rails.',
-    specs:g=> g.single ? [['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
+    specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
       ['Floor height',fIn(g.yLF)+' off ground'],['Clear height',fIn(g.lowerClear)],
       ['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],
-      ['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft, half run and half sleeping box'],['Per bird',((g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']]
-     : [['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
-      ['Lower floor height',fIn(g.yLF)+' off ground'],['Lower clear height',fIn(g.lowerClear)],
-      ['Upper floor height',fFt(g.yUF)],['Upper clear height',fIn(g.upperClear)],
-      ['Lower door',fIn(g.ldw)+' × '+fIn(g.ldh)],['Upper doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
-      ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+' × '+fIn(g.box[2])+' tall'],['Ramp',fIn(g.rampLen)+' long at '+Math.round(g.rampDeg)+'°'],
-      ['Floor space',(g.lowerArea+g.runArea+g.boxArea).toFixed(1)+' sq ft over two levels'],['Per bird',((g.lowerArea+g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
-    steps1:[
-      ['Build the front and back ladder frames','Lay each frame flat: two 45½″ corner posts joined by three 45″ rails whose bottoms sit 3″, 18″ and 44″ above the floor. Fit the back frame\'s middle post in two pieces between the rails, 13½″ and 24½″, and a 24½″ 2×4, laid flat, as the front middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Drive two 3″ screws through the post into each rail end, predrilling so the 2×2 does not split. Check that the diagonals match.'],
-      ['Join the frames','Stand the frames up facing each other and join them with 21″ side rails at the same three heights. Screw a 21″ middle joist between the front and back floor rails with its top ½″ below the rail tops, and a 21″ cross rail in the top frame.'],
-      ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, below the floor, and one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: hold each piece in place and mark it off the frame instead of cutting from the list. The plywood back and box end lock the rest square.'],
-      ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, level with the top of the middle joist (½″ below the rail tops). The front and back ledgers go in two pieces, one each side of the joist. Cut the floor to 45″ × 21″, drop it in and glue and screw it to the ledgers and joist. It finishes flush with the rails, so no plywood edge shows outside.'],
-      ['Fit the sleeping box divider','Screw three 1×2 cleats on the run side of the middle posts: one up the back of the front post, one up the front of the back post, and one along the floor between them, stopping short of the pop hole. Set the divider against them, centered on the posts, with its 7″ × 8″ pop hole at the bottom toward the back, and screw it to the cleats with 1⅝″ screws. It stops 2″ below the top rail so stale air can leave through the run side.'],
-      ['Close in the walls and top','Screw ½″ plywood to the back and the sleeping-box end, from the bottom of the floor rail to the top of the top rail; the end sheet laps the back edge. Staple hardware cloth over the run end, pulled tight, every 2–3″. Then screw the plywood top down onto the top rails and cross rail.'],
-      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post. The run door\'s latch runs along its top rail, the only place on the mesh door with 4″ of wood for the bar and guide; the box door\'s latch screws to its plywood. Each catch screws to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
-      ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Paint the hinges and latches black if they are not already. Skip the floor and the hardware cloth, and let the paint cure for a few days before the birds move in.'],
-      ['Set it in place','Carry the coop to the porch with the open front facing away from the wind. On cold days, hang a tarp over the front.']],
-    stepRules1:[[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/\(plywood\)|^Run side hardware cloth/,5],[/^Sleeping box divider|^Divider cleat/,4],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
-    cutNotes1:[[/^Divider cleat/,'Run side of the divider; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^End wall/,'Laps the back edge of the back wall'],[/^Top \(plywood\)/,'Overlaps the back and the box end'],[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops']],
-    get steps(){ return this.state.levels==='1' ? this.steps1 : this.steps2; },
-    get stepRules(){ return this.state.levels==='1' ? this.stepRules1 : this.stepRules2; },
-    get cutNotes(){ return this.state.levels==='1' ? this.cutNotes1 : this.cutNotes2; },
-    get lede(){ return this.state.levels==='1' ? this.lede1 : this.lede2; },
-    steps2:[
-      ['Build the front and back ladder frames','Lay each frame flat: two 72″ corner posts joined by four 45″ rails whose bottoms sit 3″, 18″, 44″ and 70½″ above the floor. Fit the middle post pieces between the rails: 13½″, 24½″ and 25″ on the back frame, and only the 25″ top piece on the front. Drive two 3″ screws through the post into each rail end, predrilling so the 2×2 does not split. Check that the diagonals match.'],
-      ['Join the frames','Stand the frames up facing each other and join them with 21″ side rails at the same four heights. Screw a 21″ middle joist between the front and back rails under each floor, with its top ½″ below the rail tops, and a 21″ cross rail in the top frame.'],
-      ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone and the lower level, and in the upper side away from the sleeping box. Their ends are cut at an angle: hold each piece in place and mark it off the frame instead of cutting from the list. Once they are in, the frame is locked square.'],
-      ['Put in the floors','Screw 1×2 ledgers to the inside faces of the floor rails, level with the tops of the middle joists (½″ below the rail tops). The front and back ledgers go in two pieces, one each side of the joist. Cut both floors to 45″ × 21″ and cut the 9″ × 8″ ramp hatch in the upper one, then drop each in and glue and screw it to the ledgers and joist. The floors finish flush with the rails, so no plywood edge shows outside.'],
-      ['Wrap it in hardware cloth','Cover the lower level on the back and both sides, and the upper run (the half without the sleeping box) on the back, the side and the top. Pull it tight and staple every 2–3″. Do this before the sleeping box so you can still reach every rail from inside.'],
-      ['Build the sleeping box','Screw the divider between the middle posts with its 7″ × 8″ pop hole at the bottom, toward the back. Then screw on the back, the side and the lid.'],
-      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round. The lower door and the upper run door are 1×2 frames with diagonal braces, with hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each door on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Then mount the latches.'],
-      ['Add the ramp and set it in place','Build the ramp on the bench: glue and brad the cleats every 3″ and add the hanger cleat across the top end. Then, from the upper run door, slide it bottom-first down through the floor hatch until the hanger cleat rests on the floor. Nothing in the run gets in the way, and it lifts back out the same way for cleaning. Carry the coop to the porch and strap the back top rail to the house wall.']],
-    cutNotes2:[[/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/floor joist|floor ledger/,'Top ½″ below the rail tops'],
-      [/^Upper floor \(/,'9″ × 8″ hatch, 2″ in from the end away from the sleeping box and 10½″ back from the front edge'],
-      [/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Ramp cleat/,'Every 3″ along the ramp']],
-    stepRules2:[[/^Ramp/,7],[/hinge|latch|carabiner|knuckle|Carry handle/i,6],[/door/i,6],[/brace/,2],[/hardware cloth/,4],[/^Sleeping box/,5],[/floor \(|ledger/,3],[/\(sides\)|joist|Top cross rail/,1],[/./,0]],
-    notes:(g,an)=> g.single ? [
-      ['How it goes together','Build two ladder frames, front and back, from 45½″ corner posts and 45″ rails, then join them with 21″ side rails at three levels: a bottom stretcher at 3″, the floor at 18″ and the top frame at 44″. The posts double as legs. Plywood closes the back, the box end and the top; the run end is hardware cloth.'],
-      ['Why it is light','With no upper level or ramp, the cage is about '+fLb(an.total)+' lb. The floor, back, box end, top, divider and box door come from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets.'],
-      ['Space','The floor is about '+(g.runArea+g.boxArea).toFixed(1)+' sq ft, split between the open run on the left and the sleeping box on the right: about '+((g.runArea+g.boxArea)/4).toFixed(1)+' sq ft per bird. That is enough for four quail.'],
-      ['Wind and cold','Plywood closes the back, the box end and the top, and the sleeping box gives the birds a draft-free corner. The run end and run door are mesh and supply the light and air. Set the coop with the run end away from the prevailing wind, and on cold days hang a tarp over the run end and front, leaving a gap at the top for air.'],
-      ['Racking','The plywood back, box end and top lock the cage square. The leg zone below the floor gets diagonal braces on the back and both sides, and the mesh run end gets one more above the floor.'],
-      ['Predators','On a porch the main threats are raccoons, cats, rats, opossums and snakes. Plywood closes the back, the box end and the top, and ½″ hardware cloth covers the run end and the run door. Both doors sit flush in their openings with ⅛″ gaps and close with a gate latch and a locking carabiner.'],
-      ['Flighty birds','Quail flush straight up when startled, and the run has about '+fIn(g.lowerClear)+' of headroom under a solid plywood top. Stretch soft bird netting or shade cloth a few inches below the top to cushion them.'],
-      ['Not shown','Fasteners you still need: exterior wood glue. Also not shown: the tarp, bird netting, feeders, waterers and bedding.']]
-     : [
-      ['How it goes together','Build two ladder frames, front and back, from full-height 2×2 corner posts and 45″ rails. Then join them with 21″ side rails and the floor joists at four levels: a bottom stretcher at 3″, the lower floor at 18″, the upper floor at 44″ and the top frame at 70½″. The posts double as legs, so there is no separate base. Every piece cuts from 8 ft 2×2 or 1×2.'],
-      ['Why it is light','There is no roof and no wall sheathing except the sleeping box, so the 2×2 frame only carries hardware cloth, two floors and a small plywood box. All the plywood comes from '+Object.values(an.ply).reduce((a,p)=>a+p.sheets.length,0)+' sheets. The whole cage is about '+fLb(an.total)+' lb, roughly a quarter of the outdoor coop.'],
-      ['Racking','A tall, narrow cage on 2×2s will rack unless it is braced. Diagonal braces run on the back and both sides of the leg zone and the lower level, and on the left side of the upper run. The sleeping-box plywood stiffens the upper right. Fasten the hardware cloth tight with fence staples every 2–3″ and it helps too.'],
-      ['Tipping','At 6′ tall and 2′ deep it can tip if a dog jumps on it or a door is leaned on. Strap the back top rail to the house wall with a short furniture anti-tip strap screwed into a stud.'],
-      ['Sleeping box','It fills the right half of the upper level. The divider has a 7″ × 8″ pop hole at the back and stops 2″ below the top rail, so stale air can leave through the run side. In winter, clip a sheet of clear corrugated plastic or a tarp over the top and windward side of the run to cut drafts and blown-in rain or snow.'],
-      ['Predators','On a porch the main threats are raccoons, cats, rats, opossums and snakes. ½″ hardware cloth covers every open face including the top. ¼″ cloth also stops mice and is about the same weight, if you prefer it. The three doors sit flush in their openings with ⅛″ gaps. Each closes with a gate latch and a locking carabiner, because raccoons can work plain latches.'],
-      ['Flighty birds','Quail flush straight up when startled. Each level has about '+fIn(Math.min(g.lowerClear,g.upperClear))+' of headroom, which is high enough for them to hit the top hard. Staple soft bird netting or shade cloth a few inches under the top mesh of the upper run to cushion them.'],
-      ['Ramp','The rise is '+fIn(g.rise)+', so the 7″-wide ramp runs at about '+Math.round(g.rampDeg)+'° with '+g.cleats+' cleats. It hangs from a cleat at the 9″ × 8″ hatch and lifts out for cleaning. Teach the birds the route by placing them in the sleeping box at dusk for the first few nights.'],
-      ['Cleaning','The lower door spans almost the whole front. The two upper doors open the run half and the sleeping box separately. To keep shavings off the porch, slide a cut-down boot tray or a scrap of vinyl flooring onto each floor as a removable liner.'],
-      ['Not shown','Fasteners you still need: exterior wood glue. Also not shown: the anti-tip wall strap, bird netting, feeders, waterers, a heat lamp (if you add one, guard it and keep it clear of the plywood), and bedding.']]
+      ['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft, half run and half sleeping box'],['Per bird',((g.runArea+g.boxArea)/4).toFixed(1)+' sq ft']],
+    steps:[
+      ['Build the front and back frames','Lay each frame flat. Front: two 45½″ corner posts with 45″ rails between them, their bottoms 3″, 18″ and 44″ above the ground, and a 24½″ 2×4, laid flat, between the floor rail and the top rail. Back: the same posts and rails, a 13½″ 2×2 middle post below the floor rail, and a 24½″ 2×4, laid flat, above it. Predrill and glue every joint. Each rail gets one 3″ screw through the post into its end, about 1″ up from the rail bottom. Each middle post gets 3″ screws through the rails into its ends; screw the lower back post through the floor rail before fitting the 2×4 above it. Check the diagonals match.','frames'],
+      ['Join the frames','Stand the frames up and join them with 21″ side rails at all three heights: one 3″ screw through each corner post into the rail end, about ½″ up from the rail bottom so it misses the front rail\'s screw. Fit the 21″ floor joist between the floor rails with its top ½″ below theirs, and the 21″ top cross rail between the top rails, each with one 3″ screw through the rail into each end. Glue the joints.','join'],
+      ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, and one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Fasten each end with one 3″ screw driven at an angle through the brace into the post or rail (toe-screwed), predrilled, with glue.','braces'],
+      ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops ½″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Glue, and drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
+      ['Lay the floor','Cut the floor to 45″ × 21″ and drop it onto the ledgers and joist. Glue, and drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist. It finishes flush with the rails.','floor'],
+      ['Fit the divider cleats','On the run side of the centre line, screw three 1×2 cleats, laid flat, with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Drive 1⅝″ screws about every 6″ through the cleats into the posts, and down through the floor cleat and floor into the joist.','cleats'],
+      ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
+      ['Close in the walls and top','Screw ½″ plywood to the back and to the sleeping-box end (the end sheet laps the back sheet\'s edge), then screw the top down onto the top rails and cross rail. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
+      ['Staple on the hardware cloth','Cut hardware cloth for the run end and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
+      ['Fit the door stops','Screw 1×2 stops inside the door openings so the doors close flush: down the run side of the front 2×4 and under the top rail across the run opening, both set back ¾″ (the run door\'s thickness), and down the box side of the 2×4, set back ½″, between the box door\'s top and bottom rails. 1⅝″ screws about every 8″.','stops'],
+      ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 1×2 frame, predrilled and joined with one 3″ screw through each stile into each rail end, plus glue; a 1×2 diagonal brace rising from the bottom hinge corner, glued and bradded; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 1×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), glued and bradded from the plywood side.','doors'],
+      ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge. Door-side leaves take #8 × ⅝″ screws on the run door (its frame is only ¾″ thick) and #8 × 1″ on the box door (plywood plus frame, 1¼″). Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with the same short screws on the door side and the supplied screws for each catch on the 2×4.','hang'],
+      ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Skip the floor and the hardware cloth, and let the paint cure for a few days before the birds move in.','paint'],
+      ['Set it in place','Carry the coop to the porch with the run end away from the wind. On cold days, hang a tarp over the front.','place']],
+    cutNotes:[[/^Divider cleat/,'Laid flat; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],
+      [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
+      [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, glued and bradded'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top ½″ below the rail tops']],
+    notes:(g,an)=>[
+      ['How it goes together','Build two ladder frames, front and back, then join them with side rails at three levels: a bottom stretcher at 3″, the floor at 18″ and the top frame at 44″. The posts double as legs. Plywood closes the back, the box end and the top; the run end is hardware cloth. The build steps list every screw.'],
+      ['Weight','About '+fLb(an.total)+' lb. Two people can carry it by lifting under the floor rails.'],
+      ['Space','The floor is about '+(g.runArea+g.boxArea).toFixed(1)+' sq ft, split between the open run and the sleeping box: about '+((g.runArea+g.boxArea)/4).toFixed(1)+' sq ft per bird.'],
+      ['Wind and cold','Plywood closes the back, the box end and the top, and the sleeping box gives the birds a draft-free corner. Set the coop with the run end away from the prevailing wind, and on cold days hang a tarp over the run end and front, leaving a gap at the top for air.'],
+      ['Racking','The plywood back, box end and top lock the cage square. The leg zone gets diagonal braces on the back and both sides, and the mesh run end gets one above the floor.'],
+      ['Predators','Raccoons, cats, rats, opossums and snakes. Plywood closes the back, box end and top, and ½″ hardware cloth covers the run end and run door. Both doors sit flush with ⅛″ gaps against stops, and close with a gate latch and a locking carabiner.'],
+      ['Flighty birds','Quail flush straight up when startled, and the run has about '+fIn(g.lowerClear)+' of headroom. Stretch soft bird netting a few inches below the top to cushion them.'],
+      ['Not shown','The tarp, bird netting, feeders, waterers and bedding.']]
   },
   outdoor:{
-    tab:'Outdoor coop', dims:'', title:'Four-Quail Outdoor Coop',
-    lede:'The one-level porch design with its own roof, for outdoors. Pressure-treated corner posts double as legs, a 7/16″ OSB floor and roof deck, plywood on the back and the sleeping-box end, and hardware cloth on the run end. The roof sheds to the back, and the front has a mesh run door and a plywood sleeping-box door, each with a gate latch and a locking carabiner.',
-    build:buildShed, center:28, radius:47, fasten:3,
+    tab:'Outdoor coop', title:'Four-Quail Outdoor Coop',
+    lede:'The porch coop with its own roof, for outdoors. Pressure-treated corner posts double as legs, the floor and roof deck are 7/16″ OSB, the back and sleeping-box end are plywood, and the run end is hardware cloth. The steel roof sheds to the back, and the front has a mesh run door and a plywood sleeping-box door, each with a gate latch and a locking carabiner.',
+    build:(cfg,ctx)=>buildCoop(Object.assign({},cfg,{outdoor:true}),ctx), center:28, radius:47, fasten:3,
     state:{roof:'alum-ply'},
     layers:[['framing','Framing'],['floors','Floor'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors'],['hardware','Latches & hinges']],
-    options:[],
-    compare:null,
-    uses:{'2x4':'Front middle post, which the latches screw into','2x2':'Rails, back middle post, floor joist, braces','1x2':'Floor ledgers, door frame and door stops'},
+    options:[], compare:null,
+    have:[
+      ['#8 deck screws, 3″','Frame joints, floor joist, top rails, brace ends and the run-door corners. Predrill the 2×2 and 1×2. Coated deck screws are fine in the pressure-treated posts.','scr3'],
+      ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls, roof deck, door stops.','scr158'],
+      ['Brad nailer and brads','With glue, for the run-door brace and the box door frame.','brad'],
+      ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple']],
+    uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Rails, lower back middle post, floor joist, braces','1x2':'Floor ledgers, divider cleats, door stops, door frames'},
     cfgLabel:s=>'steel roof over OSB',
     split:an=>'',
     specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep; roof '+fIn(g.deck[0])+' × 30″'],['Height',fFt(g.roofTop)+' at the front'],
@@ -855,25 +804,27 @@ const MODELS = {
       ['Clear height',fIn(g.clearFront)+' front, '+fIn(g.clearBack)+' back'],['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
       ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+', about '+fIn(g.box[2])+' tall'],['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft ('+((g.runArea+g.boxArea)/4).toFixed(1)+' per bird)']],
     steps:[
-      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a 45″ pressure-treated bottom stretcher 3″ above the ground, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, as the middle post between the floor rail and the top rail; both doors latch to its 3½″ face. Back: two 45½″ pressure-treated corner posts, the same pressure-treated stretcher and floor rail, a top rail flush with the post tops, and a middle post in two pieces: a 13½″ pressure-treated piece between the stretcher and the floor rail, and a 24½″ untreated piece above. Predrill and drive two 3″ screws through the post into each rail end, and check that the diagonals match.'],
-      ['Join the frames','Stand the frames up and join them with 21″ side rails: pressure-treated at 3″, untreated at 18″. Screw the 21″ floor joist between the front and back floor rails with its top 7/16″ below the rail tops. Then fit the three sloped top rails, one on each side and one in the middle, from the front top rail down to the back top rail; cut both ends at 15° so they sit flat against the top rails.'],
-      ['Add the diagonal braces','Fit pressure-treated braces in the back and both sides of the leg zone, below the floor, and an untreated one in the run end above the floor, which gets hardware cloth instead of plywood. Their ends are cut at an angle: mark each off the frame. The plywood back and box end lock the rest square.'],
-      ['Put in the floor','Screw 1×2 ledgers to the inside faces of the floor rails, 7/16″ below the rail tops and level with the joist; the front and back ledgers go in two pieces, one each side of the joist. Drop in the 45″ × 21″ OSB floor and glue and screw it down. It finishes flush with the rails.'],
-      ['Fit the sleeping box divider','Screw three 1×2 cleats on the run side of the middle posts: one up the back of the front post, one up the front of the back post, and one along the floor between them, stopping short of the pop hole. Set the divider against them, centered on the posts, with its 7″ × 8″ pop hole at the bottom toward the back, and screw it to the cleats with 1⅝″ screws. Its top follows the roof slope and stops 2″ below the middle top rail so stale air can leave through the run side.'],
-      ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. The end sheet is cut to the roof slope and laps the back sheet\'s edge. Staple hardware cloth over the run end, also cut to the slope, every 2–3″.'],
-      ['Put on the roof','Screw down the 7/16″ OSB roof deck so it overhangs 3″ at the front and back, and paint the top face and all the edges. Cut one 8 ft steel panel into two pieces and screw them down side by side with neoprene-washer roofing screws, overlapping one corrugation.'],
-      ['Make and hang the doors','Measure each opening and build its door ⅛″ smaller all round: the run door is a 1×2 frame with a diagonal brace and hardware cloth stapled to the back; the sleeping-box door is plywood with two 1×2 stiffeners on the inside. Hang each on two hinges screwed flat across the gap onto the post and door faces, using ⅝″–¾″ screws on the door side. Both latch to the middle post. The run door\'s latch runs along its top rail, the only place on the mesh door with 4″ of wood for the bar and guide; the box door\'s latch screws to its plywood. Each catch screws to the 2×4. Then screw 1×2 stops inside the opening, down each side of the middle post and under the top rail, so each door closes against them.'],
-      ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.'],
-      ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind.']],
-    stepRules:[[/hinge|latch|carabiner|knuckle|Carry handle/i,7],[/door/i,7],[/^Roof|roofing/i,6],[/brace/,2],[/\(plywood\)|^Run end hardware cloth/,5],[/^Sleeping box divider|^Divider cleat/,4],[/^Floor \(|ledger/,3],[/\(sides\)|joist|sloped/,1],[/./,0]],
-    cutNotes:[[/^Divider cleat/,'Run side of the divider; the divider screws to it'],[/^Bottom stretcher/,'Pressure-treated'],[/leg zone/,'Pressure-treated; angled ends, mark off the frame'],[/^Door stop/,'Inside the opening; the door closes against it'],[/^Front middle post/,'Laid flat so both latch catches screw into its 3½″ face'],[/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],[/divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back; top edge follows the roof slope'],
-      [/^End wall/,'Top edge cut to the roof slope; laps the back edge of the back wall'],[/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],
-      [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops']],
-    have:[
-      ['#8 deck screws, 3″','Rails into the posts: drive through the post into the rail end, two per joint. Predrill so the 2×2 does not split. Coated deck screws are fine in the pressure-treated posts.'],
-      ['Deck screws, 1⅝″ (slightly thinner than #8)','OSB floor and roof deck, wall plywood, 1×2 door-frame corners (predrill).'],
-      ['Brad nailer and brads','With glue, for the box door stiffeners and to hold plywood in place while you screw it. Not strong enough for the frame joints.'],
-      ['Fence staples','For the hardware cloth: one every 2–3″ along each edge and into every rail it crosses.']],
+      ['Build the front and back frames','Lay each frame flat. Front: two 51½″ pressure-treated corner posts, a pressure-treated 45″ bottom stretcher 3″ up, a 45″ floor rail 18″ up, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, between the floor rail and the top rail. Back: two 45½″ pressure-treated corner posts, the same stretcher and floor rail, a top rail flush with the post tops, a 13½″ pressure-treated 2×2 middle post below the floor rail and a 24½″ 2×4, laid flat, above it. Predrill and glue every joint. Each rail gets one 3″ screw through the post into its end, about 1″ up from the rail bottom. Each middle post gets 3″ screws through the rails into its ends; screw the lower back post through the floor rail before fitting the 2×4 above it. Check the diagonals match.','frames'],
+      ['Join the frames','Stand the frames up and join them with 21″ side rails at 3″ (pressure-treated) and 18″: one 3″ screw through each corner post into the rail end, about ½″ up from the rail bottom so it misses the front rail\'s screw. Fit the three sloped top rails, both ends cut at 15°, between the front and back top rails: through the corner posts into the side ones, and through the top rails into the middle one. Fit the 21″ floor joist between the floor rails, its top 7/16″ below theirs, with one 3″ screw through each rail into its end. Glue the joints.','join'],
+      ['Add the diagonal braces','Fit pressure-treated braces in the back and both sides of the leg zone, and an untreated one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Fasten each end with one 3″ screw driven at an angle through the brace into the post or rail (toe-screwed), predrilled, with glue.','braces'],
+      ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops 7/16″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Glue, and drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
+      ['Lay the floor','Cut the OSB floor to 45″ × 21″, seal its edges, and drop it onto the ledgers and joist. Glue, and drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist.','floor'],
+      ['Fit the divider cleats','On the run side of the centre line, screw three 1×2 cleats, laid flat, with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Drive 1⅝″ screws about every 6″ through the cleats into the posts, and down through the floor cleat and floor into the joist.','cleats'],
+      ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, its top following the roof slope, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
+      ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. Both are cut to the roof slope at the top, and the end sheet laps the back sheet\'s edge. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
+      ['Screw down the roof deck','Screw the OSB roof deck down so it overhangs 3″ at the front and back, with 1⅝″ screws about every 6″ into the front and back top rails and the three sloped rails. Paint its top face and all its edges before the steel goes on.','roofdeck'],
+      ['Put on the steel','Cut one 8 ft steel panel into two pieces and lay them side by side, overlapping one corrugation. Drive 2″ roofing screws through the tops of the ridges, every other ridge over the front and back top rails, plus one into each sloped rail mid-roof. Snug the neoprene washers without crushing them.','roofing'],
+      ['Staple on the hardware cloth','Cut hardware cloth for the run end, top edge cut to the roof slope, and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
+      ['Fit the door stops','Screw 1×2 stops inside the door openings so the doors close flush: down the run side of the front 2×4 and under the top rail across the run opening, both set back ¾″, and down the box side of the 2×4, set back ½″, between the box door\'s top and bottom rails. 1⅝″ screws about every 8″.','stops'],
+      ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 1×2 frame, predrilled and joined with one 3″ screw through each stile into each rail end, plus glue; a 1×2 diagonal brace rising from the bottom hinge corner, glued and bradded; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 1×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), glued and bradded from the plywood side.','doors'],
+      ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge. Door-side leaves take #8 × ⅝″ screws on the run door and #8 × 1″ on the box door. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with the same short screws on the door side and the supplied screws for each catch on the 2×4.','hang'],
+      ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
+      ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind.','place']],
+    cutNotes:[[/^Divider cleat/,'Laid flat; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],
+      [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
+      [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, glued and bradded'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops'],
+      [/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],
+      [/^Run end hardware cloth/,'Top edge cut to the roof slope'],[/^Roof deck/,'Overhangs 3″ front and back'],[/^Bottom stretcher|^Back middle post, lower/,'Pressure-treated']],
     notes:(g,an)=>[
       ['How it goes together','It is the porch coop\'s one-level design with a roof. The front frame is 6″ taller than the back, and three sloped top rails carry a 7/16″ OSB roof deck that sheds rain to the back. The pressure-treated corner posts double as legs.'],
       ['Roof','Corrugated steel over the OSB deck, at about '+g.pitch12.toFixed(1)+' in 12 ('+Math.round(g.pitch)+'°), which suits corrugated steel. There is no felt or foam closure: the solid OSB deck keeps rodents and drips out, and the coop is small enough that any condensation under the steel just dries. Paint the deck\'s top face and edges so dampness under the steel does not swell it.'],
@@ -884,7 +835,7 @@ const MODELS = {
       ['Predators','Raccoons, cats, rats, opossums and snakes. Plywood and the roof close the back, the box end and the top; ½″ hardware cloth covers the run end and the run door. Both doors sit flush with ⅛″ gaps and close with a gate latch and a locking carabiner.'],
       ['Flighty birds','Quail flush straight up when startled. Stretch soft bird netting a few inches below the roof deck to cushion them.'],
       ['Weight','About '+fLb(an.total)+' lb. Two people can carry it by lifting under the floor rails.'],
-      ['Not shown','Fasteners you still need: exterior wood glue, and roofing screws with neoprene washers. Also not shown: pavers, bird netting, feeders, waterers and bedding.']]
+      ['Not shown','Pavers, bird netting, feeders, waterers and bedding.']]
   }
 };
 
@@ -946,7 +897,8 @@ function rebuild(){
   root.position.set(ctx.g.W/2,0,ctx.g.L/2); holder.add(root);
   person.position.set(-(ctx.g.W/2+18),0,ctx.g.L/2-6);   /* beside the front corner, toward the camera */
   current=ctx; current.an=analyze(ctx.bom, M().fasten);
-  const rules=M().stepRules||[]; ctx.parts.forEach(pt=>{ const r=rules.find(([re])=>re.test(pt.userData.name)); pt.userData.step = r ? r[1] : (M().steps.length-1); });
+  const rules=M().stepRules||[], keys=M().steps.map(st=>st[2]);
+  ctx.parts.forEach(pt=>{ const ki=keys.indexOf(pt.userData.stepKey); if(ki>=0){ pt.userData.step=ki; return; } const r=rules.find(([re])=>re.test(pt.userData.name)); pt.userData.step = r ? r[1] : (M().steps.length-1); });
   applyLayers(); setDoors(); renderPanel(); dirty=true;
 }
 let buildStep=-1;
@@ -956,6 +908,7 @@ function applyLayers(){ if(!current) return; const ls=M().layerState;
   if(selected) clearPick();
   current.parts.forEach(m=>{ m.visible=!!ls[m.userData.layer] && (buildStep<0 || m.userData.step<=buildStep);
     m.material = painted ? m.userData.paintMat : m.userData.rawMat;
+    if(m.userData.layer==='fast'){ m.visible = buildStep>=0 && m.userData.step<=buildStep; m.material = m.userData.step===buildStep ? MAT.fastNow : MAT.fast; }
     m.children.forEach(c=>{ if(c.isLineSegments) c.material=(painted&&c.userData.painted)?PAINT_EDGE:EDGE_MAT; }); });
   dirty=true; }
 function setDoors(){ if(!current) return; current.pivots.forEach(d=>{ d.p.rotation[d.axis]=d.open*doorT; }); dirty=true; }
@@ -1082,6 +1035,10 @@ const PRICE={
   'hw:Gate latch, 4″ with padlock hole':[6.48,'https://www.lowes.com/pd/national-hardware-steel-painted-gate-latch/50414134','store',1,'National Hardware N184-861, black. Check the carabiner fits through its hole.'],
   'hw:Locking carabiner':[2.00,null,'',1,'Estimated at $2 each; any small locking carabiner that fits the latch\'s padlock hole.'],
   'x:staples':[8.98,'https://www.lowes.com/pd/Fas-n-Tite-3-4-in-Leg-x-3-16-in-Round-Crown-14-Gauge-Fence-Staples-1-lb/1000435467','store',1,'Fas-n-Tite round-crown fence staples, about 1 lb. Hammer them in; no staple gun needed.'],
+  'x:scr58':[4.98,LS('#8 x 5/8 in wood screws'),'',1,''],
+  'x:scr1':[4.98,LS('#8 x 1 in wood screws'),'',1,''],
+  'x:roof':[9.98,LS('#10 x 2 in roofing screws neoprene washer'),'',1,''],
+  'x:glue':[5.98,LS('Titebond III 8 oz wood glue'),'',1,''],
   'hw:Pull handle, 6½″ black utility (carry handle)':[4.98,'https://www.lowes.com/pd/ReliaBilt-ReliaBilt-6-1-2-in-Black-Utility-Pull-Handle-1-Pack/5002385973','store',1,'RELIABILT screen/storm door pull. Its included screws are too short for carrying weight: bolt it through into the floor framing with ¼″ bolts instead.']
 };
 let myPrices={}; try{ myPrices=JSON.parse(localStorage.getItem('coopPrices')||'{}')||{}; }catch(_){ myPrices={}; }
@@ -1104,7 +1061,9 @@ function shopRows(an){
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
     rows.push(['Hardware', pk>1 ? k+', '+pk+'-pack' : k, Math.ceil(v.qty/pk), pk>1 ? v.qty+' needed: '+uses : uses, 'hw:'+k]); }
-  (m.have||[]).forEach(([item,d],i)=>rows.push(['Already have',item,0,d,'have:'+i]));
+  for(const [id,item,d] of [['scr58','#8 × ⅝″ wood screws, small box','For the hinges and latch on the ¾″ run-door frame; longer screws would poke through.'],['scr1','#8 × 1″ wood screws, small box','For the hinges and latch on the box door (½″ plywood plus its 1×2 frame).'],['roof','#10 × 2″ roofing screws with neoprene washers','Through the steel ridges into the top rails.'],['glue','Exterior wood glue (such as Titebond III), 8 oz','For every frame joint, the ledgers, floor and door frames.']])
+    if(an.fast[id]!==undefined) rows.push(['Fasteners',item,1,(an.fast[id]?'About '+an.fast[id]+' needed. ':'')+d,'x:'+id]);
+  (m.have||[]).forEach(([item,d,fid],i)=>rows.push(['Already have',item,0,(fid&&an.fast[fid]?'About '+an.fast[fid]+' needed. ':'')+d,'have:'+i]));
   return rows;
 }
 function costTotal(rows){ return rows.reduce((a,r)=>a+r[2]*unitPrice(r[4]),0); }
@@ -1145,9 +1104,15 @@ $('#copyShop').addEventListener('click',async e=>{
 });
 function resetCopy(){ const ta=$('#copyFallback'); if(ta){ ta.hidden=true; ta.value=''; } const b=$('#copyShop'); clearTimeout(b._t); b.textContent='Copy shopping list'; }
 /* Build steps */
+function stepFast(key){
+  if(!current||!key) return ''; const c={}; let glue=false;
+  current.bom.forEach(b=>{ if(b.k!=='fast'||b.step!==key) return; if(b.item==='glue'){ glue=true; return; } c[b.item]=(c[b.item]||0)+(b.n||0); });
+  const parts=Object.entries(c).filter(([,n])=>n>0).map(([k,n])=>(k==='staple'||k==='brad'?'about ':'')+n+' × '+(n===1?FAST[k][0]:FAST[k][1]));
+  if(glue) parts.push('exterior wood glue'); return parts.join(' · ');
+}
 function renderSteps(){
   const st=M().steps;
-  $('#steps').innerHTML=st.map(([t,d],i)=>`<li class="${i===buildStep?'on':''}"><b>${t}</b><p>${d}</p><button type="button" data-s="${i}" aria-pressed="${i===buildStep}">${i===buildStep?'Showing in 3D':'Show in 3D'}</button></li>`).join('');
+  $('#steps').innerHTML=st.map(([t,d,k],i)=>{ const fx=stepFast(k); return `<li class="${i===buildStep?'on':''}"><b>${t}</b><p>${d}</p>${fx?`<p class="fx"><b>Fasteners:</b> ${fx}</p>`:''}<button type="button" data-s="${i}" aria-pressed="${i===buildStep}">${i===buildStep?'Showing in 3D':'Show in 3D'}</button></li>`; }).join('');
   const pill=$('#stepPill'); pill.hidden = buildStep<0;
   if(buildStep>=0){ $('#stepName').textContent='Step '+(buildStep+1)+' of '+st.length+': '+st[buildStep][0]; $('#stepPrev').disabled=buildStep===0; $('#stepNext').disabled=buildStep===st.length-1; }
 }
@@ -1159,13 +1124,13 @@ $('#stepNext').addEventListener('click',()=>setStep(Math.min(M().steps.length-1,
 $('#stepExit').addEventListener('click',()=>setStep(-1));
 function renderCut(an){
   const m=M(), rules=m.stepRules||[], notes=m.cutNotes||[];
-  const stepOf=n=>{ const r=rules.find(([re])=>re.test(n)); return r?r[1]:m.steps.length-1; };
+  const keys=m.steps.map(st=>st[2]), stepOf=(n,k)=>{ const ki=keys.indexOf(k); if(ki>=0) return ki; const r=rules.find(([re])=>re.test(n)); return r?r[1]:m.steps.length-1; };
   const noteOf=n=>{ const r=notes.find(([re])=>re.test(n)); return r?r[1]:''; };
   const rows=[];
-  for(const k of an.lumKeys){ const g=an.lum[k]; g.forEach(b=>rows.push({n:b.name, mat:LUM_LABEL[g.size]+(g.pt?' treated':''), size:fIn(b.len), sort:b.len})); }
-  for(const k of an.plyKeys){ const p0=an.ply[k]; p0.list.forEach(b=>rows.push({n:b.name, mat: p0.osb ? '7/16″ OSB' : fIn(p0.th)+' ply'+(p0.pt?', treated':''), size: b.h2 ? fIn(b.w)+' × '+fIn(b.h)+' → '+fIn(b.h2) : fIn(b.w)+' × '+fIn(b.h), sort:b.w*b.h})); }
-  an.mesh.forEach(b=>rows.push({n:b.name, mat:'½″ cloth', size:fIn(b.w)+' × '+fIn(b.h), sort:b.w*b.h}));
-  const bySt={}; rows.forEach(r=>{ const st=stepOf(r.n), key=r.n+'|'+r.mat+'|'+r.size; const g=(bySt[st]=bySt[st]||{}); (g[key]=g[key]||Object.assign({q:0},r)).q++; });
+  for(const k of an.lumKeys){ const g=an.lum[k]; g.forEach(b=>rows.push({n:b.name, st:b.step, mat:LUM_LABEL[g.size]+(g.pt?' treated':''), size:fIn(b.len), sort:b.len})); }
+  for(const k of an.plyKeys){ const p0=an.ply[k]; p0.list.forEach(b=>rows.push({n:b.name, st:b.step, mat: p0.osb ? '7/16″ OSB' : fIn(p0.th)+' ply'+(p0.pt?', treated':''), size: b.h2 ? fIn(b.w)+' × '+fIn(b.h)+' → '+fIn(b.h2) : fIn(b.w)+' × '+fIn(b.h), sort:b.w*b.h})); }
+  an.mesh.forEach(b=>rows.push({n:b.name, st:b.step, mat:'½″ cloth', size:fIn(b.w)+' × '+fIn(b.h), sort:b.w*b.h}));
+  const bySt={}; rows.forEach(r=>{ const st=stepOf(r.n,r.st), key=r.n+'|'+r.mat+'|'+r.size; const g=(bySt[st]=bySt[st]||{}); (g[key]=g[key]||Object.assign({q:0},r)).q++; });
   let h='<thead><tr><th>Part</th><th>Material</th><th>Qty</th><th>Size</th></tr></thead><tbody>';
   Object.keys(bySt).map(Number).sort((a,b)=>a-b).forEach(st=>{
     h+=`<tr class="sec"><td colspan="4">Step ${st+1} · ${m.steps[st][0]}</td></tr>`;
