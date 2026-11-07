@@ -984,7 +984,7 @@ function renderHeader(){ const m=M(); $('#eyebrow').textContent=m.eyebrow; $('#t
 function renderLayers(){
   const el=$('#layers'), m=M(), ls=m.layerState; el.innerHTML='<span class="lbl">Layers</span>';
   const all=m.layers.map(l=>l[0]);
-  const presets=[['Framing only',['framing']],['No plywood',all.filter(k=>!['sheathing','roofdeck','roofing'].includes(k))],['Show all',all]];
+  const presets=[['Framing only',['framing']],['Show all',all]];
   presets.forEach(([lbl,on])=>{ const b=document.createElement('button'); b.type='button'; b.className='chip preset'; b.textContent=lbl;
     b.addEventListener('click',()=>{ all.forEach(k=>ls[k]=on.includes(k)); renderLayers(); applyLayers(); }); el.appendChild(b); });
   m.layers.forEach(([k,lbl])=>{ const l=document.createElement('label'); l.className='chip'+(ls[k]?'':' off'); l.style.setProperty('--c',`var(--sw-${k})`);
