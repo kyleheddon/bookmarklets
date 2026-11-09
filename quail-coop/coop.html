@@ -863,7 +863,7 @@ const MODELS = {
 };
 
 /* ---------- three.js scene ---------- */
-let MK = 'porch';
+let MK = 'outdoor';
 const M = () => MODELS[MK];
 const runtime = {open:false};
 for(const k in MODELS){ MODELS[k].layerState={}; MODELS[k].layers.forEach(([l])=>MODELS[k].layerState[l]=true); }
@@ -982,13 +982,16 @@ $('#kpiCost').addEventListener('click',()=>{ $('#tab-shop').click(); $('#tab-sho
 $('#kpiWeight').addEventListener('click',()=>{ $('#weightCard').scrollIntoView({behavior:reduceMotion?'auto':'smooth',block:'start'}); });
 
 /* ---------- UI ---------- */
+/* tab order: the first tab is the default */
+const TAB_ORDER=['outdoor','porch'];
 function renderModelTabs(){
-  $('#models').innerHTML=Object.entries(MODELS).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b></button>`).join('');
+  $('#models').innerHTML=TAB_ORDER.map(k=>[k,MODELS[k]]).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b></button>`).join('');
 }
 $('#models').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setModel(b.dataset.m, true); });
 function setModel(k, push){
-  if(k==='garage') k='porch'; if(!MODELS[k]) k='porch'; const changed = k!==MK || !current; MK=k;
-  if(push){ try{ history.replaceState(null,'','#'+k); }catch(_){ location.hash=k; } }
+  if(k==='garage') k='porch'; if(!MODELS[k]) k=TAB_ORDER[0]; const changed = k!==MK || !current; MK=k;
+  /* switching tabs clears any #link, so a reload always opens on the first tab */
+  if(push && location.hash){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(_){} }
   renderModelTabs(); renderHeader(); renderLayers(); renderOptions();
   if(changed){ buildStep=-1; rebuild(); goView('iso', !push); }
 }
