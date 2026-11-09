@@ -304,6 +304,12 @@ function clipRect(poly, x0,x1,y0,y1){
   for(const [ins,cut] of E){ const inp=out; out=[]; for(let i=0;i<inp.length;i++){ const c=inp[i], p=inp[(i+inp.length-1)%inp.length]; const ci=ins(c), pi=ins(p); if(ci){ if(!pi) out.push(cut(p,c)); out.push(c);} else if(pi) out.push(cut(p,c)); } }
   return out;
 }
+/* keep the part of a polygon below the line v = a + b*u */
+function clipBelow(poly,a,b){ const f=p=>a+b*p[0]-p[1], out=[];
+  for(let i=0;i<poly.length;i++){ const c=poly[i], p=poly[(i+poly.length-1)%poly.length], fc=f(c), fp=f(p);
+    if((fc>=0)!==(fp>=0)){ const t=fp/(fp-fc); out.push([p[0]+t*(c[0]-p[0]), p[1]+t*(c[1]-p[1])]); }
+    if(fc>=0) out.push(c); }
+  return out; }
 function lin(hex){ return new THREE.Color(hex).convertSRGBToLinear(); }
 
 /* ---------- materials ---------- */
@@ -425,11 +431,13 @@ function meshPanel(ctx,o){
   else g.translate(uc, vc, o.at);
   return addMesh(ctx,g,Object.assign({mat:'mesh', layer:'mesh', bom:{k:'mesh',w,h}}, o));
 }
-function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer, pt){
+/* topLine [a,b]: the brace's top end is cut along v = a + b*u (a sloped rail above it) instead of square to v1 */
+function brace(ctx, axis, r, up, range, name, D, size, parent, mat, layer, pt, topLine){
   const [u0,u1,v0,v1]=r; const A = up?[u0,v0]:[u0,v1], Bp = up?[u1,v1]:[u1,v0];
   const dx=Bp[0]-A[0], dy=Bp[1]-A[1], l=Math.hypot(dx,dy), d=[dx/l,dy/l], n=[-d[1],d[0]], h=D/2;
   const band=[[A[0]-d[0]*D-n[0]*h, A[1]-d[1]*D-n[1]*h],[Bp[0]+d[0]*D-n[0]*h, Bp[1]+d[1]*D-n[1]*h],[Bp[0]+d[0]*D+n[0]*h, Bp[1]+d[1]*D+n[1]*h],[A[0]-d[0]*D+n[0]*h, A[1]-d[1]*D+n[1]*h]];
-  const poly = clipRect(band,u0,u1,v0,v1);
+  let poly = clipRect(band,u0,u1,v0,topLine?1e9:v1);
+  if(topLine) poly = clipBelow(poly,topLine[0],topLine[1]);
   const pr = poly.map(p=>p[0]*d[0]+p[1]*d[1]); const len = Math.max(...pr)-Math.min(...pr);
   prism(ctx,{axis, poly, range, mat:mat||'wood', layer:layer||'framing', name, parent, bom:Object.assign({k:'lum', size, len}, pt?{pt:true}:{})});
 }
@@ -585,8 +593,8 @@ function buildCoop(cfg, ctx){
   /* ---- 3. diagonal braces, toe-screwed at each end ---- */
   ctx.st='braces';
   const bracePT = out;
-  const braceAt=(axis,r,up,range,face,dir,name,isPt)=>{
-    brace(ctx,axis,r,up,range,name,T,F,null,null,null,isPt);
+  const braceAt=(axis,r,up,range,face,dir,name,isPt,topLine)=>{
+    brace(ctx,axis,r,up,range,name,T,F,null,null,null,isPt,topLine);
     /* toe-screw: start on the face 1-1/4" from the end and drive at 45 deg toward the end, out through the end cut into the post or rail */
     const e=braceEnds(r,up), n=FAST_DIRS[dir], c=Math.SQRT1_2;
     for(const [pt,sg] of [[e.A,-1],[e.B,1]]){
@@ -600,7 +608,9 @@ function buildCoop(cfg, ctx){
     braceAt('z',[m1,W-T,yS+T,f1],false,[0,T],0,'-z','Front diagonal brace (leg zone)',bracePT); }
   braceAt('x',[T,L-T,yS+T,f1],true,[0,T],0,'-x','Side diagonal brace (leg zone)',bracePT);
   braceAt('x',[T,L-T,yS+T,f1],false,[W-T,W],W,'x','Side diagonal brace (leg zone)',bracePT);
-  braceAt('x',[T,L-T,f1+T,f2],true,[0,T],0,'-x','Side diagonal brace, run end',false);
+  /* run end: up to the underside of the top side rail, which slopes on the outdoor coop; the top end is cut to match it */
+  { const ra=yTF+slope*T-Tv, rb=-slope;
+    braceAt('x',[T,L-T,f1+T,ra+rb*(L-T)],true,[0,T],0,'-x','Side diagonal brace, run end',false,[ra,rb]); }
 
   /* ---- 4. floor ledgers ---- */
   ctx.st='ledgers';
