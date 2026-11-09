@@ -581,23 +581,23 @@ function buildCoop(cfg, ctx){
   for(const x of along(T,W-T,6,1.5)){ sc('scr158',[x,yLF,T+0.4],'y'); sc('scr158',[x,yLF,L-T-0.4],'y'); }
   for(const z of along(T+lg,L-T-lg,6,1.5)){ sc('scr158',[T+0.4,yLF,z],'y'); sc('scr158',[W-T-0.4,yLF,z],'y'); sc('scr158',[cxm+0.4,yLF,z],'y'); }
 
-  /* ---- 6. divider cleats: 1x2 laid flat on the run side of the centre line ---- */
+  /* ---- 6. divider cleats: 2x2 on the run side of the centre line ---- */
   ctx.st='cleats';
   const pop=[L-T-8.5,L-T-1.5], dtop=z=>plane(z)-Tv-2, cx=[dx0-1.5,dx0];
-  B({...fr,name:'Divider cleat (1×2), on front post',x:cx,y:[yLF,dtop(T)-1],z:[T,T+0.75],bom:lum(dtop(T)-1-yLF,'1x2')});
-  for(const y of along(yLF,dtop(T)-1,6,1.5)) sc('scr158',[dx0-0.75,y,T+0.75],'z');
-  B({...fr,name:'Divider cleat (1×2), on back post',x:cx,y:[yLF,dtop(L-T)-1],z:[L-T-0.75,L-T],bom:lum(dtop(L-T)-1-yLF,'1x2')});
-  for(const y of along(yLF,dtop(L-T)-1,6,1.5)) sc('scr158',[dx0-0.75,y,L-T-0.75],'-z');
-  B({...fr,name:'Divider cleat (1×2), on floor',x:cx,y:[yLF,yLF+0.75],z:[T+0.75,pop[0]-1],bom:lum(pop[0]-1-T-0.75,'1x2')});
-  for(const z of along(T+0.75,pop[0]-1,4,1.25)) sc('scr25',[m0+0.3,yLF+0.75,z],'y');   /* down through cleat and floor into the joist: 2-1/2" bites 1-1/4" into it */
+  B({...fr,name:'Divider cleat (2×2), on front post',x:cx,y:[yLF,dtop(T)-1],z:[T,2*T],bom:lum(dtop(T)-1-yLF)});
+  for(const y of along(yLF,dtop(T)-1,8,2)) sc('scr25',[dx0-0.75,y,2*T],'z');                 /* 2-1/2": 1-1/2" cleat + 1" into the post */
+  B({...fr,name:'Divider cleat (2×2), on back post',x:cx,y:[yLF,dtop(L-T)-1],z:[L-2*T,L-T],bom:lum(dtop(L-T)-1-yLF)});
+  for(const y of along(yLF,dtop(L-T)-1,8,2)) sc('scr25',[dx0-0.75,y,L-2*T],'-z');
+  B({...fr,name:'Divider cleat (2×2), on floor',x:cx,y:[yLF,yLF+T],z:[2*T,pop[0]-1],bom:lum(pop[0]-1-2*T)});
+  for(const z of along(2*T,pop[0]-1,5,1.25)) sc('scr3',[m0+0.25,yLF+T,z],'y');   /* 3": down through cleat and floor, 1" into the joist */
 
   /* ---- 7. divider ---- */
   ctx.st='divider';
   const wp={mat:'ply',layer:'sheathing'};
   P({...wp,name:'Sleeping box divider (pop hole, 2″ air gap at top)',axis:'x',poly:[[T,yLF],[L-T,yLF],[L-T,dtop(L-T)],[T,dtop(T)]],holes:[[[pop[0],yLF],[pop[1],yLF],[pop[1],yLF+8],[pop[0],yLF+8]]],range:[dx0,dx0+tb],bom:Object.assign({k:'ply',th:tb,w:L-2*T,h:dtop(T)-yLF},out?{h2:dtop(L-T)-yLF}:{})});
-  for(const y of along(yLF,dtop(T)-1,6,1.5)) sc('scr158',[dx0+tb,y,T+0.375],'x');
-  for(const y of along(yLF,dtop(L-T)-1,6,1.5)) sc('scr158',[dx0+tb,y,L-T-0.375],'x');
-  for(const z of along(T+0.75,pop[0]-1,4,1.25)) sc('scr158',[dx0+tb,yLF+0.375,z],'x');
+  for(const y of along(yLF,dtop(T)-1,6,1.5)) sc('scr158',[dx0+tb,y,1.5*T],'x');
+  for(const y of along(yLF,dtop(L-T)-1,6,1.5)) sc('scr158',[dx0+tb,y,L-1.5*T],'x');
+  for(const z of along(2*T,pop[0]-1,4,1.25)) sc('scr158',[dx0+tb,yLF+0.75,z],'x');
 
   /* ---- 8. walls (and the porch coop's top) ---- */
   ctx.st='walls';
@@ -750,10 +750,10 @@ const MODELS = {
     layers:[['framing','Framing'],['floors','Floor'],['sheathing','Walls & top'],['mesh','Hardware cloth'],['doors','Doors'],['hardware','Latches & hinges']],
     options:[], compare:null,
     have:[
-      ['#8 deck screws, 3″','Frame joints, middle posts, floor joist and cross rail. Predrill the 2×2.','scr3'],
-      ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls and top, door stops.','scr158'],
+      ['#8 deck screws, 3″','Frame joints, middle posts, floor joist, cross rail and the divider\'s floor cleat. Predrill the 2×2.','scr3'],
+      ['Deck screws, 1⅝″','Ledgers, floor, divider, walls and top, door stops.','scr158'],
       ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple']],
-    uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Posts, rails, floor joist, braces, door frames','1x2':'Floor ledgers, divider cleats, door stops'},
+    uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Posts, rails, floor joist, braces, divider cleats, door frames','1x2':'Floor ledgers, door stops'},
     cfgLabel:s=>'one level, ½″ plywood',
     split:an=>'Two people can carry it by lifting under the floor rails.',
     specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep'],['Height',fFt(g.H+g.tb)],
@@ -766,7 +766,7 @@ const MODELS = {
       ['Add the diagonal braces','Fit braces in the back and both sides of the leg zone, and one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Toe-screw each end: start one 2½″ screw on the outside face about 1¼″ from the end and drive it at about 45° toward the end, so it passes out through the end cut into the post or rail. Predrill at that angle; a 3″ screw would come out the far side.','braces'],
       ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops ½″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
       ['Lay the floor','Cut the floor to 45″ × 21″ and drop it onto the ledgers and joist. Drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist. It finishes flush with the rails.','floor'],
-      ['Fit the divider cleats','On the run side of the centre line, screw three 1×2 cleats, laid flat, with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Drive 1⅝″ screws about every 6″ through the post cleats into the posts, and 2½″ screws down through the floor cleat and floor into the joist.','cleats'],
+      ['Fit the divider cleats','On the run side of the centre line, screw three 2×2 cleats with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Predrill, then drive 2½″ screws about every 8″ through the post cleats into the posts, and 3″ screws down through the floor cleat and floor into the joist, kept ¼″ in from the cleat\'s box-side face so they catch the joist\'s edge.','cleats'],
       ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
       ['Close in the walls and top','Screw ½″ plywood to the back and to the sleeping-box end (the end sheet laps the back sheet\'s edge), then screw the top down onto the top rails and cross rail. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
       ['Staple on the hardware cloth','Cut hardware cloth for the run end and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
@@ -775,7 +775,7 @@ const MODELS = {
       ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge; door-side leaves take #8 × 1¼″ deck screws, which bite ¾″ into the 2×2 door frames without coming through. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with 1¼″ screws on the door side and the supplied screws for each catch on the 2×4.','hang'],
       ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Skip the floor and the hardware cloth, and let the paint cure for a few days before the birds move in.','paint'],
       ['Set it in place','Carry the coop to the porch with the run end away from the wind. On cold days, hang a tarp over the front.','place']],
-    cutNotes:[[/^Divider cleat/,'Laid flat; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],
+    cutNotes:[[/^Divider cleat/,'The divider screws into its 1½″ face'],[/^Door stop/,'Inside the opening; the door closes against it'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
       [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, screwed through the plywood'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top ½″ below the rail tops']],
     notes:(g,an)=>[
@@ -796,11 +796,11 @@ const MODELS = {
     layers:[['framing','Framing'],['floors','Floor'],['sheathing','Wall plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors'],['hardware','Latches & hinges']],
     options:[], compare:null,
     have:[
-      ['#8 deck screws, 3″','Frame joints, middle posts, floor joist and top rails. Predrill the 2×2. Coated deck screws are fine in the pressure-treated posts.','scr3'],
-      ['Deck screws, 1⅝″','Ledgers, floor, divider cleats and divider, walls, roof deck, door stops.','scr158'],
+      ['#8 deck screws, 3″','Frame joints, middle posts, floor joist, top rails and the divider\'s floor cleat. Predrill the 2×2. Coated deck screws are fine in the pressure-treated posts.','scr3'],
+      ['Deck screws, 1⅝″','Ledgers, floor, divider, walls, roof deck, door stops.','scr158'],
       ['Fence staples','Hardware cloth on the run end and run door, every 2–3″.','staple'],
       ['Roofing screws with neoprene washers, 2″','Through the valleys of the steel into the top rails. 1½″ or longer reaches through the steel and the 7/16″ OSB well into the rails.','roof']],
-    uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Rails, floor joist, run-end brace, door frames','1x2':'Floor ledgers, divider cleats, door stops'},
+    uses:{'2x4':'Front and back middle posts, laid flat','2x2':'Rails, floor joist, run-end brace, divider cleats, door frames','1x2':'Floor ledgers, door stops'},
     cfgLabel:s=>'steel roof over OSB',
     split:an=>'',
     specs:g=>[['Overall size',fIn(g.W+g.tb)+' wide × '+fIn(g.L+g.tb)+' deep; roof '+fIn(g.deck[0])+' × 30″'],['Height',fFt(g.roofTop)+' at the front'],
@@ -813,7 +813,7 @@ const MODELS = {
       ['Add the diagonal braces','Fit pressure-treated braces in the front, back and both sides of the leg zone, and an untreated one in the run end above the floor. Hold each piece in its bay, mark both angled ends off the frame and cut. Toe-screw each end: start one 2½″ screw on the outside face about 1¼″ from the end and drive it at about 45° toward the end, so it passes out through the end cut into the post or rail. Predrill at that angle; a 3″ screw would come out the far side.','braces'],
       ['Screw in the floor ledgers','Screw 1×2 ledgers flat against the inside faces of the floor rails, their tops 7/16″ below the rail tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Drive 1⅝″ screws about every 6″ through the ledger into the rail.','ledgers'],
       ['Lay the floor','Cut the OSB floor to 45″ × 21″, seal its edges, and drop it onto the ledgers and joist. Drive 1⅝″ screws about every 6″ around the edges into the ledgers and down the middle into the joist.','floor'],
-      ['Fit the divider cleats','On the run side of the centre line, screw three 1×2 cleats, laid flat, with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Drive 1⅝″ screws about every 6″ through the post cleats into the posts, and 2½″ screws down through the floor cleat and floor into the joist.','cleats'],
+      ['Fit the divider cleats','On the run side of the centre line, screw three 2×2 cleats with their box-side faces 23¾″ from the outside of the run end: one up the back of the front 2×4, one up the front of the back 2×4, and one along the floor over the joist, stopping 1″ short of the pop hole. Predrill, then drive 2½″ screws about every 8″ through the post cleats into the posts, and 3″ screws down through the floor cleat and floor into the joist, kept ¼″ in from the cleat\'s box-side face so they catch the joist\'s edge.','cleats'],
       ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, its top following the roof slope, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
       ['Close in the walls','Screw ½″ plywood to the back and to the sleeping-box end. Both are cut to the roof slope at the top, and the end sheet laps the back sheet\'s edge. Use 1⅝″ screws about every 6″ into the posts, rails and the back 2×4.','walls'],
       ['Screw down the roof deck','Screw the OSB roof deck down so it overhangs 3″ at the front and back, with 1⅝″ screws about every 6″ into the front and back top rails and the three sloped rails. Paint its top face and all its edges before the steel goes on.','roofdeck'],
@@ -824,7 +824,7 @@ const MODELS = {
       ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge; door-side leaves take #8 × 1¼″ deck screws, which bite ¾″ into the 2×2 door frames without coming through. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with 1¼″ screws on the door side and the supplied screws for each catch on the 2×4.','hang'],
       ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
       ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind.','place']],
-    cutNotes:[[/^Divider cleat/,'Laid flat; the divider screws to it'],[/^Door stop/,'Inside the opening; the door closes against it'],
+    cutNotes:[[/^Divider cleat/,'The divider screws into its 1½″ face'],[/^Door stop/,'Inside the opening; the door closes against it'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
       [/^Sleeping box divider/,'7″ × 8″ pop hole notched into the bottom edge, 1½″ from the back edge'],[/^Box door (stile|rail)/,'On the inside face, screwed through the plywood'],[/^End wall/,'Laps the back edge of the back wall'],[/^Floor joist|^Floor ledger/,'Top 7/16″ below the rail tops'],
       [/sloped/,'Both ends cut at 15° to sit flat on the front and back top rails'],[/corner post/,'Pressure-treated; sits on a paver'],
@@ -1064,7 +1064,7 @@ function shopRows(an){
   if(r.underlay) rows.push(['Roofing','#15 roofing felt, 1 roll',1,'About '+Math.ceil(r.underlay.area)+' sq ft needed; the smallest roll is plenty','underlay']);
   for(const [k,v] of Object.entries(an.hw)){ const pk=(PRICE['hw:'+k]||[])[3]||1, uses=Object.entries(v.uses).map(([u,n])=>n>1&&Object.keys(v.uses).length>1?u+' ('+n+')':u).join(', ');
     rows.push(['Hardware', pk>1 ? k+', '+pk+'-pack' : k, Math.ceil(v.qty/pk), pk>1 ? v.qty+' needed: '+uses : uses, 'hw:'+k]); }
-  for(const [id,item,d] of [['scr25','Hillman #10 × 2½″ deck screws, 40-count','Brace ends (toe-screwed), run-door corners and brace, the floor cleat and the run-door threshold.'],['scr114','Hillman #8 × 1¼″ deck screws, 75-count','Hinges and latches (door side), and the box door plywood into its frame. They bite ¾″ into the 2×2 door frames without coming through.']])
+  for(const [id,item,d] of [['scr25','Hillman #10 × 2½″ deck screws, 40-count','Brace ends (toe-screwed), run-door corners and brace, the divider cleats on the posts, and the run-door threshold.'],['scr114','Hillman #8 × 1¼″ deck screws, 75-count','Hinges and latches (door side), and the box door plywood into its frame. They bite ¾″ into the 2×2 door frames without coming through.']])
     if(an.fast[id]!==undefined) rows.push(['Fasteners',item,1,(an.fast[id]?'About '+an.fast[id]+' needed. ':'')+d,'x:'+id]);
   (m.have||[]).forEach(([item,d,fid],i)=>rows.push(['Already have',item,0,(fid&&an.fast[fid]?'About '+an.fast[fid]+' needed. ':'')+d,'have:'+i]));
   return rows;
