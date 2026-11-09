@@ -22,7 +22,6 @@ These are the kinds of mistakes that have already slipped into this model. Check
   - No Phillips wood screws.
   - 1¼″ is the shortest screw available, so any part a hardware screw goes into must be at least 1¼″ thick, counting the ply in front of it.
 - **Joints held by one screw get two 2″ brads first**, so they cannot twist.
-- **No glue.**
 - **Roofing screws go in the valleys** of the corrugated steel, not on the ridges.
 - **Toe-screws** start about 1¼″ from the end and are driven at 45° toward it.
 - **Each hinge and latch screw goes into solid wood behind it**, not into hardware cloth, and never into a door stop: that would screw the door shut.
