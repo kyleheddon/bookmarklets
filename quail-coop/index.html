@@ -331,6 +331,39 @@ const MAT = {
   fast: std('#3b3f44',.4,.7), fastNow: new THREE.MeshStandardMaterial({color:lin('#ffb000'),emissive:lin('#a85c00'),emissiveIntensity:.6,roughness:.35,metalness:.3})
 };
 const EDGED = {wood:1, ply:1, door:1, woodPT:1, plyPT:1, osb:1};
+/* Paint goes on the outside only. Each painted part carries its rest-pose (doors shut) position and normal, in coop
+   coordinates, plus its bare-wood color; a face whose outward side points into the coop's inside space shows bare. */
+const PAINT_U = {uBox:{value:new THREE.Vector4(0,0,0,0)}, uY:{value:new THREE.Vector3(0,0,0)}};
+for(const k of ['trim','siding','doorPaint']) MAT[k].onBeforeCompile = sh=>{
+  Object.assign(sh.uniforms, PAINT_U);
+  sh.vertexShader = 'attribute vec3 restP;\nattribute vec3 restN;\nattribute vec3 bareC;\nvarying vec3 vRP;\nvarying vec3 vRN;\nvarying vec3 vBC;\n'
+    + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n  vRP=restP; vRN=restN; vBC=bareC;');
+  sh.fragmentShader = 'uniform vec4 uBox;\nuniform vec3 uY;\nvarying vec3 vRP;\nvarying vec3 vRN;\nvarying vec3 vBC;\n'
+    + sh.fragmentShader.replace('#include <color_fragment>', `#include <color_fragment>
+  if(length(vRN)>0.1){
+    vec3 q = vRP + normalize(vRN)*0.05;
+    float zlo = abs(vRN.z)>0.5 ? 0.0 : uBox.w;   /* door jambs (faces across the front frame) count as outside */
+    if(q.x>uBox.x && q.x<uBox.y && q.z>zlo && q.z<uBox.z && q.y>uY.x && q.y<uY.y+uY.z*q.z) diffuseColor.rgb = vBC;
+  }`);
+};
+const INSIDE_ONLY = /^(Door stop|Divider cleat|Sleeping box divider|Floor ledger|Floor joist|Box door (stile|rail))/;
+function markPaint(ctx){
+  const I=ctx.interior; if(!I) return;
+  PAINT_U.uBox.value.set(I.x0,I.x1,I.z1,I.zj); PAINT_U.uY.value.set(I.yLo,I.c0,I.c1);
+  const saved=ctx.pivots.map(d=>d.p.rotation[d.axis]); ctx.pivots.forEach(d=>{ d.p.rotation[d.axis]=0; });
+  ctx.root.updateMatrixWorld(true);
+  const inv=new THREE.Matrix4().copy(ctx.root.matrixWorld).invert(), M=new THREE.Matrix4(), N=new THREE.Matrix3(), v=new THREE.Vector3();
+  ctx.parts.forEach(m=>{ const u=m.userData;
+    if(u.paintMat===u.rawMat) return;
+    if(INSIDE_ONLY.test(u.name||'')){ u.paintMat=u.rawMat; m.children.forEach(c=>{ if(c.isLineSegments) c.userData.painted=false; }); return; }
+    const g=m.geometry, P=g.attributes.position, Nn=g.attributes.normal, n=P.count;
+    M.multiplyMatrices(inv,m.matrixWorld); N.getNormalMatrix(M);
+    const rp=new Float32Array(n*3), rn=new Float32Array(n*3), bc=new Float32Array(n*3), c=u.rawMat.color;
+    for(let i=0;i<n;i++){ v.fromBufferAttribute(P,i).applyMatrix4(M); rp.set([v.x,v.y,v.z],i*3);
+      v.fromBufferAttribute(Nn,i).applyMatrix3(N).normalize(); rn.set([v.x,v.y,v.z],i*3); bc.set([c.r,c.g,c.b],i*3); }
+    g.setAttribute('restP',new THREE.BufferAttribute(rp,3)); g.setAttribute('restN',new THREE.BufferAttribute(rn,3)); g.setAttribute('bareC',new THREE.BufferAttribute(bc,3)); });
+  ctx.pivots.forEach((d,i)=>{ d.p.rotation[d.axis]=saved[i]; }); ctx.root.updateMatrixWorld(true);
+}
 const PAINT_EDGE = new THREE.LineBasicMaterial({color:0x3a4250, transparent:true, opacity:.28});
 const EDGE_MAT = new THREE.LineBasicMaterial({color:0x4a3016, transparent:true, opacity:.38});
 
@@ -713,6 +746,8 @@ function buildCoop(cfg, ctx){
   insetLatch(ctx,BR,bdw,ri+0.75,-1,'scr114',true);            /* along the box door's bottom rail */
 
   ctx.st='paint';
+  /* the coop's inside space, for outside-only paint: run end to box-end wall, front frame (jambs excluded) to back wall, floor to the underside of the top or roof deck */
+  ctx.interior={x0:0,x1:W,z1:L,zj:T,yLo:yLF,c0:yTF+slope*T+0.01,c1:-slope};
   ctx.g={single:!out,W,L,tb,tf,H:yTB,yLF,yTF,yTB,f1,udw,udh,bdw,roofTop,deck:[W+2*tb,Lr],
     lowerClear:f2-yLF, clearFront:top-yLF, clearBack:yTB-T-yLF, pitch:Math.atan(slope)*180/Math.PI, pitch12:12*slope,
     box:[W-T-dx0-tb, L-2*T, dtop(L/2)-yLF], runArea:(dx0-T)*(L-2*T)/144, boxArea:(W-T-dx0-tb)*(L-2*T)/144};
@@ -796,7 +831,7 @@ const MODELS = {
       ['Staple on the hardware cloth','Cut hardware cloth for the run end and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
       ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 2×2 frame, tacked with two brads and then joined with one 2½″ screw through each stile into each rail end; a 2×2 diagonal brace rising from the bottom hinge corner, toe-screwed at each end with a 2½″ screw; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 2×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), all set ¾″ in from the edges so they clear the stops: the rails stop ¾″ short of the latch edge and the stile ¾″ short of the top and bottom. Fasten them with 1¼″ screws through the plywood into the frame about every 6″.','doors'],
       ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge; door-side leaves take #8 × 1¼″ deck screws, which bite ¾″ into the 2×2 door frames without coming through. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with 1¼″ screws on the door side and the supplied screws for each catch on the 2×4. On the box door, leave out the latch guide\'s two screws nearest the door edge: they would land over the stop and screw the door shut. The two inner guide screws and the bar\'s screws hold it.','hang'],
-      ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Skip the floor and the hardware cloth, and let the paint cure for a few days before the birds move in.','paint'],
+      ['Paint','Prime and paint everything that shows outside white: the frame, both doors, the walls and the top. Leave the inside bare (the inside faces of the walls, top, frame and doors, plus the divider, cleats and door stops), and skip the hardware cloth, and let the paint cure for a few days before the birds move in.','paint'],
       ['Set it in place','Carry the coop to the porch with the run end away from the wind. On cold days, hang a tarp over the front.','place']],
     cutNotes:[[/^Divider cleat/,'The divider screws into its 1½″ face'],[/^Door stop/,'Inside the opening; the door closes against it'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
@@ -846,7 +881,7 @@ const MODELS = {
       ['Staple on the hardware cloth','Cut hardware cloth for the run end, top edge cut to the roof slope, and staple it to the outside of the posts and rails, pulled tight, a fence staple every 2–3″ along every edge and across the brace.','mesh'],
       ['Build the doors','Measure each opening and build its door ⅛″ smaller all round. Run door: a 2×2 frame, tacked with two brads and then joined with one 2½″ screw through each stile into each rail end; a 2×2 diagonal brace rising from the bottom hinge corner, toe-screwed at each end with a 2½″ screw; hardware cloth stapled across the back every 2–3″. Box door: ½″ plywood with a 2×2 frame on its inside face (a stile on the hinge side and rails across the top and bottom), all set ¾″ in from the edges so they clear the stops: the rails stop ¾″ short of the latch edge and the stile ¾″ short of the top and bottom. Fasten them with 1¼″ screws through the plywood into the frame about every 6″.','doors'],
       ['Hang the doors','Hang each door on two hinges screwed flat across the gap. Post-side leaves take the screws supplied with the hinge; door-side leaves take #8 × 1¼″ deck screws, which bite ¾″ into the 2×2 door frames without coming through. Mount the run door\'s latch along its top rail and the box door\'s along its bottom rail, with 1¼″ screws on the door side and the supplied screws for each catch on the 2×4. On the box door, leave out the latch guide\'s two screws nearest the door edge: they would land over the stop and screw the door shut. The two inner guide screws and the bar\'s screws hold it.','hang'],
-      ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
+      ['Paint','Prime and paint the outside to match the house: the frame and the run door white, the plywood walls slate blue, the sleeping-box door red-brown. Seal every OSB edge. Leave the inside bare: the inside faces of the walls, frame and doors, plus the divider, cleats and door stops. Paint the pressure-treated legs, stretchers and braces too once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
       ['Set it in place','Set the four legs on pavers or patio blocks, not soil, with the run end away from the prevailing wind.','place']],
     cutNotes:[[/^Divider cleat/,'The divider screws into its 1½″ face'],[/^Door stop/,'Inside the opening; the door closes against it'],
       [/door diagonal/,'Angled ends: mark off the door frame'],[/diagonal brace/,'Angled ends: mark off the frame'],
@@ -922,7 +957,7 @@ function rebuild(){
   holder.children.slice().forEach(c=>{ c.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); holder.remove(c); });
   const root=new THREE.Group(); root.rotation.y=Math.PI;
   const ctx={dry:false,root,parts:[],bom:[],pivots:[],paintAll:M().paintAll}; M().build(M().state,ctx);
-  root.position.set(ctx.g.W/2,0,ctx.g.L/2); holder.add(root);
+  root.position.set(ctx.g.W/2,0,ctx.g.L/2); holder.add(root); holder.updateMatrixWorld(true); markPaint(ctx);
   person.position.set(-(ctx.g.W/2+18),0,ctx.g.L/2-6);   /* beside the front corner, toward the camera */
   current=ctx; current.an=analyze(ctx.bom, M().fasten);
   const rules=M().stepRules||[], keys=M().steps.map(st=>st[2]);
