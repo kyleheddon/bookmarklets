@@ -1035,7 +1035,7 @@ MODELS.rim = (()=>{
     ['Paint','Prime and paint the outside to match the house: the frame, legs, roof frame and run door white, the plywood walls and lid slate blue, the sleeping-box door red-brown. Leave the inside bare. Paint the pressure-treated legs and knee braces once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
     keep('place')];
   return Object.assign({},o,{
-    tab:'Outdoor coop, 2×4 base', title:'Four-Quail Coop: Box on a 2×4 Stand',
+    tab:'Outdoor coop', title:'Four-Quail Coop: Box on a 2×4 Stand',
     lede:'A 24″-tall coop box on a 2×4 floor rim, between four pressure-treated 2×4 legs that run up past it to carry a steel shed roof. The coop is 3 ft deep and the sleeping box is 18″ wide. The floor is hardware cloth throughout. The sleeping box is plywood on its back, end and top; the run is hardware cloth on its end, back and top. The roof is steel on 2×2 purlins. Two front doors, each with a gate latch and a locking carabiner.',
     build:(cfg,ctx)=>buildCoop(Object.assign({},cfg,{outdoor:true,rim:true}),ctx),
     layers:[['framing','Framing'],['sheathing','Box plywood'],['mesh','Hardware cloth'],['roofing','Roofing'],['doors','Doors'],['hardware','Latches & hinges']],
@@ -1068,7 +1068,8 @@ MODELS.rim = (()=>{
   });
 })();
 delete MODELS.porch;   /* the porch coop tab was retired */
-let MK = 'outdoor';
+delete MODELS.outdoor; /* so was the original outdoor coop; it stays above only as the base the 2x4-stand coop is built from */
+let MK = 'rim';
 const M = () => MODELS[MK];
 const runtime = {open:false};
 for(const k in MODELS){ MODELS[k].layerState={}; MODELS[k].layers.forEach(([l])=>MODELS[k].layerState[l]=true); }
@@ -1188,7 +1189,7 @@ $('#kpiWeight').addEventListener('click',()=>{ $('#weightCard').scrollIntoView({
 
 /* ---------- UI ---------- */
 /* tab order: the first tab is the default */
-const TAB_ORDER=['outdoor','rim'];
+const TAB_ORDER=['rim'];
 function renderModelTabs(){
   $('#models').innerHTML=TAB_ORDER.map(k=>[k,MODELS[k]]).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b></button>`).join('');
 }
