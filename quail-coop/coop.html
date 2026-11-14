@@ -536,10 +536,11 @@ function ramp(ctx, o){
    Porch: flat plywood top, untreated. Outdoor: 6" higher front, OSB roof deck with steel, pressure-treated legs. ---------- */
 function buildCoop(cfg, ctx){
   const out=!!cfg.outdoor, rim=!!cfg.rim;   /* rim: 2x4 legs and floor rim joists instead of 2x2 posts-as-legs, stretchers and floor rails */
-  const T=1.5, W=48, L=24, tb=0.5, tf=out?0.4375:0.5, F='2x2', g8=0.125, ft=0.75;
+  const T=1.5, W=48, L=24, tb=0.5, tf=(out&&!rim)?0.4375:0.5, F='2x2', g8=0.125, ft=0.75;
   const m0=(W-T)/2, m1=(W+T)/2, pm0=W/2-1.75, pm1=W/2+1.75, cxm=W/2;   /* 2x2 middle members; 2x4 posts laid flat */
   const lift=out?18:0;   /* outdoor: longer legs put the top of the roof at 6 ft */
-  const yS=3, f1=18+lift, f2=44+lift, rise=out?6:0;
+  /* rim: a 24" box on the base, with the roof on the legs above it (6" clear at the back, 12" at the front) */
+  const yS=3, f1=rim?30.5:18+lift, f2=44+lift, rise=out?6:0;
   const yLF=f1+T, yTF=f2+rise+T, yTB=f2+T;                             /* floor top; tops of the front and back top rails */
   const slope=rise/(L-T), cosA=1/Math.hypot(1,slope), sinA=slope*cosA, Tv=T/cosA;
   const plane=z=>yTF-slope*(z-T), wallTop=z=>yTF-rise*z/L;
@@ -548,27 +549,27 @@ function buildCoop(cfg, ctx){
   const fr={mat:'wood',layer:'framing'};
   const B=o=>box(ctx,o), P=o=>prism(ctx,o), sc=(it,p,d,par)=>fast(ctx,it,p,d,par);
   const yR0=yLF-3.5, yFB=rim?yR0:f1;                                     /* rim joist bottom; bottom edge of the floor frame (walls and mesh start here) */
-  const top=yTF-T, ft0=f1+T-tf, dx0=cxm-tb/2;                          /* door-opening top; ledger tops; run-side face of the divider */
+  const boxTop=yLF+24;                                                    /* rim: top of the enclosure */
+  const top=(rim?boxTop:yTF)-T, ft0=f1+T-tf, dx0=cxm-tb/2;                          /* door-opening top; ledger tops; run-side face of the divider */
   ctx.mod='coop';
 
   /* ---- 1. front and back frames ---- */
   ctx.st='frames';
   if(rim){
-    /* 2x2 corner posts stop at the bottom of the 2x4 rim joists; the rims fit between them */
-    for(const xs of [[0,T],[W-T,W]]){
-      B({...fr,name:'Front corner post',x:xs,y:[yR0,yTF],z:[0,T],bom:lum(yTF-yR0)});
-      B({...fr,name:'Back corner post',x:xs,y:[yR0,yTB],z:[L-T,L],bom:lum(yTB-yR0)}); }
+    /* the box: 2x2 corner posts from the bottom of the 2x4 rim joists to the box top; the rims fit between them */
+    for(const xs of [[0,T],[W-T,W]]) for(const z0 of [0,L-T])
+      B({...fr,name:(z0?'Back':'Front')+' corner post',x:xs,y:[yR0,boxTop],z:[z0,z0+T],bom:lum(boxTop-yR0)});
     for(const [z0,nm] of [[0,'Rim joist, front (2×4 on edge)'],[L-T,'Rim joist, back (2×4 on edge)']]){
       B({...fr,name:nm,x:[T,W-T],y:[yR0,yLF],z:[z0,z0+T],bom:lum(W-2*T,'2x4')});
       for(const y of [yR0+0.7,yR0+2.8]){ sc('scr3',[0,y,z0+0.75],'-x'); sc('scr3',[W,y,z0+0.75],'x'); } }
-    for(const [y0,z0,nm] of [[yTF-T,0,'Top rail, front (high side)'],[yTB-T,L-T,'Top rail, back (low side)']]){
-      B({...fr,name:nm,x:[T,W-T],y:[y0,y0+T],z:[z0,z0+T],bom:lum(W-2*T)});
-      sc('scr3',[0,y0+1.0,z0+0.75],'-x'); sc('scr3',[W,y0+1.0,z0+0.75],'x'); }
+    for(const [z0,nm] of [[0,'Box top rail, front'],[L-T,'Box top rail, back']]){
+      B({...fr,name:nm,x:[T,W-T],y:[boxTop-T,boxTop],z:[z0,z0+T],bom:lum(W-2*T)});
+      sc('scr3',[0,boxTop-1.0,z0+0.75],'-x'); sc('scr3',[W,boxTop-1.0,z0+0.75],'x'); }
     const tc=[0,0.6,0.8], tcb=[0,0.6,-0.8];   /* toe-screws: the 2x4 posts stand on the rim's top edge */
     B({...fr,name:'Front middle post (2×4 laid flat)',x:[pm0,pm1],y:[yLF,top],z:[0,T],bom:lum(top-yLF,'2x4')});
-    for(const x of [pm0+0.9,pm1-0.9]){ sc('scr3',[x,yTF,0.75],'y'); sc('scr25',[x,yLF+1.25,T],tc); }
-    B({...fr,name:'Back middle post (2×4 laid flat)',x:[pm0,pm1],y:[yLF,yTB-T],z:[L-T,L],bom:lum(yTB-T-yLF,'2x4')});
-    for(const x of [pm0+0.9,pm1-0.9]){ sc('scr3',[x,yTB,L-0.75],'y'); sc('scr25',[x,yLF+1.25,L-T],tcb); }
+    for(const x of [pm0+0.9,pm1-0.9]){ sc('scr3',[x,boxTop,0.75],'y'); sc('scr25',[x,yLF+1.25,T],tc); }
+    B({...fr,name:'Back middle post (2×4 laid flat)',x:[pm0,pm1],y:[yLF,top],z:[L-T,L],bom:lum(top-yLF,'2x4')});
+    for(const x of [pm0+0.9,pm1-0.9]){ sc('scr3',[x,boxTop,L-0.75],'y'); sc('scr25',[x,yLF+1.25,L-T],tcb); }
   } else {
   for(const xs of [[0,T],[W-T,W]]){
     B({...fr,name:'Front corner post'+(out?' (pressure-treated, doubles as leg)':' (doubles as leg)'),x:xs,y:[0,yTF],z:[0,T],bom:ptl(yTF)});
@@ -604,10 +605,17 @@ function buildCoop(cfg, ctx){
     for(const xs of [[0,T],[W-T,W]]){ B({...fr,name:nm,x:xs,y:[y0,y0+T],z:[T,L-T],bom:(isPt?ptl:lum)(L-2*T)});
       const xc=(xs[0]+xs[1])/2; sc('scr3',[xc,y0+0.5,0],'-z'); sc('scr3',[xc,y0+0.5,L],'z'); }     /* low, so they miss the front/back rail screws */
   const sl=(z0,z1)=>[[z0,plane(z0)],[z1,plane(z1)],[z1,plane(z1)-Tv],[z0,plane(z0)-Tv]];
+  if(rim){   /* box top: side rails and a middle cross rail, flush with the front and back box top rails */
+    for(const xs of [[0,T],[W-T,W]]){ B({...fr,name:'Box top rail, side',x:xs,y:[boxTop-T,boxTop],z:[T,L-T],bom:lum(L-2*T)});
+      const xc=(xs[0]+xs[1])/2; sc('scr3',[xc,boxTop-1.2,0],'-z'); sc('scr3',[xc,boxTop-1.2,L],'z'); }
+    B({...fr,name:'Box top cross rail',x:[m0,m1],y:[boxTop-T,boxTop],z:[T,L-T],bom:lum(L-2*T)});
+    sc('scr3',[cxm,boxTop-0.75,0],'-z'); sc('scr3',[cxm,boxTop-0.75,L],'z');
+  } else {
   for(const xs of [[0,T],[W-T,W]]){ P({...fr,name:out?'Top side rail (sloped)':'Top rail (sides)',axis:'x',poly:sl(T,L-T),range:xs,bom:lum((L-2*T)/cosA)});
     const xc=(xs[0]+xs[1])/2; sc('scr3',[xc,plane(T)-Tv+0.5,0],'-z'); sc('scr3',[xc,plane(L-T)-Tv+0.5,L],'z'); }
   P({...fr,name:out?'Top middle rail (sloped)':'Top cross rail',axis:'x',poly:sl(T,L-T),range:[m0,m1],bom:lum((L-2*T)/cosA)});
   sc('scr3',[cxm,yTF-0.75,0],'-z'); sc('scr3',[cxm,yTB-0.75,L],'z');
+  }
   B({...fr,name:'Floor joist',x:[m0,m1],y:[f1-tf,f1+T-tf],z:[T,L-T],bom:lum(L-2*T)});
   sc('scr3',[cxm+0.4,f1+0.5,0],'-z'); sc('scr3',[cxm+0.4,f1+0.5,L],'z');
 
@@ -625,22 +633,22 @@ function buildCoop(cfg, ctx){
       sc('scr25', axis==='z' ? [u,v,face] : [face,v,u], [n[0]*c-tE[0]*c, n[1]*c-tE[1]*c, n[2]*c-tE[2]*c]); }
   };
   if(rim){
-    /* pressure-treated 2x4 legs inside each corner, 3-1/2" face against the front or back rim, tops under the floor */
-    const LW=3.5, kd=8, v1=ft0-T, a=v1-kd, bw=LW*Math.SQRT2, c=Math.SQRT1_2;
-    for(const [lx,sx] of [[[T,T+LW],1],[[W-T-LW,W-T],-1]]) for(const [lz,sz] of [[[T,2*T],1],[[L-2*T,L-T],-1]]){
-      B({...fr,name:'Leg (2×4, pressure-treated)',x:lx,y:[0,ft0],z:lz,bom:ptl(ft0,'2x4')});
-      const zf=sz>0?0:L, df=sz>0?'-z':'z', xs0=sx>0?0:W, ds=sx>0?'-x':'x';
-      for(const x of [lx[0]+0.9,lx[1]-0.9]) for(const y of [yR0+1.3,yR0+2.2]) sc('scr25',[x,y,zf],df);   /* through the front/back rim into the leg's face */
-      sc('scr3',[xs0,yR0+1.75,(lz[0]+lz[1])/2],ds);                                                    /* through the side rim into the leg's end */
-      /* two 45-degree knee braces per leg: one against the front/back rim, one against the side rim */
-      const kb=(axis,u0,s,range,inner,nIn,outer,dOut)=>{
-        P({...fr,name:'Knee brace (2×4, 45°, pressure-treated)',axis,poly:[[u0,a],[u0+s*(v1-a),v1],[u0+s*(v1-a-bw),v1],[u0,a+bw]],range,bom:ptl(kd*Math.SQRT2,'2x4')});
-        const at=(u,v,w)=>axis==='z'?[u,v,w]:[w,v,u], vec=(du,dv,dw)=>axis==='z'?[du,dv,dw]:[dw,dv,du];
-        const t=vec(-s*c,-c,0), n=nIn; sc('scr25',at(u0+s*1.3,a+2.6,inner),[n[0]*c-t[0]*c,n[1]*c-t[1]*c,n[2]*c-t[2]*c]);   /* toe-screw into the leg */
-        for(const du of [kd-4.6,kd-2.3]) sc('scr25',at(u0+s*du,v1-0.75,outer),dOut);   /* through the rim into the top end, where it laps the rim */
+    /* pressure-treated 2x4 legs outside the two ends, 3-1/2" face against the side rim and corner post, ground to roof */
+    const LW=3.5, bw=LW*Math.SQRT2, c=Math.SQRT1_2;
+    for(const sx of [1,-1]) for(const sz of [1,-1]){
+      const lx=sx>0?[-T,0]:[W+tb,W+tb+T], lz=sz>0?[0,LW]:[L-LW,L], yt=sz>0?yTF:yTB, xo=sx>0?-T:W+tb+T, dO=sx>0?'-x':'x', it=sx>0?'scr25':'scr3';
+      B({...fr,name:'Leg (2×4, pressure-treated)',x:lx,y:[0,yt],z:lz,bom:ptl(yt,'2x4')});
+      for(const z of (sz>0?[2.1,3.0]:[L-3.0,L-2.1])) for(const y of [yR0+0.9,yR0+2.6]) sc(it,[xo,y,z],dO);   /* into the side rim */
+      for(const y of [yLF+3,(yLF+boxTop)/2,boxTop-3]) sc(it,[xo,y,sz>0?0.75:L-0.75],dO);                    /* into the corner post */
+      const kb=(axis,u0,s,range,kd,v1,face,nOut,topToe)=>{
+        const a=v1-kd, at=(u,v)=>axis==='z'?[u,v,face]:[face,v,u], vec=(du,dv,dw)=>axis==='z'?[du,dv,dw]:[dw,dv,du];
+        P({...fr,name:'Knee brace (2×4, 45°, pressure-treated)',axis,poly:[[u0,a],[u0+s*kd,v1],[u0+s*(kd-bw),v1],[u0,a+bw]],range,bom:ptl(kd*Math.SQRT2,'2x4')});
+        const n=nOut, tb0=vec(-s*c,-c,0); sc('scr25',at(u0+s*1.3,a+2.6),[n[0]*c-tb0[0]*c,n[1]*c-tb0[1]*c,n[2]*c-tb0[2]*c]);   /* toe-screw into the leg */
+        if(topToe) sc('scr25',at(u0+s*(kd-3.7),v1-1.25),[n[0]*c,n[1]*c-c,n[2]*c]);                                       /* toe-screw up into the rim */
+        else for(const du of [kd-4.6,kd-2.3]) sc(sx>0?'scr25':'scr3',at(u0+s*du,v1-1.0),n);                              /* through the brace into the side rim */
       };
-      kb('z',sx>0?T+LW:W-T-LW,sx,lz,sz>0?2*T:L-2*T,[0,0,sz],zf,df);
-      kb('x',sz>0?2*T:L-2*T,sz,sx>0?[T,2*T]:[W-2*T,W-T],sx>0?2*T:W-2*T,[sx,0,0],xs0,ds);
+      kb('z',sx>0?0:W+tb,sx,sz>0?[0,T]:[L-T,L],12,yR0,sz>0?0:L,[0,0,sz>0?-1:1],true);       /* under the front/back rim, in its plane */
+      kb('x',sz>0?LW:L-LW,sz,lx,8,yLF,xo,[sx>0?-1:1,0,0],false);                            /* against the side rim, in the leg's plane */
     }
   } else {
   braceAt('z',[T,m0,yS+T,f1],true,[L-T,L],L,'z','Back diagonal brace (leg zone)',bracePT);
@@ -652,13 +660,13 @@ function buildCoop(cfg, ctx){
   braceAt('x',[T,L-T,yS+T,f1],false,[W-T,W],W,'x','Side diagonal brace (leg zone)',bracePT);
   }
   /* run end: up to the underside of the top side rail, which slopes on the outdoor coop; the top end is cut to match it */
-  { const ra=yTF+slope*T-Tv, rb=-slope;
-    braceAt('x',[T,L-T,f1+T,ra+rb*(L-T)],true,[0,T],0,'-x','Side diagonal brace, run end',false,[ra,rb]); }
+  { const ra=rim?boxTop-T:yTF+slope*T-Tv, rb=rim?0:-slope, st0=ctx.st; if(rim) ctx.st='join';
+    braceAt('x',[T,L-T,f1+T,ra+rb*(L-T)],true,[0,T],0,'-x','Side diagonal brace, run end',false,[ra,rb]); ctx.st=st0; }
 
   /* ---- 4. floor ledgers ---- */
   ctx.st='ledgers';
   const lg=T, lh=T;   /* 2x2 ledgers: the floor screws land in a 1-1/2" face */
-  const lx0=rim?T+3.5:T;   /* rim: the legs take the corners */
+  const lx0=T;
   for(const [zs,face,dir] of [[[T,T+lg],T+lg,'z'],[[L-T-lg,L-T],L-T-lg,'-z']]) for(const xs of [[lx0,m0],[m1,W-lx0]]){
     B({...fr,name:'Floor ledger (2×2)',x:xs,y:[ft0-lh,ft0],z:zs,bom:lum(m0-lx0)});
     for(const x of along(xs[0],xs[1],8,1.5)) sc('scr25',[x,ft0-0.75,face],dir); }
@@ -668,13 +676,13 @@ function buildCoop(cfg, ctx){
 
   /* ---- 5. floor ---- */
   ctx.st='floor';
-  P({mat:out?'osb':'ply',layer:'floors',name:out?'Floor (OSB)':'Floor',axis:'y',poly:[[T,T],[W-T,T],[W-T,L-T],[T,L-T]],range:[ft0,yLF],bom:Object.assign({k:'ply',th:tf,w:W-2*T,h:L-2*T},out?{osb:true}:{})});
+  P({mat:(out&&!rim)?'osb':'ply',layer:'floors',name:rim?'Floor (pressure-treated plywood)':out?'Floor (OSB)':'Floor',axis:'y',poly:[[T,T],[W-T,T],[W-T,L-T],[T,L-T]],range:[ft0,yLF],bom:Object.assign({k:'ply',th:tf,w:W-2*T,h:L-2*T},rim?{pt:true}:out?{osb:true}:{})});
   for(const x of along(T,W-T,6,1.5)){ sc('scr158',[x,yLF,T+0.75],'y'); sc('scr158',[x,yLF,L-T-0.75],'y'); }
   for(const z of along(T+lg,L-T-lg,6,1.5)){ sc('scr158',[T+0.75,yLF,z],'y'); sc('scr158',[W-T-0.75,yLF,z],'y'); sc('scr158',[cxm+0.4,yLF,z],'y'); }
 
   /* ---- 6. divider cleats: 2x2 on the run side of the centre line ---- */
   ctx.st='cleats';
-  const pop=[L-T-8.5,L-T-1.5], dtop=z=>plane(z)-Tv-2, cx=[dx0-1.5,dx0];
+  const pop=[L-T-8.5,L-T-1.5], dtop=z=>rim?boxTop-T-2:plane(z)-Tv-2, cx=[dx0-1.5,dx0];
   B({...fr,name:'Divider cleat (2×2), on front post',x:cx,y:[yLF,dtop(T)-1],z:[T,2*T],bom:lum(dtop(T)-1-yLF)});
   for(const y of along(yLF,dtop(T)-1,8,2)) sc('scr25',[dx0-0.75,y,2*T],'z');                 /* 2-1/2": 1-1/2" cleat + 1" into the post */
   B({...fr,name:'Divider cleat (2×2), on back post',x:cx,y:[yLF,dtop(L-T)-1],z:[L-2*T,L-T],bom:lum(dtop(L-T)-1-yLF)});
@@ -716,14 +724,19 @@ function buildCoop(cfg, ctx){
 
   /* ---- 8. walls (and the porch coop's top) ---- */
   ctx.st='walls';
-  const backTop = out ? plane(L+tb) : yTB;
+  const backTop = rim ? boxTop : out ? plane(L+tb) : yTB, yWT = rim ? boxTop : yTB;   /* yWT: top of the wall framing */
   B({...wp,name:'Back wall (plywood)',x:[0,W],y:[yFB,backTop],z:[L,L+tb],bom:{k:'ply',th:tb,w:W,h:backTop-yFB}});
-  for(const x of [0.75,W-0.75,cxm]) for(const y of along(x===cxm?yLF:yFB,x===cxm?yTB-T:backTop,6,1)) sc('scr158',[x,y,L+tb],'z');
-  for(const y of [yFB+0.75,yTB-0.75]) for(const x of along(0,W,6,3.5)) if(Math.abs(x-cxm)>2) sc('scr158',[x,y,L+tb],'z');
-  if(out) P({...wp,name:'End wall, sleeping-box end (plywood)',axis:'x',poly:[[0,yFB],[L+tb,yFB],[L+tb,wallTop(L+tb)],[0,wallTop(0)]],range:[W,W+tb],bom:{k:'ply',th:tb,w:L+tb,h:wallTop(0)-yFB,h2:wallTop(L+tb)-yFB}});
+  for(const x of [0.75,W-0.75,cxm]) for(const y of along(x===cxm?yLF:yFB,x===cxm?yWT-T:backTop,6,1)) sc('scr158',[x,y,L+tb],'z');
+  for(const y of [yFB+0.75,yWT-0.75]) for(const x of along(0,W,6,3.5)) if(Math.abs(x-cxm)>2) sc('scr158',[x,y,L+tb],'z');
+  if(rim) B({...wp,name:'End wall, sleeping-box end (plywood)',x:[W,W+tb],y:[yFB,boxTop],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:boxTop-yFB}});
+  else if(out) P({...wp,name:'End wall, sleeping-box end (plywood)',axis:'x',poly:[[0,yFB],[L+tb,yFB],[L+tb,wallTop(L+tb)],[0,wallTop(0)]],range:[W,W+tb],bom:{k:'ply',th:tb,w:L+tb,h:wallTop(0)-yFB,h2:wallTop(L+tb)-yFB}});
   else B({...wp,name:'End wall, sleeping-box end (plywood)',x:[W,W+tb],y:[f1,yTB],z:[0,L+tb],bom:{k:'ply',th:tb,w:L+tb,h:yTB-f1}});
-  for(const z of [0.75,L-0.75]) for(const y of along(yFB,z<1?yTF:yTB,6,1)) sc('scr158',[W+tb,y,z],'x');
-  for(const z of along(T,L-T,6,2)){ sc('scr158',[W+tb,yFB+0.75,z],'x'); sc('scr158',[W+tb,plane(z)-Tv/2,z],'x'); }
+  for(const z of [0.75,L-0.75]) for(const y of along(yFB,rim?boxTop:z<1?yTF:yTB,6,1)) sc('scr158',[W+tb,y,z],'x');
+  for(const z of along(T,L-T,6,2)){ sc('scr158',[W+tb,yFB+0.75,z],'x'); sc('scr158',[W+tb,rim?boxTop-0.75:plane(z)-Tv/2,z],'x'); }
+  if(rim){   /* plywood lid over the sleeping-box half; the run half gets hardware cloth */
+    B({...wp,name:'Box top, sleeping-box half (plywood)',x:[cxm,W+tb],y:[boxTop,boxTop+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W+tb-cxm,h:L+tb}});
+    for(const z of [0.75,L-0.75]) for(const x of along(cxm,W,6,1)) sc('scr158',[x,boxTop+tb,z],'y');
+    for(const x of [cxm+0.4,W-0.75]) for(const z of along(T,L-T,6,2)) sc('scr158',[x,boxTop+tb,z],'y'); }
   if(!out){
     B({...wp,name:'Top (plywood)',x:[0,W+tb],y:[yTB,yTB+tb],z:[0,L+tb],bom:{k:'ply',th:tb,w:W+tb,h:L+tb}});
     for(const z of [0.75,L-0.75]) for(const x of along(0,W,6,1)) sc('scr158',[x,yTB+tb,z],'y');
@@ -732,35 +745,54 @@ function buildCoop(cfg, ctx){
 
   /* ---- 9-10. outdoor roof: OSB deck, then steel ---- */
   let roofTop=yTB+tb, Lr=0;
+  if(rim){   /* roof frame on the legs, above the box: 2x2 front and back rails between the legs, three sloped rafters */
+    ctx.st='roofframe';
+    const xr=[0,W+tb], sl=(z0,z1)=>[[z0,plane(z0)],[z1,plane(z1)],[z1,plane(z1)-Tv],[z0,plane(z0)-Tv]];
+    for(const [y0,z0,nm] of [[yTF-T,0,'Roof rail, front (high side)'],[yTB-T,L-T,'Roof rail, back (low side)']]){
+      B({...fr,name:nm,x:xr,y:[y0,y0+T],z:[z0,z0+T],bom:lum(xr[1]-xr[0])});
+      sc('scr3',[-T,y0+0.75,z0+0.75],'-x'); sc('scr3',[W+tb+T,y0+0.75,z0+0.75],'x'); }
+    const rc=(xr[0]+xr[1])/2;
+    for(const [xs,nm] of [[[0,T],'Rafter, side (sloped)'],[[W+tb-T,W+tb],'Rafter, side (sloped)'],[[rc-T/2,rc+T/2],'Rafter, middle (sloped)']]){
+      P({...fr,name:nm,axis:'x',poly:sl(T,L-T),range:xs,bom:lum((L-2*T)/cosA)});
+      const xc=(xs[0]+xs[1])/2; sc('scr3',[xc,plane(T)-Tv+0.5,0],'-z'); sc('scr3',[xc,plane(L-T)-Tv+0.5,L],'z');
+      if(nm!=='Rafter, middle (sloped)') for(const z of [2.5,L-2.5]) sc('scr25',[xs[0]<1?-T:W+tb+T,plane(z)-Tv/2,z],xs[0]<1?'-x':'x');   /* through the leg into the rafter */
+    }
+    fastN(ctx,'brad',2*ctx.bom.filter(b=>b.k==='fast'&&b.step===ctx.st&&b.item==='scr3').length);
+  }
   if(out){
     ctx.st='roofdeck';
-    const oh=3, zA=-oh, zB=L+oh, td=tf; Lr=(zB-zA)/cosA;
+    const oh=3, zA=-oh, zB=L+oh, td=0.4375; Lr=(zB-zA)/cosA;
+    const dx0r=rim?-T:-tb, dx1r=rim?W+tb+T:W+tb, dcx=(dx0r+dx1r)/2;   /* rim: the deck covers the legs too */
     const SP=(u,v)=>[zA+u*cosA+v*sinA, plane(zA)-u*sinA+v*cosA], uAt=z=>(z-zA)/cosA, nrm=[0,cosA,sinA];
-    P({mat:'osb',layer:'roofdeck',name:'Roof deck (OSB)',axis:'x',poly:[SP(0,0),SP(Lr,0),SP(Lr,td),SP(0,td)],range:[-tb,W+tb],bom:{k:'ply',th:td,w:W+2*tb,h:Lr,osb:true}});
+    P({mat:'osb',layer:'roofdeck',name:'Roof deck (OSB)',axis:'x',poly:[SP(0,0),SP(Lr,0),SP(Lr,td),SP(0,td)],range:[dx0r,dx1r],bom:{k:'ply',th:td,w:dx1r-dx0r,h:Lr,osb:true}});
     const onDeck=(x,z,v)=>{ const [zz,yy]=SP(uAt(z),v); return [x,yy,zz]; };
-    for(const z of [0.75,L-0.75]) for(const x of along(0,W,6,1)) sc('scr158',onDeck(x,z,td),nrm);
-    for(const x of [0.75,cxm,W-0.75]) for(const z of along(T,L-T,6,2)) sc('scr158',onDeck(x,z,td),nrm);
+    const rafX=rim?[0.75,(W+tb)/2,W+tb-0.75]:[0.75,cxm,W-0.75];
+    for(const z of [0.75,L-0.75]) for(const x of along(rim?0:0,rim?W+tb:W,6,1)) sc('scr158',onDeck(x,z,td),nrm);
+    for(const x of rafX) for(const z of along(T,L-T,6,2)) sc('scr158',onDeck(x,z,td),nrm);
     ctx.st='roofing';
     const e1=new THREE.Vector3(1,0,0), e2=new THREE.Vector3(0,sinA,-cosA), e3=new THREE.Vector3(0,cosA,sinA);
-    const Wr=W+2*tb+1, Lp=Lr+2, amp=0.3, n=Math.ceil((Wr-2)/24), per=Math.max(1,Math.floor(96/Lp));
+    const Wr=dx1r-dx0r+1, Lp=Lr+2, amp=0.3, n=Math.ceil((Wr-2)/24), per=Math.max(1,Math.floor(96/Lp));
     ctx.bom.push({k:'alum',name:'Corrugated steel panel',panels:Math.ceil(n/per),pieces:n,len:Lp,area:Wr*Lp/144,mod:'coop'});
     if(!ctx.dry){ const g=new THREE.PlaneGeometry(Wr,Lp,Math.ceil(Wr/2.67*10),1); const q=g.attributes.position;
       for(let i=0;i<q.count;i++) q.setZ(i, amp*Math.sin(2*Math.PI*(q.getX(i)+Wr/2)/2.67)); g.computeVertexNormals();
-      const [cz,cy]=SP(Lr/2, td+amp); g.applyMatrix4(new THREE.Matrix4().makeBasis(e1,e2,e3).setPosition(W/2,cy,cz));
+      const [cz,cy]=SP(Lr/2, td+amp); g.applyMatrix4(new THREE.Matrix4().makeBasis(e1,e2,e3).setPosition(dcx,cy,cz));
       addMesh(ctx,g,{mat:'alum',layer:'roofing',name:'Corrugated galvanized steel roofing',desc:n+' pieces, 26″ wide × '+fIn(Lp),noEdges:true}); }
     /* roofing screws through every other ridge over the front and back top rails, and one into each sloped rail mid-roof */
     /* roofing screws go in the low points (valleys) of the waves, where the washer seats flat on the solid deck */
-    const valley=k=>W/2-Wr/2+2.67*(k+0.75), nearV=x=>valley(Math.round((x-valley(0))/2.67));
-    for(const z of [0.75,L-0.75]) for(let k=0; valley(k)<W+tb; k+=2) if(valley(k)>-tb) sc('roof',onDeck(valley(k),z,td+0.02),nrm);
-    for(const x of [0.75,cxm,W-0.75]) sc('roof',onDeck(nearV(x),L/2,td+0.02),nrm);
+    const valley=k=>dcx-Wr/2+2.67*(k+0.75), nearV=x=>valley(Math.round((x-valley(0))/2.67));
+    for(const z of [0.75,L-0.75]) for(let k=0; valley(k)<dx1r; k+=2) if(valley(k)>dx0r) sc('roof',onDeck(valley(k),z,td+0.02),nrm);
+    for(const x of rafX) sc('roof',onDeck(nearV(x),L/2,td+0.02),nrm);
     roofTop=SP(-1,td+2*amp)[1];
   }
 
   /* ---- 11. hardware cloth on the run end ---- */
   ctx.st='mesh';
-  if(out) meshPoly(ctx,{name:'Run end hardware cloth',at:-0.05,poly:[[0,yFB],[L,yFB],[L,wallTop(L)],[0,wallTop(0)]]});
+  if(rim){ meshPanel(ctx,{name:'Run end hardware cloth',axis:'x',at:-0.05,u:[0,L],v:[yFB,boxTop]});
+    meshPanel(ctx,{name:'Box top hardware cloth, run half',axis:'y',at:boxTop+0.05,u:[0,cxm],v:[0,L]});
+    fastN(ctx,'staple',Math.ceil(2*(cxm+L)/2.5)); }
+  else if(out) meshPoly(ctx,{name:'Run end hardware cloth',at:-0.05,poly:[[0,yFB],[L,yFB],[L,wallTop(L)],[0,wallTop(0)]]});
   else meshPanel(ctx,{name:'Run end hardware cloth',axis:'x',at:-0.05,u:[0,L],v:[f1,yTB]});
-  fastN(ctx,'staple', Math.ceil(2*(L+(wallTop(0)-f1))/2.5) + Math.ceil(braceEnds([T,L-T,f1+T,f2],true).len/3));
+  if(!rim) fastN(ctx,'staple', Math.ceil(2*(L+(wallTop(0)-f1))/2.5) + Math.ceil(braceEnds([T,L-T,f1+T,f2],true).len/3));
 
   /* ---- 13. build the doors ---- */
   ctx.st='doors';
@@ -796,9 +828,9 @@ function buildCoop(cfg, ctx){
 
   ctx.st='paint';
   /* the coop's inside space, for outside-only paint: run end to box-end wall, front frame (jambs excluded) to back wall, floor to the underside of the top or roof deck */
-  ctx.interior={x0:0,x1:W,z1:L,zj:T,yLo:yLF,c0:yTF+slope*T+0.01,c1:-slope};
-  ctx.g={single:!out,W,L,tb,tf,H:yTB,yLF,yTF,yTB,f1,udw,udh,bdw,roofTop,deck:[W+2*tb,Lr],
-    lowerClear:f2-yLF, clearFront:top-yLF, clearBack:yTB-T-yLF, pitch:Math.atan(slope)*180/Math.PI, pitch12:12*slope,
+  ctx.interior=rim?{x0:0,x1:W,z1:L,zj:T,yLo:yLF,c0:boxTop+0.01,c1:0}:{x0:0,x1:W,z1:L,zj:T,yLo:yLF,c0:yTF+slope*T+0.01,c1:-slope};
+  ctx.g={single:!out,W,L,tb,tf,H:yTB,yLF,yTF,yTB,f1,udw,udh,bdw,roofTop,deck:[rim?W+tb+2*T:W+2*tb,Lr],
+    lowerClear:f2-yLF, clearFront:top-yLF, clearBack:(rim?boxTop:yTB)-T-yLF, pitch:Math.atan(slope)*180/Math.PI, pitch12:12*slope,
     box:[W-T-dx0-tb, L-2*T, dtop(L/2)-yLF], runArea:(dx0-T)*(L-2*T)/144, boxArea:(W-T-dx0-tb)*(L-2*T)/144};
   return ctx.g;
 }
@@ -956,30 +988,54 @@ const MODELS = {
    instead of 2x2 posts-as-legs, stretchers, floor rails, lower middle posts and leg-zone braces. */
 MODELS.rim = (()=>{
   const o=MODELS.outdoor, fix=t=>t.replace(/floor rails/g,'rim joists').replace(/floor rail/g,'rim joist').replace(/rail tops/g,'rim tops');
-  const text={
-    frames:['Build the front and back frames','Lay each frame flat. Front: two 35½″ 2×2 corner posts with a 45″ 2×4 rim joist on edge between their bottoms, a 45″ top rail flush with the post tops, and a 30½″ 2×4, laid flat, standing on the rim joist up to the top rail. Back: two 29½″ corner posts, the same rim joist and a top rail, and a 24½″ 2×4, laid flat, on the rim joist. Predrill every joint. Each rim joist gets two 3″ screws through each post into its end, ¾″ from its top and bottom edges. Each top rail gets one 3″ screw through each post, about 1″ up from its bottom, after two 2″ brads so it cannot twist. Toe-screw the foot of each 2×4 to the rim joist with two 2½″ screws from the inside face, and drive two 3″ screws down through the top rail into its top. Check the diagonals match.'],
-    join:['Join the frames','Stand the frames up and join them with 21″ 2×4 side rim joists between the corner posts, two 3″ screws through each post into each end, placed between the front rim\'s screws so they miss. Fit the three sloped top rails, both ends cut at 15°, between the front and back top rails: through the corner posts into the side ones, and through the top rails into the middle one, with two brads first. Fit the 21″ 2×2 floor joist between the rim joists, its top 7/16″ below theirs, with one 3″ screw through each rim into its end.'],
-    braces:['Fit the legs and knee braces','This is easiest with the frame upside down on a flat floor. Cut four 37⅛″ pressure-treated 2×4 legs. Set one in each corner inside the rim joists, its 3½″ face against the front or back rim and its end against the side rim, with its top 7/16″ below the rim tops so the floor will rest on it. Fasten each with four 2½″ screws through the front or back rim into its face and one 3″ screw through the side rim into its end. Then cut eight pressure-treated 2×4 knee braces, 11⅜″ long point to long point, with both ends at 45°. Fit two per leg, one against the front or back rim and one against the side rim, each running from the leg\'s face up to the rim, with its top end 1½″ below the rim\'s top edge so the floor ledger fits above it. Toe-screw the bottom end into the leg with one 2½″ screw, and drive two 2½″ screws through the rim into the top end. Last, fit the untreated 2×2 brace in the run end above the floor, toe-screwed at each end.'],
-    ledgers:['Screw in the floor ledgers','Screw 2×2 ledgers against the inside faces of the rim joists, their tops 7/16″ below the rim tops, level with the joist and the leg tops and just above the knee braces. The front and back ledgers go in two pieces, from the leg to the joist; the side ledgers fit between the front and back ones. Predrill and drive 2½″ screws about every 8″ through the ledger into the rim.'],
-    paint:null, place:null };
-  const steps=o.steps.map(st=>{ const k=st[2]; if(text[k]) return [text[k][0],text[k][1],k];
-    let t=fix(st[1]); if(k==='paint') t=t.replace('Paint the pressure-treated legs, stretchers and braces too','Paint the pressure-treated legs and knee braces too');
-    return [st[0],t,k]; });
+  const keep=k=>{ const st=o.steps.find(x=>x[2]===k); return [st[0],fix(st[1]),k]; };
+  const steps=[
+    ['Build the front and back frames','Build the box first, on a flat bench or sawhorses; the legs go on once it is closed in. Lay each frame flat. Front: two 27½″ 2×2 corner posts, a 45″ 2×4 rim joist on edge between their bottoms, a 45″ 2×2 box top rail flush with their tops, and a 22½″ 2×4, laid flat, standing on the rim joist up to the top rail. The back frame is the same. Predrill every joint. Each rim joist gets two 3″ screws through each post into its end, ¾″ from its top and bottom edges. Each top rail gets one 3″ screw through each post, after two 2″ brads so it cannot twist. Toe-screw the foot of each 2×4 to the rim joist with two 2½″ screws from the inside face, and drive two 3″ screws down through the top rail into its top. Check the diagonals match.','frames'],
+    ['Join the frames','Stand the frames up and join them with 21″ 2×4 side rim joists between the corner posts, two 3″ screws through each post into each end, placed between the front rim\'s screws so they miss. Join the tops with 21″ 2×2 side top rails, and fit a 21″ 2×2 cross rail between the middle 2×4s at the top; it carries the edges of the lid and the top hardware cloth. Fit the 21″ 2×2 floor joist between the rim joists, its top ½″ below theirs. Each of these gets one 3″ screw per joint, after two brads. Then fit the 2×2 brace in the run end, from the bottom front corner up to the back top rail, toe-screwed at each end with a 2½″ screw.','join'],
+    ['Screw in the floor ledgers','Screw 2×2 ledgers against the inside faces of the rim joists, their tops ½″ below the rim tops, level with the joist. The front and back ledgers go in two pieces, one each side of the joist; the side ledgers fit between them. Predrill and drive 2½″ screws about every 8″ through the ledger into the rim.','ledgers'],
+    ['Lay the floor','Cut the ½″ pressure-treated plywood floor to 45″ × 21″ and drop it onto the ledgers and joist. Drive 1⅝″ screws about every 6″ around the edges, ¾″ in from the rims so they land in the middle of the ledgers, and down the middle into the joist.','floor'],
+    keep('cleats'),
+    ['Fit the divider','Set the divider against the cleats from the sleeping-box side, pop hole at the bottom toward the back, its top 2″ below the cross rail so air moves between the two halves, and drive 1⅝″ screws through it into the cleats about every 6″.','divider'],
+    keep('stops'),
+    ['Close in the box','Screw ½″ plywood to the back and to the sleeping-box end, each from the bottom of the rim joists to the box top; the end sheet laps the back sheet\'s edge. Then screw a 24½″ × 24½″ plywood lid over the sleeping-box half of the top, from the middle of the cross rail to the outside of the end wall. Use 1⅝″ screws about every 6″ into the posts, rims, rails and the back 2×4.','walls'],
+    ['Staple on the hardware cloth','Staple hardware cloth over the run end, from the bottom of the rim joist to the box top, and over the run half of the top, lapping onto the cross rail to meet the lid. Pull it tight and put a fence staple every 2–3″ along every edge and across the brace.','mesh'],
+    ['Fit the legs and knee braces','Cut two 69½″ and two 63½″ pressure-treated 2×4 legs; the taller pair goes at the front. With a helper holding the box at its final height (floor 32″ up), set a leg at each corner against the outside of each end, its 3½″ face against the side rim and corner post and flush with the box\'s front or back face. On the run end the legs go over the hardware cloth; on the box end, over the plywood. Plumb each leg and fasten it with four screws into the side rim and three into the corner post: 2½″ on the run end, 3″ on the box end so they reach through the plywood. Then cut eight pressure-treated 2×4 knee braces with both ends at 45°. Four are 17″ long: one under each end of the front and back rims, from the leg up to the rim\'s underside, toe-screwed into the leg and up into the rim with 2½″ screws. Four are 11⅜″ long: one against the outside of each side rim, from the leg up to the rim top, toe-screwed into the leg and screwed through into the rim with two screws (2½″ on the run end, 3″ on the box end).','braces'],
+    ['Fit the roof frame','Screw 48½″ 2×2 roof rails between the leg tops, front and back, with one 3″ screw through each leg into each end. Fit three 21¾″ 2×2 rafters, both ends cut at 15°, between the rails: one against each pair of legs, with a 2½″ screw through each leg into it, and one in the middle. Each rafter gets one 3″ screw through each rail into its end; fire two brads into each joint first. The roof frame clears the box by 6″ at the back and 12″ at the front.','roofframe'],
+    ['Screw down the roof deck','Screw the 51½″ × 31″ OSB roof deck down so it covers the leg tops and overhangs 3″ at the front and back, with 1⅝″ screws about every 6″ into the rails and rafters. Paint its top face and all its edges before the steel goes on.','roofdeck'],
+    ['Put on the steel','Cut two 8 ft steel panels into three 33″ pieces and lay them side by side across the deck, each overlapping the next by one corrugation. Drive the roofing screws through the low points (valleys) of the waves, where the steel sits flat on the deck: every other valley over the front and back roof rails, plus one into each rafter mid-roof. Snug the neoprene washers until they just bulge, without crushing them.','roofing'],
+    keep('doors'), keep('hang'),
+    ['Paint','Prime and paint the outside to match the house: the frame, legs, roof frame and run door white, the plywood walls and lid slate blue, the sleeping-box door red-brown. Leave the inside and the pressure-treated floor bare. Paint the pressure-treated legs and knee braces once they have dried out, usually a few weeks after purchase. Let the paint cure for a few days before the birds move in.','paint'],
+    keep('place')];
   return Object.assign({},o,{
-    tab:'Outdoor coop, 2×4 base', title:'Four-Quail Outdoor Coop on a 2×4 Base',
-    lede:'The outdoor coop on a sturdier base: pressure-treated 2×4 legs, a 2×4 floor rim and 45° 2×4 knee braces, with no stretchers or lower posts. Above the floor it is the same: 7/16″ OSB floor and roof deck, plywood back and sleeping-box end, hardware cloth on the run end, a steel roof that sheds to the back, and two front doors with gate latches and locking carabiners.',
+    tab:'Outdoor coop, 2×4 base', title:'Four-Quail Coop: Box on a 2×4 Stand',
+    lede:'A 24″-tall coop box on a 2×4 floor rim, between four pressure-treated 2×4 legs that run up past it to carry a steel shed roof. The floor is pressure-treated plywood, the back and sleeping-box end are plywood, the top is plywood over the sleeping box and hardware cloth over the run, and the run end is hardware cloth. Two front doors, each with a gate latch and a locking carabiner.',
     build:(cfg,ctx)=>buildCoop(Object.assign({},cfg,{outdoor:true,rim:true}),ctx),
-    uses:{'2x4':'Floor rim joists, front and back middle posts','2x2':'Corner posts, rails, floor joist and ledgers, run-end brace, divider cleats, door frames','1x2':'Door stops'},
+    layers:[['framing','Framing'],['floors','Floor'],['sheathing','Box plywood'],['mesh','Hardware cloth'],['roofdeck','Roof deck'],['roofing','Roofing'],['doors','Doors'],['hardware','Latches & hinges']],
+    uses:{'2x4':'Floor rim joists, front and back middle posts','2x2':'Corner posts, box top rails, roof rails and rafters, floor joist and ledgers, run-end brace, divider cleats, door frames','1x2':'Door stops'},
     ptUses:{'2x4':'Legs and knee braces'},
-    have:o.have.map(h=>h[2]==='scr3'?['#8 deck screws, 3″','Frame and rim joints, middle posts, floor joist, top rails, the legs\' ends and the divider\'s floor cleat. Predrill the 2×2.','scr3']:h),
+    specs:g=>[['Overall size',fIn(g.W+g.tb+3)+' wide (with the legs) × '+fIn(g.L+g.tb)+' deep; roof '+fIn(g.deck[0])+' × '+fIn(g.deck[1])],['Height',fFt(g.roofTop)+' at the front'],
+      ['Box','24″ tall, floor '+fIn(g.yLF)+' off ground'],['Roof clearance','6″ above the box at the back, 12″ at the front'],
+      ['Inside height',fIn(g.clearFront)],['Doors',fIn(g.udw)+' × '+fIn(g.udh)+' each'],
+      ['Sleeping box inside',fIn(g.box[0])+' × '+fIn(g.box[1])+', about '+fIn(g.box[2])+' tall'],['Floor space',(g.runArea+g.boxArea).toFixed(1)+' sq ft ('+((g.runArea+g.boxArea)/4).toFixed(1)+' per bird)']],
+    have:o.have.map(h=>h[2]==='scr3'?['#8 deck screws, 3″','Frame and rim joints, middle posts, floor joist, box top and roof rails, rafters, and the legs on the box end. Predrill the 2×2.','scr3']:
+      h[2]==='roof'?['Roofing screws with neoprene washers, 2″','Through the valleys of the steel into the roof rails and rafters.','roof']:h),
     steps,
-    cutNotes:[[/^Leg/,'Pressure-treated; top 7/16″ below the rim tops; sits on a paver'],[/^Knee brace/,'Both ends cut at 45°'],[/^Rim joist/,'2×4 on edge'],[/corner post/,'Stops at the bottom of the rim joists']]
-      .concat(o.cutNotes.filter(([re])=>!/corner post|Bottom stretcher/.test(re.source)).map(([re,t])=>[re,fix(t)])),
-    notes:(g,an)=>o.notes(g,an).filter(([h])=>h!=='How it goes together').map(([h,t])=>
-      h==='Legs'?[h,'The four 2×4 legs and the eight knee braces are pressure-treated, since they are outside and get splashback. Everything above the legs is untreated. Set the legs on pavers or patio blocks so they stay dry.']:
-      h==='Racking'?[h,'The plywood back and box end lock the cage square. Below the floor, each leg has two 45° knee braces up to the rim joists, which stiffen the base in both directions, and the 2×4 rim spans the full width without a middle post. There are no bottom stretchers, so the legs\' feet are not tied together: tie the coop down as described in the last step.']:
-      h==='Weight'?[h,'About '+fLb(an.total)+' lb. Two people can carry it by lifting under the rim joists.']:[h,fix(t)])
-      .concat([['How it goes together','The outdoor coop\'s cage sits on a 2×4 floor rim between 2×2 corner posts that stop at the rim\'s bottom edge. Pressure-treated 2×4 legs fill the corners inside the rim, and 45° knee braces tie each leg to the rim on both sides.']])
+    cutNotes:[[/^Leg/,'Pressure-treated; the taller pair goes at the front; sits on a paver'],[/^Knee brace/,'Both ends cut at 45°'],[/^Rim joist/,'2×4 on edge'],
+      [/corner post/,'From the bottom of the rim joists to the box top'],[/^Rafter/,'Both ends cut at 15° to sit flat on the roof rails'],[/^Roof rail/,'Between the legs, at their tops'],
+      [/^Run end hardware cloth/,'Bottom of the rim joist to the box top'],[/^Box top hardware cloth/,'Laps onto the cross rail'],[/^Box top, sleeping/,'Lid; laps the end wall'],
+      [/^Floor joist|^Floor ledger/,'Top ½″ below the rim tops'],[/^Roof deck/,'Covers the leg tops; overhangs 3″ front and back']]
+      .concat(o.cutNotes.filter(([re])=>!/corner post|Bottom stretcher|Run end hardware|Floor joist|sloped|Roof deck/.test(re.source))),
+    notes:(g,an)=>[
+      ['How it goes together','A 24″-tall box on a 2×4 floor rim, standing between four pressure-treated 2×4 legs that run up past it to carry a steel shed roof. The box is closed on its own: plywood over the sleeping-box half of the top and hardware cloth over the run half. The roof only keeps rain and sun off; it clears the box by 6″ at the back and 12″ at the front.'],
+      ['Roof','Corrugated steel over a 7/16″ OSB deck, at about '+g.pitch12.toFixed(1)+' in 12 ('+Math.round(g.pitch)+'°), on 2×2 roof rails and rafters screwed to the legs. Paint the deck\'s top face and edges so dampness under the steel does not swell it.'],
+      ['Floor','½″ pressure-treated plywood, so wet bedding does not rot it. Use a removable liner anyway, and leave the floor unpainted.'],
+      ['Legs','The four 2×4 legs and the eight knee braces are pressure-treated. Everything else is untreated. Set the legs on pavers or patio blocks so they stay dry.'],
+      ['Wind and cold','Plywood closes the back, the sleeping-box end and the top of the sleeping box, which gives the birds a draft-free corner. The run end, run top and run door are mesh. Set the coop with the run end away from the prevailing wind, and on cold days hang a tarp over the run end and front.'],
+      ['Racking','The plywood back and box end lock the box square. Knee braces tie each leg to the rim in both directions; above the box the legs are held by the roof frame. There are no bottom stretchers, so the legs\' feet are not tied together: tie the coop down as described in the last step.'],
+      ['Predators','Raccoons, cats, rats, opossums and snakes. Plywood closes the back, the box end and the sleeping-box half of the top; ½″ hardware cloth covers the run end, the run half of the top and the run door. Both doors sit flush with ⅛″ gaps and close with a gate latch and a locking carabiner.'],
+      ['Flighty birds','Quail flush straight up when startled. Hang soft bird netting a few inches under the hardware-cloth top to cushion them.'],
+      ['Weight','About '+fLb(an.total)+' lb. Two people can carry it by lifting under the rim joists.'],
+      ['Not shown','Pavers, bird netting, feeders, waterers and bedding.']]
   });
 })();
 delete MODELS.porch;   /* the porch coop tab was retired */

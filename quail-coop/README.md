@@ -1,9 +1,9 @@
 # Four-Quail Coops
 
-Interactive 3D build models of two versions of an outdoor quail coop for four birds, on two tabs. Both are one level, 4′ wide × 2′ deep, with a sleeping box on one half, two front doors (mesh for the run, plywood for the box) and a steel shed roof 6′ off the ground.
+Interactive 3D build models of two versions of an outdoor quail coop for four birds, on two tabs. Both are one level, 4′ wide × 2′ deep, with a sleeping box on one half, two front doors (mesh for the run, plywood for the box) and a steel shed roof whose top is 6′ off the ground.
 
 - **Outdoor coop** (`#outdoor`, the first and default tab): has its own shed roof (corrugated steel over a 7/16″ OSB deck), an OSB floor and pressure-treated legs, stretchers and leg-zone braces. 6′ to the top of the roof, with the floor about 37″ off the ground.
-- **Outdoor coop, 2×4 base** (`#rim`): the same cage on a sturdier base. Pressure-treated 2×4 legs sit inside the corners of a 2×4 floor rim, with two 45° 2×4 knee braces per leg. There are no bottom stretchers, floor rails or lower middle posts. The 2×2 corner posts stop at the bottom of the rim.
+- **Outdoor coop, 2×4 base** (`#rim`): a 24″-tall box on a 2×4 floor rim, with a pressure-treated plywood floor. The top is plywood over the sleeping box and hardware cloth over the run. Four pressure-treated 2×4 legs stand outside the two ends and run from the ground up past the box to carry the steel shed roof, which clears the box by 6″ at the back and 12″ at the front. Each leg has two 45° 2×4 knee braces to the rim. There are no stretchers. The floor is 32″ up, and the roof top is 6′.
 
 Open `index.html` in a browser; it always opens on the first tab. You can drag to rotate the model, open the doors, and switch to framing only to see the frame and every screw. The shopping list, cut list, build steps and weight estimate are generated from the same geometry.
 
