@@ -9,7 +9,7 @@ Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-
   4. **Walls:** hardware cloth over the whole top and the run's end and back; plywood over the 18″ sleeping box's back and end.
   5. **Legs:** pressure-treated 2×4 legs outside the ends, running up to the roof, with 45° knee braces to the rims.
   6. **Roof:** steel on purlins, rafters and roof rails.
-  7. **Stops and doors:** both doors hinge on the middle post and latch at the outer corners.
+  7. **Doors:** both doors hinge on the middle post and latch at the outer corners. There are no door stops; the latches hold the doors flush.
 
   The floor is 31″ up, the roof top is 6′, and the roof clears the box by 6½″ at the back.
 
@@ -35,7 +35,7 @@ These are the kinds of mistakes that have already slipped into this model. Check
 - **Each hinge and latch screw goes into solid wood behind it**, not into hardware cloth, and never into a door stop: that would screw the door shut.
 
 ### Gaps, overlaps and rodent-proofing
-- **Door stops form one unbroken run** around each opening on the top, bottom and latch side, meeting at the corners. With the door shut, the only gap left is the ⅛″ clearance around the door's edge.
+- **If the design has door stops, they form one unbroken run** around each opening on the top, bottom and latch side, meeting at the corners. With the door shut, the only gap left is the ⅛″ clearance around the door's edge.
 - **With the doors shut, no door part may overlap a stop or the frame.** Check this using bounding boxes in the scene (see Testing).
 - **Braces, cleats and stops must reach the parts they butt against.** On the outdoor coop the top side rails slope, so anything that meets them must be cut to the slope, not cut square at a fixed height.
 
