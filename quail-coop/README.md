@@ -1,9 +1,9 @@
 # Four-Quail Coop
 
-Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-wide, 3′-deep box on a stand under a steel shed roof, with a sleeping box at one end and two front doors (mesh for the run, plywood for the box).
+Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-wide, 2′-deep box on a stand under a steel shed roof, with a sleeping box at one end and two front doors (mesh for the run, plywood for the box).
 
 - **Outdoor coop** (`#rim`): built in this order:
-  1. **Floor:** a 48″ × 36″ frame of 2×4s on edge with two 2×2 joists, covered with hardware cloth.
+  1. **Floor:** a 48″ × 24″ frame of 2×4s on edge with two 2×2 joists, covered with hardware cloth.
   2. **Wall frames:** an 18″ box standing on the floor frame, with 2×2 corner posts and two 2×2 middle posts.
   3. **Divider:** plywood screwed to the middle posts' faces.
   4. **Walls:** hardware cloth over the whole top and the run's end and back; plywood over the 18″ sleeping box's back and end.
@@ -11,7 +11,7 @@ Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-
   6. **Roof:** steel on purlins, rafters and roof rails.
   7. **Doors:** both doors hinge along the bottom onto the front rim and drop open. Each is held shut by a 3″ barrel bolt at its top outer corner, and there are no door stops.
 
-  The floor is 31″ up, the roof top is 6′, and the roof clears the box by 12½″ at the back.
+  The floor is 31″ up, the roof top is 6′, and the roof clears the box by 12″ at the back.
 
 Open `index.html` in a browser. You can drag to rotate the model, open the doors, and switch to framing only to see the frame and every screw. The shopping list, cut list, build steps and weight estimate are generated from the same geometry.
 
