@@ -1,10 +1,10 @@
-# Four-Quail Coops
+# Four-Quail Coop
 
 Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-wide, 3′-deep box on a stand under a steel shed roof, with a sleeping box at one end and two front doors (mesh for the run, plywood for the box).
 
 - **Outdoor coop** (`#rim`): a 3′-deep, 24″-tall box on a 2×4 floor rim, with an 18″-wide sleeping box. The whole floor is hardware cloth. The sleeping box is plywood on its back, end and top, and the run is hardware cloth on its end, back and top, with no diagonal braces. Four pressure-treated 2×4 legs stand outside the two ends and run from the ground to the roof, with a 45° knee brace from each leg to each rim it meets. The roof is steel on three 2×2 purlins over 2×2 rafters, with no deck, at about 2 in 12, and it clears the box by 6½″ at the back and 12½″ at the front. The floor is 31″ up, and the roof top is 6′.
 
-Open `index.html` in a browser; You can drag to rotate the model, open the doors, and switch to framing only to see the frame and every screw. The shopping list, cut list, build steps and weight estimate are generated from the same geometry.
+Open `index.html` in a browser. You can drag to rotate the model, open the doors, and switch to framing only to see the frame and every screw. The shopping list, cut list, build steps and weight estimate are generated from the same geometry.
 
 `coop.html` is the same page without the document wrapper, which is the form used for publishing it as a Claude artifact.
 
