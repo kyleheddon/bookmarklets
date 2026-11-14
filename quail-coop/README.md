@@ -9,7 +9,7 @@ Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-
   4. **Walls:** hardware cloth over the whole top and the run's end and back; plywood over the 18″ sleeping box's back and end.
   5. **Legs:** pressure-treated 2×4 legs outside the ends, running up to the roof, with 45° knee braces to the rims.
   6. **Roof:** steel on purlins, rafters and roof rails.
-  7. **Doors:** both doors hinge along the bottom onto the front rim and drop open. Each latches at its top outer corner, and there are no door stops.
+  7. **Doors:** both doors hinge along the bottom onto the front rim and drop open. Each is held shut by a 3″ barrel bolt at its top outer corner, and there are no door stops.
 
   The floor is 31″ up, the roof top is 6′, and the roof clears the box by 12½″ at the back.
 
