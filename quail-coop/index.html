@@ -276,7 +276,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
         <ul class="list" id="shop"></ul>
         <div class="total"><b id="costTotal">—</b><span id="costNote"></span></div>
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div><textarea id="copyFallback" class="copybox" rows="8" readonly hidden aria-label="Shopping list text to copy"></textarea></div>
-      <div role="tabpanel" id="pane-steps" aria-labelledby="tab-steps" hidden><p class="note" style="margin:0 0 6px">Build in this order. Tap <b>Show in 3D</b> to see the coop as it stands at the end of each step.</p><ol class="steps" id="steps"></ol></div>
+      <div role="tabpanel" id="pane-steps" aria-labelledby="tab-steps" hidden><p class="note" style="margin:0 0 6px">Build in this order. The model follows along, starting at step 1: use the ‹ › arrows under the model, or <b>Show in 3D</b> on any step, to see the coop as it stands at the end of that step.</p><ol class="steps" id="steps"></ol></div>
       <div role="tabpanel" id="pane-cut" aria-labelledby="tab-cut" hidden><div class="tablewrap"><table class="cut" id="cut"></table></div></div>
       <div role="tabpanel" id="pane-notes" aria-labelledby="tab-notes" hidden><div class="notes" id="notes"></div></div>
     </section>
@@ -1451,7 +1451,9 @@ function renderCut(an){
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab);
   /* Summary shows the cost, weight, description, dimensions and weight card; every other tab shows only its own list */
-  document.querySelector('.panel').classList.toggle('steps-mode', b.dataset.tab!=='summary'); });
+  document.querySelector('.panel').classList.toggle('steps-mode', b.dataset.tab!=='summary');
+  /* Build steps puts the model into step mode at step 1; leaving the tab shows the finished coop again */
+  if(b.dataset.tab==='steps'){ if(buildStep<0) setStep(0); } else if(buildStep>=0) setStep(-1); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
 $('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; });
