@@ -1471,7 +1471,7 @@ function setStep(i){ const was=buildStep; buildStep=i; if(i>=0){ M().layers.forE
 function scrollStepIntoPanel(i){
   const panel=document.querySelector('.panel'), li=document.querySelectorAll('#steps li')[i];
   if(!panel||!li||getComputedStyle(panel).overflowY==='visible') return;
-  const bar=document.querySelector('.tabbar'), off=(bar?bar.offsetHeight-22:0)+8;   /* land just under the sticky tab bar */
+  const bar=document.querySelector('.tabbar'), off=(bar?bar.getBoundingClientRect().bottom-panel.getBoundingClientRect().top:0)+8;   /* land just under the sticky tab bar */
   const top=li.getBoundingClientRect().top-panel.getBoundingClientRect().top+panel.scrollTop-off;
   panel.scrollTo({top:Math.max(0,top),behavior:reduceMotion?'auto':'smooth'});
 }
