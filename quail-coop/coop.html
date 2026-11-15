@@ -1440,8 +1440,8 @@ function renderCut(an){
 }
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab);
-  /* build steps: hide everything between the model and the steps so they are easier to follow */
-  document.querySelector('.panel').classList.toggle('steps-mode', b.dataset.tab==='steps'); });
+  /* build steps and cut list: hide everything between the model and the list so they are easier to follow */
+  document.querySelector('.panel').classList.toggle('steps-mode', b.dataset.tab==='steps'||b.dataset.tab==='cut'); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
 $('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; });
