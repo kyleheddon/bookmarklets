@@ -1264,7 +1264,7 @@ function fitVisible(instant, dirIn){
   const dir=(dirIn?new THREE.Vector3(...dirIn):camera.position.clone().sub(controls.target)).normalize();
   const right=new THREE.Vector3(0,1,0).cross(dir).normalize(), up=dir.clone().cross(right).normalize();
   const sr=stage.getBoundingClientRect(), vb=document.querySelector('.viewbar'), H=Math.max(sr.height,1);
-  const inset=vb?Math.max(0,sr.bottom-vb.getBoundingClientRect().top+8):0, fr=Math.max(0.4,(H-inset)/H);
+  const inset=vb?Math.max(0,sr.bottom-vb.getBoundingClientRect().top+2):0, fr=Math.max(0.4,(H-inset)/H);
   const vf=camera.fov*Math.PI/180, ty=Math.tan(vf/2), tx=ty*camera.aspect, tyu=ty*fr;
   /* the box's corners, in the camera's right/up/back frame around the box centre */
   const c0=box.getCenter(new THREE.Vector3()), pts=[];
@@ -1273,7 +1273,7 @@ function fitVisible(instant, dirIn){
   let cx=0, cy=0, d=0;
   for(let pass=0;pass<3;pass++){
     d=0; for(const [x,y,z] of pts) d=Math.max(d, z+Math.abs(x-cx)/tx, z+Math.abs(y-cy)/tyu);
-    d*=1.07;
+    d*=1.015;   /* small margin: the parts nearly touch the edges of the clear area */
     let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
     for(const [x,y,z] of pts){ const k=d/(d-z); x0=Math.min(x0,(x-cx)*k); x1=Math.max(x1,(x-cx)*k); y0=Math.min(y0,(y-cy)*k); y1=Math.max(y1,(y-cy)*k); }
     cx+=(x0+x1)/2; cy+=(y0+y1)/2;
