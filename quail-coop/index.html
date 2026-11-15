@@ -564,7 +564,7 @@ function buildCoop(cfg, ctx){
   const cxm=rim?W-18:W/2;   /* divider line; rim: the sleeping box is 18" wide */
   const m0=cxm-T/2, m1=cxm+T/2, pm0=cxm-1.75, pm1=cxm+1.75;   /* 2x2 middle members; 2x4 posts laid flat */
   const lift=out?18:0;   /* outdoor: longer legs put the top of the roof at 6 ft */
-  /* rim: an 18" box on the stand; the roof is two beveled 2x2 purlins, the back one on the box's back top rail, the front one on the front legs */
+  /* rim: an 18" box on the stand; the roof is two square 2x2 purlins on angled leg tops, the back one on the box's back top rail, the front one on the front legs */
   const yS=3, rise=out?6:0, f1=rim?29.5:18+lift;
   const sl0=rise/(L-T), ca0=1/Math.hypot(1,sl0);
   const f2=rim?(f1+T+18)+sl0*(L-T)-rise-T:44+lift;   /* rim: the roof line (the purlins' undersides) meets the box top at the back edge */
