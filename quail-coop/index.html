@@ -39,6 +39,7 @@
 }
 [hidden]{display:none!important}
 .panel.steps-mode > :not(.tabsec):not(.tabbar){display:none!important}
+@media (min-width: 881px){ .tabbar{position:sticky;top:-22px;z-index:3;background:var(--panel);padding-top:22px;margin-top:-22px} }   /* desktop: tabs stay put while the panel scrolls */
 .panel:not(.steps-mode) > .tabsec{display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45}
@@ -1464,7 +1465,16 @@ function renderSteps(){
   if(buildStep>=0){ $('#stepName').textContent='Step '+(buildStep+1)+' of '+st.length+': '+st[buildStep][0]; $('#stepPrev').disabled=buildStep===0; $('#stepNext').disabled=buildStep===st.length-1; }
 }
 function setStep(i){ const was=buildStep; buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps();
-  if(i>=0) fitVisible(); else if(was>=0) fitAll(); }   /* step mode zooms to fit what each step shows */
+  if(i>=0) fitVisible(); else if(was>=0) fitAll();   /* step mode zooms to fit what each step shows */
+  if(i>=0) scrollStepIntoPanel(i); }
+/* put the current step's instructions at the top of the side panel (where the panel scrolls on its own, i.e. not on phones) */
+function scrollStepIntoPanel(i){
+  const panel=document.querySelector('.panel'), li=document.querySelectorAll('#steps li')[i];
+  if(!panel||!li||getComputedStyle(panel).overflowY==='visible') return;
+  const bar=document.querySelector('.tabbar'), off=(bar?bar.offsetHeight-22:0)+8;   /* land just under the sticky tab bar */
+  const top=li.getBoundingClientRect().top-panel.getBoundingClientRect().top+panel.scrollTop-off;
+  panel.scrollTo({top:Math.max(0,top),behavior:reduceMotion?'auto':'smooth'});
+}
 $('#steps').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.s; setStep(i===buildStep?-1:i);
   if(window.matchMedia('(max-width: 880px)').matches) stage.scrollIntoView({behavior:reduceMotion?'auto':'smooth'}); });
 $('#stepPrev').addEventListener('click',()=>setStep(Math.max(0,buildStep-1)));
