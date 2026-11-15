@@ -1232,12 +1232,31 @@ function goView(name, instant){
   if(instant||reduceMotion){ camera.position.copy(to); controls.target.copy(TGT()); tween=null; dirty=true; return; }
   tween={from:camera.position.clone(), to, tf:controls.target.clone(), t0:performance.now()};
 }
+/* Frame what is showing: keep the current viewing angle, centre on the visible parts and zoom so they fill the view. */
+function fitVisible(){
+  if(!current) return;
+  holder.updateMatrixWorld(true);
+  const box=new THREE.Box3(), b=new THREE.Box3();
+  current.parts.forEach(m=>{ if(!m.visible||m.userData.layer==='fast') return; let o=m.parent, ok=true; while(o){ if(o.visible===false){ ok=false; break; } o=o.parent; } if(!ok) return; b.setFromObject(m); box.union(b); });
+  if(box.isEmpty()) return;
+  const sph=box.getBoundingSphere(new THREE.Sphere()), c=sph.center, r=Math.max(sph.radius,12);
+  const asp=camera.aspect, vf=camera.fov*Math.PI/180, hf=2*Math.atan(Math.tan(vf/2)*asp), dist=r/Math.sin(Math.min(vf,hf)/2)*1.05;
+  const dir=camera.position.clone().sub(controls.target).normalize(), to=c.clone().add(dir.multiplyScalar(dist));
+  if(reduceMotion){ camera.position.copy(to); controls.target.copy(c); tween=null; dirty=true; return; }
+  tween={from:camera.position.clone(), to, tf:controls.target.clone(), tt:c.clone(), t0:performance.now()};
+}
+/* Back to framing the whole coop, from the current angle. */
+function fitAll(){
+  const dir=camera.position.clone().sub(controls.target).normalize(), to=TGT().add(dir.multiplyScalar(fitDist()));
+  if(reduceMotion){ camera.position.copy(to); controls.target.copy(TGT()); tween=null; dirty=true; return; }
+  tween={from:camera.position.clone(), to, tf:controls.target.clone(), t0:performance.now()};
+}
 function resize(){ const r=stage.getBoundingClientRect(); renderer.setSize(r.width,r.height,false); camera.aspect=r.width/Math.max(r.height,1); camera.updateProjectionMatrix(); dirty=true; }
 new ResizeObserver(resize).observe(stage);
 
 function loop(now){
   requestAnimationFrame(loop);
-  if(tween){ const t=Math.min(1,(now-tween.t0)/650); const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; const tg=TGT();
+  if(tween){ const t=Math.min(1,(now-tween.t0)/650); const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; const tg=tween.tt||TGT();
     const a=tween.from.clone().sub(tween.tf), b=tween.to.clone().sub(tg);
     const len=a.length()+(b.length()-a.length())*e; const dir=a.normalize().lerp(b.normalize(),e).normalize();
     controls.target.lerpVectors(tween.tf,tg,e); camera.position.copy(controls.target).add(dir.multiplyScalar(len)); if(t>=1) tween=null; dirty=true; }
@@ -1432,7 +1451,8 @@ function renderSteps(){
   const pill=$('#stepPill'); pill.hidden = buildStep<0;
   if(buildStep>=0){ $('#stepName').textContent='Step '+(buildStep+1)+' of '+st.length+': '+st[buildStep][0]; $('#stepPrev').disabled=buildStep===0; $('#stepNext').disabled=buildStep===st.length-1; }
 }
-function setStep(i){ buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps(); }
+function setStep(i){ const was=buildStep; buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps();
+  if(i>=0) fitVisible(); else if(was>=0) fitAll(); }   /* step mode zooms to fit what each step shows */
 $('#steps').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.s; setStep(i===buildStep?-1:i);
   if(window.matchMedia('(max-width: 880px)').matches) stage.scrollIntoView({behavior:reduceMotion?'auto':'smooth'}); });
 $('#stepPrev').addEventListener('click',()=>setStep(Math.max(0,buildStep-1)));
