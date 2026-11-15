@@ -209,6 +209,10 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
   .tabbar{margin-bottom:-14px}
   .tabs{margin-bottom:0}
   .tabs button{padding:7px 6px 7px}
+  /* build steps on phones: the model stays pinned at the top and the tabs under it, while the steps scroll underneath */
+  body.steps-on .stage{position:sticky;top:0;height:45svh;min-height:260px;z-index:4}
+  body.steps-on .tabbar{position:sticky;top:max(45svh,260px);z-index:3;background:var(--panel);margin-left:calc(-1 * max(16px, env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px, env(safe-area-inset-right,0px)));padding:0 max(16px, env(safe-area-inset-right,0px)) 0 max(16px, env(safe-area-inset-left,0px));margin-bottom:0}
+  body.steps-on .panel{padding-bottom:60svh}
   .panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
   .layers::-webkit-scrollbar{display:none}
   .chip{flex:none}
@@ -1465,13 +1469,16 @@ function setStep(i){ const was=buildStep; buildStep=i; if(i>=0){ M().layers.forE
 /* put the current step's instructions at the top of the side panel (where the panel scrolls on its own, i.e. not on phones) */
 function scrollStepIntoPanel(i){
   const panel=document.querySelector('.panel'), li=document.querySelectorAll('#steps li')[i];
-  if(!panel||!li||getComputedStyle(panel).overflowY==='visible') return;
+  if(!panel||!li) return;
+  if(getComputedStyle(panel).overflowY==='visible'){   /* phone: the page scrolls; land the step just under the pinned model and tabs */
+    const bar=document.querySelector('.tabbar'), off=stage.getBoundingClientRect().height+(bar?bar.offsetHeight:0)+8;
+    window.scrollTo({top:Math.max(0,li.getBoundingClientRect().top+window.scrollY-off),behavior:reduceMotion?'auto':'smooth'}); return; }
   const bar=document.querySelector('.tabbar'), off=(bar?bar.getBoundingClientRect().bottom-panel.getBoundingClientRect().top:0)+8;   /* land just under the sticky tab bar */
   const top=li.getBoundingClientRect().top-panel.getBoundingClientRect().top+panel.scrollTop-off;
   panel.scrollTo({top:Math.max(0,top),behavior:reduceMotion?'auto':'smooth'});
 }
 $('#steps').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.s; setStep(i===buildStep?-1:i);
-  if(window.matchMedia('(max-width: 880px)').matches) stage.scrollIntoView({behavior:reduceMotion?'auto':'smooth'}); });
+  });
 $('#stepPrev').addEventListener('click',()=>setStep(Math.max(0,buildStep-1)));
 $('#stepNext').addEventListener('click',()=>setStep(Math.min(M().steps.length-1,buildStep+1)));
 $('#stepExit').addEventListener('click',()=>setStep(-1));
@@ -1497,7 +1504,11 @@ document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.c
   /* Summary shows the cost, weight, description, dimensions and weight card; every other tab shows only its own list */
   document.querySelector('.panel').classList.toggle('steps-mode', b.dataset.tab!=='summary');
   /* Build steps puts the model into step mode at step 1; leaving the tab shows the finished coop again */
-  if(b.dataset.tab==='steps'){ if(buildStep<0) setStep(0); } else if(buildStep>=0) setStep(-1); });
+  const wasSteps=document.body.classList.contains('steps-on');
+  document.body.classList.toggle('steps-on', b.dataset.tab==='steps'); resize();
+  if(wasSteps && b.dataset.tab!=='steps' && getComputedStyle(document.querySelector('.panel')).overflowY==='visible'){   /* phone: back to the top of the page */
+    window.scrollTo({top:0,behavior:'auto'}); }   /* the model, tabs and the new tab's top are all in view again */
+  if(b.dataset.tab==='steps'){ if(buildStep<0) setStep(0); else scrollStepIntoPanel(buildStep); } else if(buildStep>=0) setStep(-1); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
 $('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true;
   if(person.visible||buildStep>=0) fitVisible(); else fitAll(); });   /* zoom to fit the person too, and back again when it is hidden */
