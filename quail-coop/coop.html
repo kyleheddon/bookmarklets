@@ -1251,9 +1251,17 @@ function fitVisible(){
   current.parts.forEach(m=>{ if(!m.visible||m.userData.layer==='fast') return; let o=m.parent, ok=true; while(o){ if(o.visible===false){ ok=false; break; } o=o.parent; } if(!ok) return; b.setFromObject(m); box.union(b); });
   if(person.visible){ person.updateMatrixWorld(true); box.union(b.setFromObject(person)); }   /* include the person figure when it is showing */
   if(box.isEmpty()) return;
-  const sph=box.getBoundingSphere(new THREE.Sphere()), c=sph.center, r=Math.max(sph.radius,12);
-  const asp=camera.aspect, vf=camera.fov*Math.PI/180, hf=2*Math.atan(Math.tan(vf/2)*asp), dist=r/Math.sin(Math.min(vf,hf)/2)*1.05;
-  const dir=camera.position.clone().sub(controls.target).normalize(), to=c.clone().add(dir.multiplyScalar(dist));
+  const sph=box.getBoundingSphere(new THREE.Sphere()), c=sph.center.clone(), r=Math.max(sph.radius,12);
+  /* keep clear of the controls along the bottom of the view (step bar and toggles): frame in the space above them */
+  const sr=stage.getBoundingClientRect(), vb=document.querySelector('.viewbar'), H=Math.max(sr.height,1);
+  const inset=vb?Math.max(0,sr.bottom-vb.getBoundingClientRect().top+8):0, fr=Math.max(0.4,(H-inset)/H);
+  const asp=camera.aspect, vf=camera.fov*Math.PI/180, vfu=2*Math.atan(Math.tan(vf/2)*fr), hf=2*Math.atan(Math.tan(vf/2)*asp);
+  const dist=r/Math.sin(Math.min(vfu,hf)/2)*1.05;
+  const dir=camera.position.clone().sub(controls.target).normalize();
+  /* shift the aim point down so the parts sit centred in the clear area above the controls */
+  const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion), wpp=2*dist*Math.tan(vf/2)/H;
+  c.addScaledVector(up,-wpp*inset/2);
+  const to=c.clone().add(dir.multiplyScalar(dist));
   if(reduceMotion){ camera.position.copy(to); controls.target.copy(c); tween=null; dirty=true; return; }
   tween={from:camera.position.clone(), to, tf:controls.target.clone(), tt:c.clone(), t0:performance.now()};
 }
