@@ -4,7 +4,7 @@ Interactive 3D build model of an outdoor quail coop for four birds. It's a 4′-
 
 - **Outdoor coop** (`#rim`): built in this order:
   1. **Floor:** a 48″ × 24″ frame of 2×2s with two 2×2 joists, covered with hardware cloth.
-  2. **Walls:** the front and back are built flat as 2×2 plate-and-stud walls (bottom plate, top plate, 15″ studs, all 2×2), stood on the floor frame and screwed down. The end walls are built flat the same way and screwed between them, and a top cross plate goes over the divider.
+  2–3. **Walls:** the front and back are built flat as 2×2 plate-and-stud walls (bottom plate, top plate, 15″ studs, all 2×2), stood on the floor frame and screwed down. The end walls are built flat the same way and screwed between them, and a top cross plate goes over the divider.
   3. **Divider:** plywood screwed to the middle studs, stopping ½″ behind the front so the box door closes against it.
   4. **Walls:** hardware cloth over the whole top and the run's end and back; plywood over the 18″ sleeping box's back and end.
   5. **Legs:** pressure-treated 2×4 legs outside the ends, running up to the roof, with 45° knee braces to the rims.
