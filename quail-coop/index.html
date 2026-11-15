@@ -39,6 +39,7 @@
 }
 [hidden]{display:none!important}
 .panel.steps-mode > :not(.tabsec):not(.tabbar){display:none!important}
+body.steps-on .panel{padding-bottom:75vh}   /* room for the last steps to scroll up to the top */
 @media (min-width: 881px){ .tabbar{position:sticky;top:-22px;z-index:3;background:var(--panel);padding-top:22px;margin-top:-22px} }   /* desktop: tabs stay put while the panel scrolls */
 .panel:not(.steps-mode) > .tabsec{display:none!important}
 html,body{height:100%}
@@ -217,7 +218,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
   /* build steps on phones: the model stays pinned at the top and the tabs under it, while the steps scroll underneath */
   body.steps-on .stage{position:sticky;top:0;height:45svh;min-height:260px;z-index:4}
   body.steps-on .tabbar{position:sticky;top:max(45svh,260px);z-index:3;background:var(--panel);margin-left:calc(-1 * max(16px, env(safe-area-inset-left,0px)));margin-right:calc(-1 * max(16px, env(safe-area-inset-right,0px)));padding:0 max(16px, env(safe-area-inset-right,0px)) 0 max(16px, env(safe-area-inset-left,0px));margin-bottom:0}
-  body.steps-on .panel{padding-bottom:60svh}
+  body.steps-on .panel{padding-bottom:75svh}
   .panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
   .layers::-webkit-scrollbar{display:none}
   .chip{flex:none}
@@ -287,7 +288,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
         <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><button type="button" class="copy" id="copyShop">Copy shopping list</button><button type="button" class="linkbtn" id="resetPrices" style="margin-top:12px">Reset prices to estimates</button></div><textarea id="copyFallback" class="copybox" rows="8" readonly hidden aria-label="Shopping list text to copy"></textarea>
         <div class="store" style="margin:16px 0 0"><b>Lowe's Atlanta-Edgewood, store #1875</b><span>1280 Caroline St NE, Atlanta, GA 30307 · <a href="https://www.lowes.com/store/GA-Atlanta/1875" target="_blank" rel="noopener">Store page ↗</a></span>
           <span class="note"><span class="tag store">Edgewood</span> prices are confirmed at the Edgewood store. <span class="tag">Amazon</span> items are bought on Amazon instead. <span class="tag">Online, unconfirmed</span> prices are earlier lowes.com prices that still need checking. <span class="tag">est.</span> prices are estimates. To check one, open its link, set your store to Edgewood, and type the price you see into its box. The total updates as you type, and this browser remembers your prices for next time.</span></div></div>
-      <div role="tabpanel" id="pane-steps" aria-labelledby="tab-steps" hidden><p class="note" style="margin:0 0 6px">Build in this order. The model follows along, starting at step 1: use the ‹ › arrows under the model, or <b>Show in 3D</b> on any step, to see the coop as it stands at the end of that step.</p><ol class="steps" id="steps"></ol></div>
+      <div role="tabpanel" id="pane-steps" aria-labelledby="tab-steps" hidden><p class="note" style="margin:0 0 6px">Build in this order. Scroll through the steps and the model follows along, showing the coop as it stands at the end of the step at the top. <b>Show in 3D</b> jumps to any step.</p><ol class="steps" id="steps"></ol></div>
       <div role="tabpanel" id="pane-cut" aria-labelledby="tab-cut" hidden><div class="tablewrap"><table class="cut" id="cut"></table></div></div>
       <div role="tabpanel" id="pane-notes" aria-labelledby="tab-notes" hidden><div class="notes" id="notes"></div></div>
     </section>
@@ -1486,24 +1487,38 @@ function stepFast(key){
 function renderSteps(){
   const st=M().steps;
   $('#steps').innerHTML=st.map(([t,d,k],i)=>{ const fx=stepFast(k); return `<li class="${i===buildStep?'on':''}"><b>${t}</b><p>${d}</p>${fx?`<p class="fx"><b>Fasteners:</b> ${fx}</p>`:''}<button type="button" data-s="${i}" aria-pressed="${i===buildStep}">${i===buildStep?'Showing in 3D':'Show in 3D'}</button></li>`; }).join('');
-  const pill=$('#stepPill'); pill.hidden = buildStep<0;
+  const pill=$('#stepPill'); pill.hidden = true;   /* steps are driven by scrolling the list, not by a navigator on the model */
   if(buildStep>=0){ $('#stepName').textContent='Step '+(buildStep+1)+' of '+st.length+': '+st[buildStep][0]; $('#stepPrev').disabled=buildStep===0; $('#stepNext').disabled=buildStep===st.length-1; }
 }
-function setStep(i){ const was=buildStep; buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps();
+function setStep(i, fromScroll){ if(i===buildStep && fromScroll) return; const was=buildStep; buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps();
   if(i>=0) fitVisible(false, STEP_VIEWS[M().steps[i][2]]); else if(was>=0) fitAll();   /* step mode zooms to fit what each step shows */
-  if(i>=0) scrollStepIntoPanel(i); }
+  if(i>=0 && !fromScroll) scrollStepIntoPanel(i); }
 /* put the current step's instructions at the top of the side panel (where the panel scrolls on its own, i.e. not on phones) */
 function scrollStepIntoPanel(i){
   const panel=document.querySelector('.panel'), li=document.querySelectorAll('#steps li')[i];
   if(!panel||!li) return;
   if(getComputedStyle(panel).overflowY==='visible'){   /* phone: the page scrolls; land the step just under the pinned model and tabs */
     const bar=document.querySelector('.tabbar'), off=stage.getBoundingClientRect().height+(bar?bar.offsetHeight:0)+8;
-    window.scrollTo({top:Math.max(0,li.getBoundingClientRect().top+window.scrollY-off),behavior:reduceMotion?'auto':'smooth'}); return; }
+    progScrollUntil=performance.now()+900; window.scrollTo({top:Math.max(0,li.getBoundingClientRect().top+window.scrollY-off),behavior:reduceMotion?'auto':'smooth'}); return; }
   const bar=document.querySelector('.tabbar'), off=(bar?bar.getBoundingClientRect().bottom-panel.getBoundingClientRect().top:0)+8;   /* land just under the sticky tab bar */
   const top=li.getBoundingClientRect().top-panel.getBoundingClientRect().top+panel.scrollTop-off;
-  panel.scrollTo({top:Math.max(0,top),behavior:reduceMotion?'auto':'smooth'});
+  progScrollUntil=performance.now()+900; panel.scrollTo({top:Math.max(0,top),behavior:reduceMotion?'auto':'smooth'});
 }
-$('#steps').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.s; setStep(i===buildStep?-1:i);
+/* scrolling the steps list picks the step: the one whose instructions have reached the top (just under the tabs) */
+let progScrollUntil=0, stepScrollRaf=0;
+function stepFromScroll(){
+  stepScrollRaf=0;
+  if(!document.body.classList.contains('steps-on')||buildStep<0||performance.now()<progScrollUntil) return;
+  const panel=document.querySelector('.panel'), bar=document.querySelector('.tabbar'), lis=[...document.querySelectorAll('#steps li')];
+  const phone=getComputedStyle(panel).overflowY==='visible';
+  const line=(phone?stage.getBoundingClientRect().bottom:panel.getBoundingClientRect().top)+(bar?bar.getBoundingClientRect().bottom-(phone?stage.getBoundingClientRect().bottom:panel.getBoundingClientRect().top):0)+40;
+  let k=0; lis.forEach((li,i)=>{ if(li.getBoundingClientRect().top<=line) k=i; });
+  setStep(k,true);
+}
+const onStepScroll=()=>{ if(!stepScrollRaf) stepScrollRaf=requestAnimationFrame(stepFromScroll); };
+window.addEventListener('scroll',onStepScroll,{passive:true});
+document.querySelector('.panel').addEventListener('scroll',onStepScroll,{passive:true});
+$('#steps').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const i=+b.dataset.s; setStep(i);
   });
 $('#stepPrev').addEventListener('click',()=>setStep(Math.max(0,buildStep-1)));
 $('#stepNext').addEventListener('click',()=>setStep(Math.min(M().steps.length-1,buildStep+1)));
