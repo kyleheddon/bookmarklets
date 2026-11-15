@@ -38,6 +38,7 @@
   --bar-5:#b7c0c8; color-scheme:dark;
 }
 [hidden]{display:none!important}
+.panel.steps-mode > :not(.tabsec){display:none!important}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:15px;line-height:1.45}
 *{box-sizing:border-box}
@@ -257,7 +258,7 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
       </div>
     </section>
 
-    <section>
+    <section class="tabsec">
       <div class="tabs" role="tablist">
         <button type="button" role="tab" aria-selected="true" data-tab="shop" id="tab-shop">Materials</button>
         <button type="button" role="tab" aria-selected="false" data-tab="steps" id="tab-steps">Build steps</button>
@@ -1443,7 +1444,9 @@ function renderCut(an){
   $('#cut').innerHTML=h+'</tbody>';
 }
 document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return;
-  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab); });
+  document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute('aria-selected', x===b)); ['shop','steps','cut','notes'].forEach(k=>$('#pane-'+k).hidden=k!==b.dataset.tab);
+  /* build steps: hide everything between the model and the steps so they are easier to follow */
+  document.querySelector('.panel').classList.toggle('steps-mode', b.dataset.tab==='steps'); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
 $('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true; });
 controls.addEventListener('start',()=>{ tween=null; });
