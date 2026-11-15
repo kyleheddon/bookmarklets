@@ -1243,6 +1243,7 @@ function fitVisible(){
   holder.updateMatrixWorld(true);
   const box=new THREE.Box3(), b=new THREE.Box3();
   current.parts.forEach(m=>{ if(!m.visible||m.userData.layer==='fast') return; let o=m.parent, ok=true; while(o){ if(o.visible===false){ ok=false; break; } o=o.parent; } if(!ok) return; b.setFromObject(m); box.union(b); });
+  if(person.visible){ person.updateMatrixWorld(true); box.union(b.setFromObject(person)); }   /* include the person figure when it is showing */
   if(box.isEmpty()) return;
   const sph=box.getBoundingSphere(new THREE.Sphere()), c=sph.center, r=Math.max(sph.radius,12);
   const asp=camera.aspect, vf=camera.fov*Math.PI/180, hf=2*Math.atan(Math.tan(vf/2)*asp), dist=r/Math.sin(Math.min(vf,hf)/2)*1.05;
@@ -1487,7 +1488,8 @@ document.querySelector('.tabs').addEventListener('click',e=>{ const b=e.target.c
   /* Build steps puts the model into step mode at step 1; leaving the tab shows the finished coop again */
   if(b.dataset.tab==='steps'){ if(buildStep<0) setStep(0); } else if(buildStep>=0) setStep(-1); });
 $('#openDoors').addEventListener('change',e=>{ runtime.open=e.target.checked; dirty=true; });
-$('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true; });
+$('#showPerson').addEventListener('change',e=>{ person.visible=e.target.checked; dirty=true;
+  if(person.visible||buildStep>=0) fitVisible(); else fitAll(); });   /* zoom to fit the person too, and back again when it is hidden */
 controls.addEventListener('start',()=>{ tween=null; });
 window.addEventListener('hashchange',()=>setModel(location.hash.slice(1), false));
 
