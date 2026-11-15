@@ -1245,7 +1245,7 @@ function goView(name, instant){
 }
 /* Camera angle for each build step (direction from the coop toward the camera; +z is the front, +y up). */
 const STEP_VIEWS={floor:[0.32,0.62,1], frames:[0.6,0.5,0.85], endwalls:[-0.6,0.5,0.85], divider:[-0.85,0.75,0.55],
-  mesh:[0.75,0.5,-0.7], legs:[0.65,0.22,0.8], roof:[0.55,0.75,0.75], doors:[0.2,0.35,1], paint:[0.62,0.4,0.68], place:[0.62,0.3,0.68]};
+  mesh:[0.8,0.55,0.5], legs:[0.65,0.22,0.8], roof:[0.55,0.75,0.75], doors:[0.2,0.35,1], paint:[0.62,0.4,0.68], place:[0.62,0.3,0.68]};
 /* Frame what is showing: from the given angle (or the current one), centre on the visible parts and zoom so their outline fills
    the clear area above the controls along the bottom of the view. */
 function fitVisible(instant, dirIn){
@@ -1287,7 +1287,11 @@ function loop(now){
   requestAnimationFrame(loop);
   if(tween){ const t=Math.min(1,(now-tween.t0)/650); const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; const tg=tween.tt||TGT();
     const a=tween.from.clone().sub(tween.tf), b=tween.to.clone().sub(tg);
-    const len=a.length()+(b.length()-a.length())*e; const dir=a.normalize().lerp(b.normalize(),e).normalize();
+    const len=a.length()+(b.length()-a.length())*e;
+    /* orbit: blend the heading the short way round and the height evenly, instead of cutting straight through */
+    const an=a.normalize(), bn=b.normalize(), az0=Math.atan2(an.x,an.z), el0=Math.asin(Math.max(-1,Math.min(1,an.y))), el1=Math.asin(Math.max(-1,Math.min(1,bn.y)));
+    let daz=Math.atan2(bn.x,bn.z)-az0; daz=Math.atan2(Math.sin(daz),Math.cos(daz));
+    const az=az0+daz*e, el=el0+(el1-el0)*e, dir=new THREE.Vector3(Math.cos(el)*Math.sin(az),Math.sin(el),Math.cos(el)*Math.cos(az));
     controls.target.lerpVectors(tween.tf,tg,e); camera.position.copy(controls.target).add(dir.multiplyScalar(len)); if(t>=1) tween=null; dirty=true; }
   const tgt=runtime.open?1:0; if(Math.abs(doorT-tgt)>0.001){ doorT = reduceMotion ? tgt : doorT+(tgt-doorT)*0.14; setDoors(); }
   if(controls.update()) dirty=true;
