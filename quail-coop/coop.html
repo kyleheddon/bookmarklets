@@ -948,7 +948,22 @@ function analyze(bom, fasten){
   out.lumKeys=Object.keys(out.lum).sort((a,b)=>(out.lum[b].pt-out.lum[a].pt)||(LORD.indexOf(out.lum[a].size)-LORD.indexOf(out.lum[b].size)));
   out.plyKeys=Object.keys(out.ply).sort((a,b)=>(out.ply[b].pt-out.ply[a].pt)||(out.ply[b].th-out.ply[a].th));
   let ml=0; for(const m of out.mesh){ const lo=Math.min(m.w,m.h), hi=Math.max(m.w,m.h); ml += hi<=36 ? lo : hi; }
-  out.meshLen=ml; out.meshRoll = ml<=240?10:ml<=300?25:50; out.meshRolls = ml<=120?1:ml<=240?2:1;   /* two 10 ft rolls cost less than one 25 ft roll */
+  out.meshLen=ml;
+  /* pick the cheapest hardware-cloth purchase that the pieces actually fit: each piece runs along the roll with its other side across the width (first-fit into rolls) */
+  { const ROLLS=[{key:'mesh:10x24',w:24,len:120,label:'24″ × 10 ft'},{key:'mesh:10',w:36,len:120,label:'36″ × 10 ft'},{key:'mesh:25',w:36,len:300,label:'36″ × 25 ft'},{key:'mesh:50',w:36,len:600,label:'36″ × 50 ft'}];
+    const price=k=>(typeof unitPrice==='function'?unitPrice(k):null)||(PRICE[k]||[0])[0]||1e9;
+    let best=null;
+    for(const r of ROLLS){
+      const runs=[]; let ok=true;
+      for(const m of out.mesh){ const c=[[m.w,m.h],[m.h,m.w]].filter(([a])=>a<=r.w+0.01).map(([,b])=>b); if(!c.length||Math.min(...c)>r.len){ ok=false; break; } runs.push(Math.min(...c)); }
+      if(!ok) continue;
+      runs.sort((a,b)=>b-a); const bins=[];
+      for(const L0 of runs){ const bi=bins.findIndex(x=>x+L0<=r.len+0.01); if(bi>=0) bins[bi]+=L0; else bins.push(L0); }
+      const cost=bins.length*price(r.key);
+      if(!best||cost<best.cost-0.005) best={...r,n:bins.length,cost};
+    }
+    best=best||{key:'mesh:50',label:'36″ × 50 ft',n:1};
+    out.meshKey=best.key; out.meshLabel=best.label; out.meshRolls=best.n; out.meshRoll=best.label; }
   out.total=Object.values(out.w).reduce((a,b)=>a+b,0);
   const ms=out.mod.run+out.mod.coop; out.mod.run+=fasten*out.mod.run/ms; out.mod.coop+=fasten*out.mod.coop/ms;
   return out;
@@ -1301,6 +1316,7 @@ const PRICE={
   'ply:0.5':[27.81,'https://www.lowes.com/pd/plytanium-15-32-in-x-4-ft-x-8-ft-rated-pine-plywood-sheathing/5016108363','store',1,'Plytanium 15/32″, the standard actual thickness sold as ½″. Plywood, not OSB.'],
   'ply:0.5pt':[48.78,LS('Severe Weather 15/32 pressure treated plywood 4x8'),'store',1,'Severe Weather 15/32″ pressure-treated SYP CDX. Search link; the exact product page is not confirmed.'],
   'ply:0.25':[30.08,LS('1/4 in x 4 ft x 8 ft plywood'),'online',1,'Not used: only sold sanded.'],
+  'mesh:10x24':[23.98,LS('1/2 in hardware cloth 2 ft x 10 ft'),'store',1,'24″ × 10 ft roll, ½″ mesh. Every piece on this coop is 24″ or less on one side.'],
   'mesh:10':[29.98,'https://www.lowes.com/pd/Garden-Zone-Actual-10-ft-x-3-ft-Gray-Steel-Welded-Wire-Rolled-Hardware-Cloth-Fencing/1000552603','store',1,'Garden Zone 10 ft × 3 ft. Check the label for ½″ mesh.'],
   'mesh:25':[79.97,'https://www.lowes.com/pd/GARDEN-CRAFT-25-ft-x-3-ft-Gray-Steel-Welded-Wire-Garden-Hardware-Cloth-Rolled-Fencing/5001503005','store',1,'Garden Craft. ½″ mesh and 19 gauge not confirmed; check the label.'],
   'mesh:50':[94.98,LS('hardware cloth 1/2 in 36 in x 50 ft')],
@@ -1333,7 +1349,7 @@ function shopRows(an){
     rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?(m.ptUses&&m.ptUses[g.size]||'Corner posts (the legs), bottom stretchers, leg-zone braces and the lower middle posts'):(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
   for(const k of an.plyKeys){ const p=an.ply[k]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
     rows.push(['Plywood & OSB', p.osb ? '7/16″ OSB sheathing, 4 × 8 ft' : fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
-  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',an.meshRolls||1,'About '+Math.ceil(an.meshLen/12)+' ft used'+(an.meshRolls>1?' (two rolls cost less than one 25 ft roll)':''),'mesh:'+an.meshRoll]);
+  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, '+an.meshLabel+' roll',an.meshRolls||1,'Every piece fits; the cheapest roll size that does','mesh:'+an.meshKey.slice(5)]);
   const r=an.roof;
   if(r.alum){ rows.push(['Roofing','Corrugated galvanized steel panel, 26″ × 8 ft',r.alum.panels,(r.alum.pieces ? 'Cut into '+r.alum.pieces+' pieces '+fIn(r.alum.len)+' long' : 'Cut each to '+fIn(r.alum.len))+' with snips or a metal-cutting blade; overlap one corrugation.','alum']); if(r.closure) rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves; match the profile and pack size to the panel you buy','closure']); }
   if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course','shingle']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges','drip']); }
