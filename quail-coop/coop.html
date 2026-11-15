@@ -1243,25 +1243,38 @@ function goView(name, instant){
   if(instant||reduceMotion){ camera.position.copy(to); controls.target.copy(TGT()); tween=null; dirty=true; return; }
   tween={from:camera.position.clone(), to, tf:controls.target.clone(), t0:performance.now()};
 }
-/* Frame what is showing: keep the current viewing angle, centre on the visible parts and zoom so they fill the view. */
-function fitVisible(instant){
+/* Camera angle for each build step (direction from the coop toward the camera; +z is the front, +y up). */
+const STEP_VIEWS={floor:[0.32,0.62,1], frames:[0.6,0.5,0.85], endwalls:[-0.6,0.5,0.85], divider:[-0.85,0.75,0.55],
+  mesh:[0.75,0.5,-0.7], legs:[0.65,0.22,0.8], roof:[0.55,0.75,0.75], doors:[0.2,0.35,1], paint:[0.62,0.4,0.68], place:[0.62,0.3,0.68]};
+/* Frame what is showing: from the given angle (or the current one), centre on the visible parts and zoom so their outline fills
+   the clear area above the controls along the bottom of the view. */
+function fitVisible(instant, dirIn){
   if(!current) return;
   holder.updateMatrixWorld(true);
   const box=new THREE.Box3(), b=new THREE.Box3();
   current.parts.forEach(m=>{ if(!m.visible||m.userData.layer==='fast') return; let o=m.parent, ok=true; while(o){ if(o.visible===false){ ok=false; break; } o=o.parent; } if(!ok) return; b.setFromObject(m); box.union(b); });
   if(person.visible){ person.updateMatrixWorld(true); box.union(b.setFromObject(person)); }   /* include the person figure when it is showing */
   if(box.isEmpty()) return;
-  const sph=box.getBoundingSphere(new THREE.Sphere()), c=sph.center.clone(), r=Math.max(sph.radius,12);
-  /* keep clear of the controls along the bottom of the view (step bar and toggles): frame in the space above them */
+  const dir=(dirIn?new THREE.Vector3(...dirIn):camera.position.clone().sub(controls.target)).normalize();
+  const right=new THREE.Vector3(0,1,0).cross(dir).normalize(), up=dir.clone().cross(right).normalize();
   const sr=stage.getBoundingClientRect(), vb=document.querySelector('.viewbar'), H=Math.max(sr.height,1);
   const inset=vb?Math.max(0,sr.bottom-vb.getBoundingClientRect().top+8):0, fr=Math.max(0.4,(H-inset)/H);
-  const asp=camera.aspect, vf=camera.fov*Math.PI/180, vfu=2*Math.atan(Math.tan(vf/2)*fr), hf=2*Math.atan(Math.tan(vf/2)*asp);
-  const dist=r/Math.sin(Math.min(vfu,hf)/2)*1.05;
-  const dir=camera.position.clone().sub(controls.target).normalize();
-  /* shift the aim point down so the parts sit centred in the clear area above the controls */
-  const up=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion), wpp=2*dist*Math.tan(vf/2)/H;
-  c.addScaledVector(up,-wpp*inset/2);
-  const to=c.clone().add(dir.multiplyScalar(dist));
+  const vf=camera.fov*Math.PI/180, ty=Math.tan(vf/2), tx=ty*camera.aspect, tyu=ty*fr;
+  /* the box's corners, in the camera's right/up/back frame around the box centre */
+  const c0=box.getCenter(new THREE.Vector3()), pts=[];
+  for(const X of [box.min.x,box.max.x]) for(const Y of [box.min.y,box.max.y]) for(const Z of [box.min.z,box.max.z]){ const v=new THREE.Vector3(X,Y,Z).sub(c0); pts.push([v.dot(right),v.dot(up),v.dot(dir)]); }
+  /* centre the outline (two passes: the perspective shifts it a little), then back off until every corner fits */
+  let cx=0, cy=0, d=0;
+  for(let pass=0;pass<3;pass++){
+    d=0; for(const [x,y,z] of pts) d=Math.max(d, z+Math.abs(x-cx)/tx, z+Math.abs(y-cy)/tyu);
+    d*=1.07;
+    let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;
+    for(const [x,y,z] of pts){ const k=d/(d-z); x0=Math.min(x0,(x-cx)*k); x1=Math.max(x1,(x-cx)*k); y0=Math.min(y0,(y-cy)*k); y1=Math.max(y1,(y-cy)*k); }
+    cx+=(x0+x1)/2; cy+=(y0+y1)/2;
+  }
+  const wpp=2*d*ty/H;   /* world units per pixel at the target: shift down so the outline sits centred above the controls */
+  const c=c0.clone().addScaledVector(right,cx).addScaledVector(up,cy-wpp*inset/2);
+  const to=c.clone().addScaledVector(dir,d);
   if(instant||reduceMotion){ camera.position.copy(to); controls.target.copy(c); tween=null; dirty=true; return; }
   tween={from:camera.position.clone(), to, tf:controls.target.clone(), tt:c.clone(), t0:performance.now()};
 }
@@ -1468,7 +1481,7 @@ function renderSteps(){
   if(buildStep>=0){ $('#stepName').textContent='Step '+(buildStep+1)+' of '+st.length+': '+st[buildStep][0]; $('#stepPrev').disabled=buildStep===0; $('#stepNext').disabled=buildStep===st.length-1; }
 }
 function setStep(i){ const was=buildStep; buildStep=i; if(i>=0){ M().layers.forEach(([k])=>M().layerState[k]=true); renderLayers(); } applyLayers(); renderSteps();
-  if(i>=0) fitVisible(); else if(was>=0) fitAll();   /* step mode zooms to fit what each step shows */
+  if(i>=0) fitVisible(false, STEP_VIEWS[M().steps[i][2]]); else if(was>=0) fitAll();   /* step mode zooms to fit what each step shows */
   if(i>=0) scrollStepIntoPanel(i); }
 /* put the current step's instructions at the top of the side panel (where the panel scrolls on its own, i.e. not on phones) */
 function scrollStepIntoPanel(i){
