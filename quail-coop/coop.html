@@ -948,7 +948,7 @@ function analyze(bom, fasten){
   out.lumKeys=Object.keys(out.lum).sort((a,b)=>(out.lum[b].pt-out.lum[a].pt)||(LORD.indexOf(out.lum[a].size)-LORD.indexOf(out.lum[b].size)));
   out.plyKeys=Object.keys(out.ply).sort((a,b)=>(out.ply[b].pt-out.ply[a].pt)||(out.ply[b].th-out.ply[a].th));
   let ml=0; for(const m of out.mesh){ const lo=Math.min(m.w,m.h), hi=Math.max(m.w,m.h); ml += hi<=36 ? lo : hi; }
-  out.meshLen=ml; out.meshRoll = ml<=120?10:ml<=300?25:50;
+  out.meshLen=ml; out.meshRoll = ml<=240?10:ml<=300?25:50; out.meshRolls = ml<=120?1:ml<=240?2:1;   /* two 10 ft rolls cost less than one 25 ft roll */
   out.total=Object.values(out.w).reduce((a,b)=>a+b,0);
   const ms=out.mod.run+out.mod.coop; out.mod.run+=fasten*out.mod.run/ms; out.mod.coop+=fasten*out.mod.coop/ms;
   return out;
@@ -1333,7 +1333,7 @@ function shopRows(an){
     rows.push(['Lumber', LUM_LABEL[g.size]+' × 8 ft, '+(g.pt?'pressure-treated':'untreated'), g.boards.length, (g.pt?(m.ptUses&&m.ptUses[g.size]||'Corner posts (the legs), bottom stretchers, leg-zone braces and the lower middle posts'):(m.uses[g.size]||''))+' · '+g.length+' pieces','lum:'+k]); }
   for(const k of an.plyKeys){ const p=an.ply[k]; const uses=[...new Set(p.list.map(b=>b.name.replace(/ \(.*\)/,'')))];
     rows.push(['Plywood & OSB', p.osb ? '7/16″ OSB sheathing, 4 × 8 ft' : fIn(p.th)+(p.pt?' pressure-treated':' untreated')+' plywood, 4 × 8 ft', p.sheets.length, uses.join(', '),'ply:'+k]); }
-  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',1,'About '+Math.ceil(an.meshLen/12)+' ft used','mesh:'+an.meshRoll]);
+  rows.push(['Hardware cloth','½″ galvanized hardware cloth, 19 ga, 36″ × '+an.meshRoll+' ft roll',an.meshRolls||1,'About '+Math.ceil(an.meshLen/12)+' ft used'+(an.meshRolls>1?' (two rolls cost less than one 25 ft roll)':''),'mesh:'+an.meshRoll]);
   const r=an.roof;
   if(r.alum){ rows.push(['Roofing','Corrugated galvanized steel panel, 26″ × 8 ft',r.alum.panels,(r.alum.pieces ? 'Cut into '+r.alum.pieces+' pieces '+fIn(r.alum.len)+' long' : 'Cut each to '+fIn(r.alum.len))+' with snips or a metal-cutting blade; overlap one corrugation.','alum']); if(r.closure) rows.push(['Roofing','Foam closure strip to match panel profile',r.closure.qty,'Top and bottom eaves; match the profile and pack size to the panel you buy','closure']); }
   if(r.shingle){ const bundles=Math.ceil((r.shingle.area*1.15+ (r.drip.len/12)*0.6)/33.3); rows.push(['Roofing','3-tab asphalt shingles, bundle',bundles,Math.ceil(r.shingle.area)+' sq ft of roof plus starter course','shingle']); rows.push(['Roofing','Aluminum drip edge, 10 ft',Math.ceil(r.drip.len/120),'All four roof edges','drip']); }
