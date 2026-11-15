@@ -40,6 +40,7 @@ body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size
 *{box-sizing:border-box}
 button{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:minmax(0,1fr) 400px;grid-template-rows:auto minmax(0,1fr);height:100%}
+.app.single{grid-template-rows:minmax(0,1fr)}   /* one coop: no coop tab bar */
 .models{grid-column:1 / -1;display:flex;gap:4px;align-items:stretch;background:var(--panel);border-bottom:1px solid var(--line);
   padding-left:max(12px, env(safe-area-inset-left,0px));padding-right:max(12px, env(safe-area-inset-right,0px));overflow-x:auto}
 .models button{border:0;background:transparent;cursor:pointer;padding:10px 14px 9px;border-bottom:3px solid transparent;margin-bottom:-1px;text-align:left;display:flex;flex-direction:column;gap:2px;flex:none}
@@ -1262,6 +1263,7 @@ $('#kpiWeight').addEventListener('click',()=>{ $('#weightCard').scrollIntoView({
 /* tab order: the first tab is the default */
 const TAB_ORDER=['rim'];
 function renderModelTabs(){
+  const one=TAB_ORDER.length<2; $('#models').hidden=one; document.querySelector('.app').classList.toggle('single',one);   /* no tab bar when there is only one coop */
   $('#models').innerHTML=TAB_ORDER.map(k=>[k,MODELS[k]]).map(([k,m])=>`<button type="button" role="tab" id="mt-${k}" data-m="${k}" aria-selected="${k===MK}"><b>${m.tab}</b></button>`).join('');
 }
 $('#models').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) setModel(b.dataset.m, true); });
