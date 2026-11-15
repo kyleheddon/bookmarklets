@@ -207,6 +207,11 @@ table.cut tr.sec td{font:700 14px/1 var(--font-display);text-transform:uppercase
   .viewbar{left:calc(8px + env(safe-area-inset-left,0px));right:8px}
   .app{display:block;height:auto}
   .stage{height:70svh;min-height:440px}
+  /* tight tab bar on phones, so the cost and weight show without scrolling */
+  .panel{padding-top:4px}
+  .tabbar{margin-bottom:-14px}
+  .tabs{margin-bottom:0}
+  .tabs button{padding:7px 6px 7px}
   .panel{border-left:0;border-top:1px solid var(--line);overflow:visible;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
   .layers::-webkit-scrollbar{display:none}
   .chip{flex:none}
